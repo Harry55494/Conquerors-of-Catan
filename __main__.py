@@ -4,6 +4,7 @@ import time
 
 if __name__ == '__main__':
 
+    # Define the players and the board. Turns happen in the order specified here
     players = [player(1, 'blue', 'Human'), player(2, 'red', 'AI')]
     board = board(board_type='default', players=players)
 
@@ -25,6 +26,9 @@ if __name__ == '__main__':
     player_has_won = False
 
     turn = 1
+
+    board.board_setup()
+    time.sleep(5)
 
     while not player_has_won:
         for player_ in players:

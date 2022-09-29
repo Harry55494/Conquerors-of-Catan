@@ -4,6 +4,12 @@ import termcolor
 class player:
 
     def __init__(self, number, colour, type='Human'):
+        """
+        Initialises a player object
+        :param number: The player number
+        :param colour: The colour of the player
+        :param type: Whether the player is human controlled or not
+        """
         self.number = number
         self.colour = colour
         self.name = 'Player ' + str(number)
@@ -15,6 +21,10 @@ class player:
         print(self.coloured_name, 'has joined the game')
 
     def printHand(self):
+        """
+        Prints the player's hand
+        :return: None
+        """
         self.resources.sort()
         print(f"You ({self.coloured_name}) have {len(self.resources)} resource card(s) in your hand.", end ='')
         if len(self.resources) > 0:
@@ -31,6 +41,11 @@ class player:
         print('')
 
     def calculateVictoryPoints(self, board):
+        """
+        Calculates the player's victory points, from both their settlements/cities and their development cards
+        :param board: The board, so that buildings can be checked
+        :return: The player's victory points
+        """
         self.victory_points = 0
         for building in board.buildings:
             if board.buildings[building] is not None:

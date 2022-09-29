@@ -8,6 +8,12 @@ class tile:
     contains_robber = False
 
     def __init__(self, dice_number, letter, tile_type):
+        """
+        Initialises a tile object
+        :param dice_number: The number that needs to be rolled to get resources from this tile
+        :param letter: The unique letter that identifies this tile, for used in the board dictionary
+        :param tile_type: The resource gained from rolling this tile
+        """
         self.dice_number = dice_number
         self.tile_type = tile_type
         self.letter = letter

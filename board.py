@@ -13,12 +13,31 @@ def roll_dice():
 # noinspection DuplicatedCode
 class board:
 
+    class setupError(Exception):
+        pass
+
     # Board Setup ---------------------------------------------------------------
 
     def __init__(self, players: list[player] = None, board_type='default'):
+        """
+        Initialises the board
+        :param players: The list of players to be added to the board
+        :param board_type: The board layout, either the default layout, or a randomised layout
+        """
         if players is None:
             self.players = []
         self.players = players
+
+        # Player Checking
+        if len(self.players) < 2:
+            raise self.setupError('There must be at least 2 players')
+        player_nums = [player_.number for player_ in self.players]
+        player_colours = [player_.colour for player_ in self.players]
+        if len(player_nums) != len(set(player_nums)):
+            raise self.setupError('Player numbers must be unique')
+        if len(player_colours) != len(set(player_colours)):
+            raise self.setupError('Player colours must be unique')
+
         self.resource_deck = []
         self.development_card_deck = []
         self.tiles = [tile(9, 'a', 'wheat'),
@@ -231,6 +250,14 @@ class board:
     # Moving Cards --------------------------------------------------------------
 
     def give_player_card(self, player_, card_type, card, amount=1):
+        """
+        Gives a player a card from the bank
+        :param player_: The player to be given the card
+        :param card_type: The card type to be given - resource or development
+        :param card: The specific card, e.g. 'wheat' or 'soldier'
+        :param amount: The amount to be given
+        :return: None
+        """
         if card_type == 'resource':
             for i in range(amount):
                 player_.resources.append(self.resource_deck.pop(self.resource_deck.index(card)))
@@ -241,6 +268,13 @@ class board:
             print('Invalid card type')
 
     def return_player_card(self, player_: player, card_type, card):
+        """
+        Returns a card to the bank
+        :param player_: The player to take the card from
+        :param card_type: The card type to be taken - resource or development
+        :param card: The specific card, e.g. 'wheat' or 'soldier'
+        :return: None
+        """
         if card_type == 'resource':
             self.resource_deck.append(player_.resources.pop(player_.resources.index(card)))
             print(f'{player_.coloured_name} has returned a {card}')
@@ -253,6 +287,11 @@ class board:
     # Processing a Roll ---------------------------------------------------------
 
     def process_roll(self, roll):
+        """
+        Processes a roll of the dice and performs the necessary board actions
+        :param roll: The number from the dice roll
+        :return: None
+        """
         if roll == 7:
             print("The robber has been rolled")
             for player_ in self.players:
@@ -294,7 +333,10 @@ class board:
     # Printing the Board -------------------------------------------------------
 
     def print_board(self):
-        # Outputs the board to the console
+        """
+        Outputs the board to the console
+        :return: None
+        """
 
         tiles_to_print = []
         buildings_to_print = {}
