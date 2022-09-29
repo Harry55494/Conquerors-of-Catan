@@ -4,10 +4,6 @@ import time
 
 if __name__ == '__main__':
 
-    # Run these two lines if you haven't run the program before
-    #os.system("pip install -r requirements.txt ")
-    #os.system("clear")
-
     players = [player(1, 'blue', 'Human'), player(2, 'red', 'AI')]
     board = board(board_type='default', players=players)
 
