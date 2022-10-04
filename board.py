@@ -429,72 +429,75 @@ class board:
 
         os.system('clear')
 
-        tiles_to_print = []
-        letters_to_print = []
-        buildings_to_print = {}
-        roads_to_print = {}
+        # *_tp = *_to_print
+        # Shorthand to make the code more readable
+
+        t_tp = []  # Tiles to print
+        l_tp = []  # Letters to print
+        b_tp = {}  # Buildings to print
+        r_tp = {}  # Roads to print
+
         terminal_width = os.get_terminal_size().columns
 
         for tile_ in self.tiles:
             if tile_.dice_number < 10:
-                tiles_to_print.append([f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
+                t_tp.append([f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
                                        (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
             else:
-                tiles_to_print.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}', tile_.symbol])
+                t_tp.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}', tile_.symbol])
 
         for tile_ in self.tiles:
-            letters_to_print.append(termcolor.colored(tile_.letter, 'white')) if print_letters else letters_to_print.append(' ')
+            l_tp.append(termcolor.colored(tile_.letter, 'white')) if print_letters else l_tp.append(' ')
 
         for building in self.buildings:
             if self.buildings[building].get('building') is not None:
-                buildings_to_print[building] = termcolor.colored(('s' if self.buildings[building].get('building') == 'settlement' else 'C'),
+                b_tp[building] = termcolor.colored(('s' if self.buildings[building].get('building') == 'settlement' else 'C'),
                                                                  self.buildings[building].get('player').colour)
             elif building in ['d1', 'f2', 'i1', 'k1', 'n2', 'p1']:
-                buildings_to_print[building] = '|'
+                b_tp[building] = '|'
             else:
-                buildings_to_print[building] = ' '
+                b_tp[building] = ' '
 
         for road in self.roads:
             if self.roads[road].get('player') is not None:
-                roads_to_print[road] = termcolor.colored(self.roads[road].get('symbol'), self.roads[road].get('player').colour)
+                r_tp[road] = termcolor.colored(self.roads[road].get('symbol'), self.roads[road].get('player').colour)
             else:
-                roads_to_print[road] = self.roads[road].get('symbol')
+                r_tp[road] = self.roads[road].get('symbol')
 
         # I am aware this absolutely horrendous to try and read. It started simply as just the outlines of hexagons, and very quickly required a lot of
         # moving parts. However, it works, and I won't need to edit it later on. If I have time, I'll come back and make it more readable.
         lines_to_print = [
-            f'                               {buildings_to_print.get("a1")} {roads_to_print[tuple(["a1", "a2"])] * 5} {buildings_to_print.get("a2")}                               ',
-            f'                              {roads_to_print[tuple(["a,b", "a1"])]}        {roads_to_print[tuple(["a2", "a,c"])]}                             ',
-            f'                             {roads_to_print[tuple(["a,b", "a1"])]}   {tiles_to_print[0][0]}     {roads_to_print[tuple(["a2", "a,c"])]}                            ',
-            f'                    {buildings_to_print.get("b1")} {roads_to_print[tuple(["a,b", "b1"])] * 5} {buildings_to_print.get("a,b")}      {letters_to_print[0]}      {buildings_to_print.get("a,c")} {roads_to_print[tuple(["a,c", "c1"])] * 5} {buildings_to_print.get("c1")}                    ',
-            f'                   {roads_to_print[tuple(["b1", "b,d"])]}         {roads_to_print[tuple(["a,b,e", "a,b"])]}    {tiles_to_print[0][1]}   {roads_to_print[tuple(["a,c", "a,c,e"])]}        {roads_to_print[tuple(["c1", "c,f"])]}                  ',
-            f'                  {roads_to_print[tuple(["b1", "b,d"])]}    {tiles_to_print[1][0]}     {roads_to_print[tuple(["a,b,e", "a,b"])]}        {roads_to_print[tuple(["a,c", "a,c,e"])]}   {tiles_to_print[2][0]}     {roads_to_print[tuple(["c1", "c,f"])]}                 ',
-            f'         {buildings_to_print.get("d2")} {roads_to_print[tuple(["d2", "b,d"])] * 5} {buildings_to_print.get("b,d")}      {letters_to_print[1]}      {buildings_to_print.get("a,b,e")} {roads_to_print[tuple(["a,c,e", "a,b,e"])] * 5} {buildings_to_print.get("a,c,e")}      {letters_to_print[2]}      {buildings_to_print.get("c,f")} {roads_to_print[tuple(["c,f", "f1"])] * 5} {buildings_to_print.get("f1")}         ',
-            f'        {roads_to_print[tuple(["d1", "d2"])]}         {roads_to_print[tuple(["b,d", "b,d,g"])]}   {tiles_to_print[1][1]}     {roads_to_print[tuple(["b,e,g", "a,b,e"])]}         {roads_to_print[tuple(["c,e,h", "a,c,e"])]}   {tiles_to_print[2][1]}     {roads_to_print[tuple(["c,f", "c,f,h"])]}         {roads_to_print[tuple(["f1", "f2"])]}       ',
-            f'       {roads_to_print[tuple(["d1", "d2"])]}    {tiles_to_print[3][0]}     {roads_to_print[tuple(["b,d", "b,d,g"])]}        {roads_to_print[tuple(["b,e,g", "a,b,e"])]}    {tiles_to_print[4][0]}     {roads_to_print[tuple(["c,e,h", "a,c,e"])]}        {roads_to_print[tuple(["c,f", "c,f,h"])]}    {tiles_to_print[5][0]}     {roads_to_print[tuple(["f1", "f2"])]}      ',
-            f'      {buildings_to_print.get("d1")}      {letters_to_print[3]}      {buildings_to_print.get("b,d,g")} {roads_to_print[tuple(["b,d,g", "b,e,g"])] * 5} {buildings_to_print.get("b,e,g")}      {letters_to_print[4]}      {buildings_to_print.get("c,e,h")} {roads_to_print[tuple(["c,f,h", "c,e,h"])] * 5} {buildings_to_print.get("c,f,h")}      {letters_to_print[5]}      {buildings_to_print.get("f2")}      ',
-            f'       {roads_to_print[tuple(["d,i", "d1"])]}   {tiles_to_print[3][1]}     {roads_to_print[tuple(["b,d,g", "d,g,i"])]}         {roads_to_print[tuple(["e,g,j", "b,e,g"])]}   {tiles_to_print[4][1]}    {roads_to_print[tuple(["c,e,h", "e,h,j"])]}         {roads_to_print[tuple(["f,h,k", "c,f,h"])]}   {tiles_to_print[5][1]}    {roads_to_print[tuple(["f2", "f,k"])]}       ',
-            f'        {roads_to_print[tuple(["d,i", "d1"])]}        {roads_to_print[tuple(["b,d,g", "d,g,i"])]}    {tiles_to_print[6][0]}     {roads_to_print[tuple(["e,g,j", "b,e,g"])]}        {roads_to_print[tuple(["c,e,h", "e,h,j"])]}    {tiles_to_print[7][0]}     {roads_to_print[tuple(["f,h,k", "c,f,h"])]}        {roads_to_print[tuple(["f2", "f,k"])]}        ',
-            f'         {buildings_to_print.get("d,i")} {roads_to_print[tuple(["d,g,i", "d,i"])] * 5} {buildings_to_print.get("d,g,i")}      {letters_to_print[6]}      {buildings_to_print.get("e,g,j")} {roads_to_print[tuple(["e,h,j", "e,g,j"])] * 5} {buildings_to_print.get("e,h,j")}      {letters_to_print[7]}      {buildings_to_print.get("f,h,k")} {roads_to_print[tuple(["f,k", "f,h,k"])] * 5} {buildings_to_print.get("f,k")}         ',
-            f'        {roads_to_print[tuple(["i1", "d,i"])]}         {roads_to_print[tuple(["g,i,l", "d,g,i"])]}   {tiles_to_print[6][1]}    {roads_to_print[tuple(["e,g,j", "g,j,l"])]}         {roads_to_print[tuple(["h,j,m", "e,h,j"])]}   {tiles_to_print[7][1]}    {roads_to_print[tuple(["f,h,k", "h,k,m"])]}         {roads_to_print[tuple(["f,k", "k1"])]}       ',
-            f'       {roads_to_print[tuple(["i1", "d,i"])]}    {tiles_to_print[8][0]}     {roads_to_print[tuple(["g,i,l", "d,g,i"])]}        {roads_to_print[tuple(["e,g,j", "g,j,l"])]}    {tiles_to_print[9][0]}     {roads_to_print[tuple(["h,j,m", "e,h,j"])]}        {roads_to_print[tuple(["f,h,k", "h,k,m"])]}    {tiles_to_print[10][0]}     {roads_to_print[tuple(["f,k", "k1"])]}      ',
-            f'      {buildings_to_print.get("i1")}      {letters_to_print[8]}      {buildings_to_print.get("g,i,l")} {roads_to_print[tuple(["g,j,l", "g,i,l"])] * 5} {buildings_to_print.get("g,j,l")}      {letters_to_print[9]}      {buildings_to_print.get("h,j,m")} {roads_to_print[tuple(["h,k,m", "h,j,m"])] * 5} {buildings_to_print.get("h,k,m")}      {letters_to_print[10]}      {buildings_to_print.get("k1")}      ',
-            f'       {roads_to_print[tuple(["i,n", "i1"])]}   {tiles_to_print[8][1]}    {roads_to_print[tuple(["g,i,l", "i,l,n"])]}         {roads_to_print[tuple(["j,l,o", "g,j,l"])]}   {tiles_to_print[9][1]}     {roads_to_print[tuple(["h,j,m", "j,m,o"])]}         {roads_to_print[tuple(["k,m,p", "h,k,m"])]}   {tiles_to_print[10][1]}    {roads_to_print[tuple(["k1", "k,p"])]}       ',
-            f'        {roads_to_print[tuple(["i,n", "i1"])]}        {roads_to_print[tuple(["g,i,l", "i,l,n"])]}    {tiles_to_print[11][0]}     {roads_to_print[tuple(["j,l,o", "g,j,l"])]}        {roads_to_print[tuple(["h,j,m", "j,m,o"])]}    {tiles_to_print[12][0]}     {roads_to_print[tuple(["k,m,p", "h,k,m"])]}        {roads_to_print[tuple(["k1", "k,p"])]}        ',
-            f'         {buildings_to_print.get("i,n")} {roads_to_print[tuple(["i,l,n", "i,n"])] * 5} {buildings_to_print.get("i,l,n")}      {letters_to_print[11]}      {buildings_to_print.get("j,l,o")} {roads_to_print[tuple(["j,m,o", "j,l,o"])] * 5} {buildings_to_print.get("j,m,o")}      {letters_to_print[12]}      {buildings_to_print.get("k,m,p")} {roads_to_print[tuple(["k,p", "k,m,p"])] * 5} {buildings_to_print.get("k,p")}         ',
-            f'        {roads_to_print[tuple(["n2", "i,n"])]}         {roads_to_print[tuple(["l,n,q", "i,l,n"])]}   {tiles_to_print[11][1]}    {roads_to_print[tuple(["j,l,o", "l,o,q"])]}         {roads_to_print[tuple(["m,o,r", "j,m,o"])]}    {tiles_to_print[12][1]}   {roads_to_print[tuple(["k,m,p", "m,p,r"])]}         {roads_to_print[tuple(["k,p", "p1"])]}       ',
-            f'       {roads_to_print[tuple(["n2", "i,n"])]}    {tiles_to_print[13][0]}     {roads_to_print[tuple(["l,n,q", "i,l,n"])]}        {roads_to_print[tuple(["j,l,o", "l,o,q"])]}    {tiles_to_print[14][0]}     {roads_to_print[tuple(["m,o,r", "j,m,o"])]}        {roads_to_print[tuple(["k,m,p", "m,p,r"])]}    {tiles_to_print[15][0]}     {roads_to_print[tuple(["k,p", "p1"])]}      ',
-            f'      {buildings_to_print.get("n2")}      {letters_to_print[13]}      {buildings_to_print.get("l,n,q")} {roads_to_print[tuple(["l,o,q", "l,n,q"])] * 5} {buildings_to_print.get("l,o,q")}      {letters_to_print[14]}      {buildings_to_print.get("m,o,r")} {roads_to_print[tuple(["m,p,r", "m,o,r"])] * 5} {buildings_to_print.get("m,p,r")}      {letters_to_print[15]}      {buildings_to_print.get("p1")}      ',
-            f'       {roads_to_print[tuple(["n1", "n2"])]}   {tiles_to_print[13][1]}    {roads_to_print[tuple(["l,n,q", "n,q"])]}         {roads_to_print[tuple(["o,q,s", "l,o,q"])]}   {tiles_to_print[14][1]}     {roads_to_print[tuple(["m,o,r", "o,r,s"])]}         {roads_to_print[tuple(["p,r", "m,p,r"])]}   {tiles_to_print[15][1]}    {roads_to_print[tuple(["p1", "p2"])]}       ',
-            f'        {roads_to_print[tuple(["n1", "n2"])]}        {roads_to_print[tuple(["l,n,q", "n,q"])]}    {tiles_to_print[16][0]}     {roads_to_print[tuple(["o,q,s", "l,o,q"])]}        {roads_to_print[tuple(["m,o,r", "o,r,s"])]}    {tiles_to_print[17][0]}     {roads_to_print[tuple(["p,r", "m,p,r"])]}        {roads_to_print[tuple(["p1", "p2"])]}        ',
-            f'         {buildings_to_print.get("n1")} {roads_to_print[tuple(["n,q", "n1"])] * 5} {buildings_to_print.get("n,q")}      {letters_to_print[16]}      {buildings_to_print.get("o,q,s")} {roads_to_print[tuple(["o,r,s", "o,q,s"])] * 5} {buildings_to_print.get("o,r,s")}      {letters_to_print[17]}      {buildings_to_print.get("p,r")} {roads_to_print[tuple(["p2", "p,r"])] * 5} {buildings_to_print.get("p2")}         ',
-            f'                  {roads_to_print[tuple(["q1", "n,q"])]}   {tiles_to_print[16][1]}    {roads_to_print[tuple(["o,q,s", "q,s"])]}         {roads_to_print[tuple(["r,s", "o,r,s"])]}    {tiles_to_print[17][1]}   {roads_to_print[tuple(["p1", "p2"])]}                  ',
-            f'                   {roads_to_print[tuple(["q1", "n,q"])]}        {roads_to_print[tuple(["o,q,s", "q,s"])]}    {tiles_to_print[18][0]}     {roads_to_print[tuple(["r,s", "o,r,s"])]}        {roads_to_print[tuple(["p1", "p2"])]}                   ',
-            f'                    {buildings_to_print.get("q1")} {roads_to_print[tuple(["q,s", "q1"])] * 5} {buildings_to_print.get("q,s")}      {letters_to_print[18]}      {buildings_to_print.get("r,s")} {roads_to_print[tuple(["r1", "r,s"])] * 5} {buildings_to_print.get("r1")}                    ',
-            f'                             {roads_to_print[tuple(["s2", "q,s"])]}   {tiles_to_print[18][1]}    {roads_to_print[tuple(["r,s", "s1"])]}                             ',
-            f'                              {roads_to_print[tuple(["s2", "q,s"])]}        {roads_to_print[tuple(["r,s", "s1"])]}                              ',
-            f'                               {buildings_to_print.get("s2")} {roads_to_print[tuple(["s1", "s2"])] * 5} {buildings_to_print.get("s1")}                               ',
-
+            f'                               {b_tp.get("a1")} {r_tp[tuple(["a1", "a2"])] * 5} {b_tp.get("a2")}                               ',
+            f'                              {r_tp[tuple(["a,b", "a1"])]}        {r_tp[tuple(["a2", "a,c"])]}                             ',
+            f'                             {r_tp[tuple(["a,b", "a1"])]}   {t_tp[0][0]}     {r_tp[tuple(["a2", "a,c"])]}                            ',
+            f'                    {b_tp.get("b1")} {r_tp[tuple(["a,b", "b1"])] * 5} {b_tp.get("a,b")}      {l_tp[0]}      {b_tp.get("a,c")} {r_tp[tuple(["a,c", "c1"])] * 5} {b_tp.get("c1")}                    ',
+            f'                   {r_tp[tuple(["b1", "b,d"])]}         {r_tp[tuple(["a,b,e", "a,b"])]}    {t_tp[0][1]}   {r_tp[tuple(["a,c", "a,c,e"])]}        {r_tp[tuple(["c1", "c,f"])]}                  ',
+            f'                  {r_tp[tuple(["b1", "b,d"])]}    {t_tp[1][0]}     {r_tp[tuple(["a,b,e", "a,b"])]}        {r_tp[tuple(["a,c", "a,c,e"])]}   {t_tp[2][0]}     {r_tp[tuple(["c1", "c,f"])]}                 ',
+            f'         {b_tp.get("d2")} {r_tp[tuple(["d2", "b,d"])] * 5} {b_tp.get("b,d")}      {l_tp[1]}      {b_tp.get("a,b,e")} {r_tp[tuple(["a,c,e", "a,b,e"])] * 5} {b_tp.get("a,c,e")}      {l_tp[2]}      {b_tp.get("c,f")} {r_tp[tuple(["c,f", "f1"])] * 5} {b_tp.get("f1")}         ',
+            f'        {r_tp[tuple(["d1", "d2"])]}         {r_tp[tuple(["b,d", "b,d,g"])]}   {t_tp[1][1]}     {r_tp[tuple(["b,e,g", "a,b,e"])]}         {r_tp[tuple(["c,e,h", "a,c,e"])]}   {t_tp[2][1]}     {r_tp[tuple(["c,f", "c,f,h"])]}         {r_tp[tuple(["f1", "f2"])]}       ',
+            f'       {r_tp[tuple(["d1", "d2"])]}    {t_tp[3][0]}     {r_tp[tuple(["b,d", "b,d,g"])]}        {r_tp[tuple(["b,e,g", "a,b,e"])]}    {t_tp[4][0]}     {r_tp[tuple(["c,e,h", "a,c,e"])]}        {r_tp[tuple(["c,f", "c,f,h"])]}    {t_tp[5][0]}     {r_tp[tuple(["f1", "f2"])]}      ',
+            f'      {b_tp.get("d1")}      {l_tp[3]}      {b_tp.get("b,d,g")} {r_tp[tuple(["b,d,g", "b,e,g"])] * 5} {b_tp.get("b,e,g")}      {l_tp[4]}      {b_tp.get("c,e,h")} {r_tp[tuple(["c,f,h", "c,e,h"])] * 5} {b_tp.get("c,f,h")}      {l_tp[5]}      {b_tp.get("f2")}      ',
+            f'       {r_tp[tuple(["d,i", "d1"])]}   {t_tp[3][1]}     {r_tp[tuple(["b,d,g", "d,g,i"])]}         {r_tp[tuple(["e,g,j", "b,e,g"])]}   {t_tp[4][1]}    {r_tp[tuple(["c,e,h", "e,h,j"])]}         {r_tp[tuple(["f,h,k", "c,f,h"])]}   {t_tp[5][1]}    {r_tp[tuple(["f2", "f,k"])]}       ',
+            f'        {r_tp[tuple(["d,i", "d1"])]}        {r_tp[tuple(["b,d,g", "d,g,i"])]}    {t_tp[6][0]}     {r_tp[tuple(["e,g,j", "b,e,g"])]}        {r_tp[tuple(["c,e,h", "e,h,j"])]}    {t_tp[7][0]}     {r_tp[tuple(["f,h,k", "c,f,h"])]}        {r_tp[tuple(["f2", "f,k"])]}        ',
+            f'         {b_tp.get("d,i")} {r_tp[tuple(["d,g,i", "d,i"])] * 5} {b_tp.get("d,g,i")}      {l_tp[6]}      {b_tp.get("e,g,j")} {r_tp[tuple(["e,h,j", "e,g,j"])] * 5} {b_tp.get("e,h,j")}      {l_tp[7]}      {b_tp.get("f,h,k")} {r_tp[tuple(["f,k", "f,h,k"])] * 5} {b_tp.get("f,k")}         ',
+            f'        {r_tp[tuple(["i1", "d,i"])]}         {r_tp[tuple(["g,i,l", "d,g,i"])]}   {t_tp[6][1]}    {r_tp[tuple(["e,g,j", "g,j,l"])]}         {r_tp[tuple(["h,j,m", "e,h,j"])]}   {t_tp[7][1]}    {r_tp[tuple(["f,h,k", "h,k,m"])]}         {r_tp[tuple(["f,k", "k1"])]}       ',
+            f'       {r_tp[tuple(["i1", "d,i"])]}    {t_tp[8][0]}     {r_tp[tuple(["g,i,l", "d,g,i"])]}        {r_tp[tuple(["e,g,j", "g,j,l"])]}    {t_tp[9][0]}     {r_tp[tuple(["h,j,m", "e,h,j"])]}        {r_tp[tuple(["f,h,k", "h,k,m"])]}    {t_tp[10][0]}     {r_tp[tuple(["f,k", "k1"])]}      ',
+            f'      {b_tp.get("i1")}      {l_tp[8]}      {b_tp.get("g,i,l")} {r_tp[tuple(["g,j,l", "g,i,l"])] * 5} {b_tp.get("g,j,l")}      {l_tp[9]}      {b_tp.get("h,j,m")} {r_tp[tuple(["h,k,m", "h,j,m"])] * 5} {b_tp.get("h,k,m")}      {l_tp[10]}      {b_tp.get("k1")}      ',
+            f'       {r_tp[tuple(["i,n", "i1"])]}   {t_tp[8][1]}    {r_tp[tuple(["g,i,l", "i,l,n"])]}         {r_tp[tuple(["j,l,o", "g,j,l"])]}   {t_tp[9][1]}     {r_tp[tuple(["h,j,m", "j,m,o"])]}         {r_tp[tuple(["k,m,p", "h,k,m"])]}   {t_tp[10][1]}    {r_tp[tuple(["k1", "k,p"])]}       ',
+            f'        {r_tp[tuple(["i,n", "i1"])]}        {r_tp[tuple(["g,i,l", "i,l,n"])]}    {t_tp[11][0]}     {r_tp[tuple(["j,l,o", "g,j,l"])]}        {r_tp[tuple(["h,j,m", "j,m,o"])]}    {t_tp[12][0]}     {r_tp[tuple(["k,m,p", "h,k,m"])]}        {r_tp[tuple(["k1", "k,p"])]}        ',
+            f'         {b_tp.get("i,n")} {r_tp[tuple(["i,l,n", "i,n"])] * 5} {b_tp.get("i,l,n")}      {l_tp[11]}      {b_tp.get("j,l,o")} {r_tp[tuple(["j,m,o", "j,l,o"])] * 5} {b_tp.get("j,m,o")}      {l_tp[12]}      {b_tp.get("k,m,p")} {r_tp[tuple(["k,p", "k,m,p"])] * 5} {b_tp.get("k,p")}         ',
+            f'        {r_tp[tuple(["n2", "i,n"])]}         {r_tp[tuple(["l,n,q", "i,l,n"])]}   {t_tp[11][1]}    {r_tp[tuple(["j,l,o", "l,o,q"])]}         {r_tp[tuple(["m,o,r", "j,m,o"])]}    {t_tp[12][1]}   {r_tp[tuple(["k,m,p", "m,p,r"])]}         {r_tp[tuple(["k,p", "p1"])]}       ',
+            f'       {r_tp[tuple(["n2", "i,n"])]}    {t_tp[13][0]}     {r_tp[tuple(["l,n,q", "i,l,n"])]}        {r_tp[tuple(["j,l,o", "l,o,q"])]}    {t_tp[14][0]}     {r_tp[tuple(["m,o,r", "j,m,o"])]}        {r_tp[tuple(["k,m,p", "m,p,r"])]}    {t_tp[15][0]}     {r_tp[tuple(["k,p", "p1"])]}      ',
+            f'      {b_tp.get("n2")}      {l_tp[13]}      {b_tp.get("l,n,q")} {r_tp[tuple(["l,o,q", "l,n,q"])] * 5} {b_tp.get("l,o,q")}      {l_tp[14]}      {b_tp.get("m,o,r")} {r_tp[tuple(["m,p,r", "m,o,r"])] * 5} {b_tp.get("m,p,r")}      {l_tp[15]}      {b_tp.get("p1")}      ',
+            f'       {r_tp[tuple(["n1", "n2"])]}   {t_tp[13][1]}    {r_tp[tuple(["l,n,q", "n,q"])]}         {r_tp[tuple(["o,q,s", "l,o,q"])]}   {t_tp[14][1]}     {r_tp[tuple(["m,o,r", "o,r,s"])]}         {r_tp[tuple(["p,r", "m,p,r"])]}   {t_tp[15][1]}    {r_tp[tuple(["p1", "p2"])]}       ',
+            f'        {r_tp[tuple(["n1", "n2"])]}        {r_tp[tuple(["l,n,q", "n,q"])]}    {t_tp[16][0]}     {r_tp[tuple(["o,q,s", "l,o,q"])]}        {r_tp[tuple(["m,o,r", "o,r,s"])]}    {t_tp[17][0]}     {r_tp[tuple(["p,r", "m,p,r"])]}        {r_tp[tuple(["p1", "p2"])]}        ',
+            f'         {b_tp.get("n1")} {r_tp[tuple(["n,q", "n1"])] * 5} {b_tp.get("n,q")}      {l_tp[16]}      {b_tp.get("o,q,s")} {r_tp[tuple(["o,r,s", "o,q,s"])] * 5} {b_tp.get("o,r,s")}      {l_tp[17]}      {b_tp.get("p,r")} {r_tp[tuple(["p2", "p,r"])] * 5} {b_tp.get("p2")}         ',
+            f'                  {r_tp[tuple(["q1", "n,q"])]}   {t_tp[16][1]}    {r_tp[tuple(["o,q,s", "q,s"])]}         {r_tp[tuple(["r,s", "o,r,s"])]}    {t_tp[17][1]}   {r_tp[tuple(["p1", "p2"])]}                  ',
+            f'                   {r_tp[tuple(["q1", "n,q"])]}        {r_tp[tuple(["o,q,s", "q,s"])]}    {t_tp[18][0]}     {r_tp[tuple(["r,s", "o,r,s"])]}        {r_tp[tuple(["p1", "p2"])]}                   ',
+            f'                    {b_tp.get("q1")} {r_tp[tuple(["q,s", "q1"])] * 5} {b_tp.get("q,s")}      {l_tp[18]}      {b_tp.get("r,s")} {r_tp[tuple(["r1", "r,s"])] * 5} {b_tp.get("r1")}                    ',
+            f'                             {r_tp[tuple(["s2", "q,s"])]}   {t_tp[18][1]}    {r_tp[tuple(["r,s", "s1"])]}                             ',
+            f'                              {r_tp[tuple(["s2", "q,s"])]}        {r_tp[tuple(["r,s", "s1"])]}                              ',
+            f'                               {b_tp.get("s2")} {r_tp[tuple(["s1", "s2"])] * 5} {b_tp.get("s1")}                               ',
         ]
 
         line_length = 71
@@ -515,3 +518,4 @@ class board:
         for player_ in self.players:
             text = f'{player_.coloured_name} ({player_.type})'.ljust(25)
             print(f'     {text}   |  VP: {player_.victory_points}'.center(terminal_width))
+        print('\n')
