@@ -18,14 +18,13 @@ class board:
 
     # Board Setup ---------------------------------------------------------------
 
-    def __init__(self, players: list[player] = None, board_type='default'):
+    def __init__(self, players: list[player], board_type='default'):
         """
         Initialises the board
         :param players: The list of players to be added to the board
         :param board_type: The board layout, either the default layout, or a randomised layout
         """
-        if players is None:
-            self.players = []
+
         self.players = players
 
         # Player Checking
@@ -50,7 +49,8 @@ class board:
                       tile(8, 'q', 'clay'), tile(2, 'r', 'wheat'),
                       tile(5, 's', 'rock')]
 
-        # Buildings map contains a grid reference, the building type, and the player who owns it. Also contains the tile type, so that the resources to give can be calculated
+        # Buildings map contains a grid reference, the building type, and the player who owns it. Also contains the tile type, so that the resources to
+        # give can be calculated
         self.buildings = {
             'a1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a']]},
             'a2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a']]},
@@ -247,9 +247,75 @@ class board:
         self.resource_deck.sort()
         self.development_card_deck = random.sample(self.development_card_deck, len(self.development_card_deck))
 
+    # Setting up Board
+
+    def place_settlement(self, player_: player, type_="settlement"):
+        """
+        Places a settlement on the board for a player
+        :param player_: The player who owns the building
+        :param type_: The type of building to place
+        :return: The location of the building
+        """
+        self.print_board(print_letters=True)
+        accepted = False
+        while not accepted:
+            location = input(f"{player_.coloured_name} , where would you like to place your {type_}? "
+                             f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"
+                             f"\n(Single corner numbers increase as you move clockwise around a tile)\n")
+            location = location.lower()
+            letters = location.split(',')
+            letters = [letter.strip() for letter in letters]
+            letters.sort()
+            location = ','.join(letters)
+            if location in self.buildings:
+                if self.buildings[location]['player'] is None:
+                    self.buildings[location].update({'player': player_, 'building': type_})
+                    accepted = True
+                    print(f"{player_.coloured_name} has placed a {type_} at {location}")
+                else:
+                    print("That location is already occupied!")
+            else:
+                print("That is not a valid location!")
+        return location
+
+    def place_road(self, player_: player, requirement = None):
+        """
+        Places a road on the board for a player
+        :param requirement: Optional, a forced location for one end of the road
+        :param player_: The player who owns the road
+        :return: None
+        """
+        self.print_board(print_letters=True)
+        accepted = False
+        while not accepted:
+            coordinates = []
+            if requirement is not None:
+                coordinates.append(requirement)
+            while len(coordinates) < 2:
+                print(f"{player_.coloured_name} , where would you like to place your road?\n"
+                      f"Please enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners")
+                print(f"{player_.coloured_name}, you must place your road next to {requirement}")
+                location = input(f"Please enter the {len(coordinates) + 1}{'st' if len(coordinates) + 1 == 1 else 'nd'} location\n")
+                location = location.lower()
+                letters = location.split(',')
+                letters = [letter.strip() for letter in letters]
+                letters.sort()
+                location = ','.join(letters)
+                coordinates.append(location)
+            if tuple(coordinates) not in self.roads:
+                coordinates = coordinates[::-1]
+            coordinates = tuple(coordinates)
+            if coordinates in self.roads:
+                if self.roads[coordinates]['player'] is None:
+                    self.roads[coordinates].update({'player': player_})
+                    accepted = True
+                    print(f"{player_.coloured_name} has placed a road at {coordinates}")
+                else:
+                    print("That location is already occupied!")
+
     # Moving Cards --------------------------------------------------------------
 
-    def give_player_card(self, player_, card_type, card, amount=1):
+    def give_player_card(self, player_: player, card_type: str, card: str, amount = 1):
         """
         Gives a player a card from the bank
         :param player_: The player to be given the card
@@ -284,9 +350,30 @@ class board:
         else:
             print('Invalid card type')
 
+    def initial_placement(self):
+        """
+        Sets up the board for the game, by allowing players to place their initial settlements and roads, and then giving them the required cards
+        :return: None
+        """
+        print('\n -- Board Setup --\n')
+        order = [player_ for player_ in self.players]
+        rev_order = order.copy()
+        rev_order.reverse()
+        order = order + rev_order
+
+        while len(order) > 0:
+            player_ = order.pop(0)
+            building = self.place_settlement(player_, 'settlement')
+            self.place_road(player_, building)
+            if len(order) < len(self.players):
+                # Players receive resources from their second settlement
+                tiles_from_settlement = self.buildings[building]['tiles']
+                for tile_ in tiles_from_settlement:
+                    self.give_player_card(player_, 'resource', tile_.resource)
+
     # Processing a Roll ---------------------------------------------------------
 
-    def process_roll(self, roll):
+    def process_roll(self, roll: int):
         """
         Processes a roll of the dice and performs the necessary board actions
         :param roll: The number from the dice roll
@@ -316,46 +403,54 @@ class board:
                         for building_tile in tiles:
                             if building_tile.dice_number == roll:
                                 if self.buildings[building].get('building') == 'settlement' and self.buildings[building].get('player') == player_:
-                                    # print(f'Roll of {roll} has been made and {self.buildings[building].get("player").coloured_name} has a {self.buildings[building].get("building")} on {roll}, so receives 1x {building_tile.tile_type}')
-                                    if building_tile.tile_type in cards_to_give:
-                                        cards_to_give[building_tile.tile_type] += 1
+                                    # print(f'Roll of {roll} has been made and {self.buildings[building].get("player").coloured_name} has a
+                                    # {self.buildings[building].get("building")} on {roll}, so receives 1x {building_tile.tile_type}')
+                                    if building_tile.resource in cards_to_give:
+                                        cards_to_give[building_tile.resource] += 1
                                     else:
-                                        cards_to_give[building_tile.tile_type] = 1
+                                        cards_to_give[building_tile.resource] = 1
                                 elif self.buildings[building].get('building') == 'city' and self.buildings[building].get('player') == player_:
-                                    # print(f'Roll of {roll} has been made and {self.buildings[building].get("player").coloured_name} has a {self.buildings[building].get("building")} on {roll}, so receives 2x {building_tile.tile_type}')
-                                    if building_tile.tile_type in cards_to_give:
-                                        cards_to_give[building_tile.tile_type] += 2
+                                    # print(f'Roll of {roll} has been made and {self.buildings[building].get("player").coloured_name} has a
+                                    # {self.buildings[building].get("building")} on {roll}, so receives 2x {building_tile.tile_type}')
+                                    if building_tile.resource in cards_to_give:
+                                        cards_to_give[building_tile.resource] += 2
                                     else:
-                                        cards_to_give[building_tile.tile_type] = 2
+                                        cards_to_give[building_tile.resource] = 2
                 for card in cards_to_give:
                     self.give_player_card(player_, 'resource', card, cards_to_give[card])
 
     # Printing the Board -------------------------------------------------------
 
-    def print_board(self):
+    def print_board(self, print_letters = False):
         """
         Outputs the board to the console
         :return: None
         """
 
+        os.system('clear')
+
         tiles_to_print = []
+        letters_to_print = []
         buildings_to_print = {}
         roads_to_print = {}
         terminal_width = os.get_terminal_size().columns
 
         for tile_ in self.tiles:
             if tile_.dice_number < 10:
-                tiles_to_print.append([f' {termcolor.colored(tile_.dice_number, ("red" if tile_.dice_number in [6, 8] else "white"))}',
-                                       (tile_.symbol + ' ' if tile_.tile_type != 'desert' else tile_.symbol)])
+                tiles_to_print.append([f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
+                                       (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
             else:
-                tiles_to_print.append([f'{termcolor.colored(tile_.dice_number, ("red" if tile_.dice_number in [6, 8] else "white"))}', tile_.symbol])
+                tiles_to_print.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}', tile_.symbol])
+
+        for tile_ in self.tiles:
+            letters_to_print.append(termcolor.colored(tile_.letter, 'white')) if print_letters else letters_to_print.append(' ')
 
         for building in self.buildings:
             if self.buildings[building].get('building') is not None:
                 buildings_to_print[building] = termcolor.colored(('s' if self.buildings[building].get('building') == 'settlement' else 'C'),
                                                                  self.buildings[building].get('player').colour)
             elif building in ['d1', 'f2', 'i1', 'k1', 'n2', 'p1']:
-                buildings_to_print[building] = ' '
+                buildings_to_print[building] = '|'
             else:
                 buildings_to_print[building] = ' '
 
@@ -365,37 +460,37 @@ class board:
             else:
                 roads_to_print[road] = self.roads[road].get('symbol')
 
-        # I am aware this absolutely horrendous to try and read. It started simply as just the outlines of hexagons, and very quickly required a lot of moving parts.
-        # However, it works, and I won't need to edit it later on. If I have time, I'll come back and make it more readable.
+        # I am aware this absolutely horrendous to try and read. It started simply as just the outlines of hexagons, and very quickly required a lot of
+        # moving parts. However, it works, and I won't need to edit it later on. If I have time, I'll come back and make it more readable.
         lines_to_print = [
             f'                               {buildings_to_print.get("a1")} {roads_to_print[tuple(["a1", "a2"])] * 5} {buildings_to_print.get("a2")}                               ',
             f'                              {roads_to_print[tuple(["a,b", "a1"])]}        {roads_to_print[tuple(["a2", "a,c"])]}                             ',
             f'                             {roads_to_print[tuple(["a,b", "a1"])]}   {tiles_to_print[0][0]}     {roads_to_print[tuple(["a2", "a,c"])]}                            ',
-            f'                    {buildings_to_print.get("b1")} {roads_to_print[tuple(["a,b", "b1"])] * 5} {buildings_to_print.get("a,b")}             {buildings_to_print.get("a,c")} {roads_to_print[tuple(["a,c", "c1"])] * 5} {buildings_to_print.get("c1")}                    ',
+            f'                    {buildings_to_print.get("b1")} {roads_to_print[tuple(["a,b", "b1"])] * 5} {buildings_to_print.get("a,b")}      {letters_to_print[0]}      {buildings_to_print.get("a,c")} {roads_to_print[tuple(["a,c", "c1"])] * 5} {buildings_to_print.get("c1")}                    ',
             f'                   {roads_to_print[tuple(["b1", "b,d"])]}         {roads_to_print[tuple(["a,b,e", "a,b"])]}    {tiles_to_print[0][1]}   {roads_to_print[tuple(["a,c", "a,c,e"])]}        {roads_to_print[tuple(["c1", "c,f"])]}                  ',
             f'                  {roads_to_print[tuple(["b1", "b,d"])]}    {tiles_to_print[1][0]}     {roads_to_print[tuple(["a,b,e", "a,b"])]}        {roads_to_print[tuple(["a,c", "a,c,e"])]}   {tiles_to_print[2][0]}     {roads_to_print[tuple(["c1", "c,f"])]}                 ',
-            f'         {buildings_to_print.get("d2")} {roads_to_print[tuple(["d2", "b,d"])] * 5} {buildings_to_print.get("b,d")}             {buildings_to_print.get("a,b,e")} {roads_to_print[tuple(["a,c,e", "a,b,e"])] * 5} {buildings_to_print.get("a,c,e")}             {buildings_to_print.get("c,f")} {roads_to_print[tuple(["c,f", "f1"])] * 5} {buildings_to_print.get("f1")}         ',
+            f'         {buildings_to_print.get("d2")} {roads_to_print[tuple(["d2", "b,d"])] * 5} {buildings_to_print.get("b,d")}      {letters_to_print[1]}      {buildings_to_print.get("a,b,e")} {roads_to_print[tuple(["a,c,e", "a,b,e"])] * 5} {buildings_to_print.get("a,c,e")}      {letters_to_print[2]}      {buildings_to_print.get("c,f")} {roads_to_print[tuple(["c,f", "f1"])] * 5} {buildings_to_print.get("f1")}         ',
             f'        {roads_to_print[tuple(["d1", "d2"])]}         {roads_to_print[tuple(["b,d", "b,d,g"])]}   {tiles_to_print[1][1]}     {roads_to_print[tuple(["b,e,g", "a,b,e"])]}         {roads_to_print[tuple(["c,e,h", "a,c,e"])]}   {tiles_to_print[2][1]}     {roads_to_print[tuple(["c,f", "c,f,h"])]}         {roads_to_print[tuple(["f1", "f2"])]}       ',
             f'       {roads_to_print[tuple(["d1", "d2"])]}    {tiles_to_print[3][0]}     {roads_to_print[tuple(["b,d", "b,d,g"])]}        {roads_to_print[tuple(["b,e,g", "a,b,e"])]}    {tiles_to_print[4][0]}     {roads_to_print[tuple(["c,e,h", "a,c,e"])]}        {roads_to_print[tuple(["c,f", "c,f,h"])]}    {tiles_to_print[5][0]}     {roads_to_print[tuple(["f1", "f2"])]}      ',
-            f'      {buildings_to_print.get("d1")}             {buildings_to_print.get("b,d,g")} {roads_to_print[tuple(["b,d,g", "b,e,g"])] * 5} {buildings_to_print.get("b,e,g")}             {buildings_to_print.get("c,e,h")} {roads_to_print[tuple(["c,f,h", "c,e,h"])] * 5} {buildings_to_print.get("c,f,h")}             {buildings_to_print.get("f2")}      ',
+            f'      {buildings_to_print.get("d1")}      {letters_to_print[3]}      {buildings_to_print.get("b,d,g")} {roads_to_print[tuple(["b,d,g", "b,e,g"])] * 5} {buildings_to_print.get("b,e,g")}      {letters_to_print[4]}      {buildings_to_print.get("c,e,h")} {roads_to_print[tuple(["c,f,h", "c,e,h"])] * 5} {buildings_to_print.get("c,f,h")}      {letters_to_print[5]}      {buildings_to_print.get("f2")}      ',
             f'       {roads_to_print[tuple(["d,i", "d1"])]}   {tiles_to_print[3][1]}     {roads_to_print[tuple(["b,d,g", "d,g,i"])]}         {roads_to_print[tuple(["e,g,j", "b,e,g"])]}   {tiles_to_print[4][1]}    {roads_to_print[tuple(["c,e,h", "e,h,j"])]}         {roads_to_print[tuple(["f,h,k", "c,f,h"])]}   {tiles_to_print[5][1]}    {roads_to_print[tuple(["f2", "f,k"])]}       ',
             f'        {roads_to_print[tuple(["d,i", "d1"])]}        {roads_to_print[tuple(["b,d,g", "d,g,i"])]}    {tiles_to_print[6][0]}     {roads_to_print[tuple(["e,g,j", "b,e,g"])]}        {roads_to_print[tuple(["c,e,h", "e,h,j"])]}    {tiles_to_print[7][0]}     {roads_to_print[tuple(["f,h,k", "c,f,h"])]}        {roads_to_print[tuple(["f2", "f,k"])]}        ',
-            f'         {buildings_to_print.get("d,i")} {roads_to_print[tuple(["d,g,i", "d,i"])] * 5} {buildings_to_print.get("d,g,i")}             {buildings_to_print.get("e,g,j")} {roads_to_print[tuple(["e,h,j", "e,g,j"])] * 5} {buildings_to_print.get("e,h,j")}             {buildings_to_print.get("f,h,k")} {roads_to_print[tuple(["f,k", "f,h,k"])] * 5} {buildings_to_print.get("f,k")}         ',
+            f'         {buildings_to_print.get("d,i")} {roads_to_print[tuple(["d,g,i", "d,i"])] * 5} {buildings_to_print.get("d,g,i")}      {letters_to_print[6]}      {buildings_to_print.get("e,g,j")} {roads_to_print[tuple(["e,h,j", "e,g,j"])] * 5} {buildings_to_print.get("e,h,j")}      {letters_to_print[7]}      {buildings_to_print.get("f,h,k")} {roads_to_print[tuple(["f,k", "f,h,k"])] * 5} {buildings_to_print.get("f,k")}         ',
             f'        {roads_to_print[tuple(["i1", "d,i"])]}         {roads_to_print[tuple(["g,i,l", "d,g,i"])]}   {tiles_to_print[6][1]}    {roads_to_print[tuple(["e,g,j", "g,j,l"])]}         {roads_to_print[tuple(["h,j,m", "e,h,j"])]}   {tiles_to_print[7][1]}    {roads_to_print[tuple(["f,h,k", "h,k,m"])]}         {roads_to_print[tuple(["f,k", "k1"])]}       ',
             f'       {roads_to_print[tuple(["i1", "d,i"])]}    {tiles_to_print[8][0]}     {roads_to_print[tuple(["g,i,l", "d,g,i"])]}        {roads_to_print[tuple(["e,g,j", "g,j,l"])]}    {tiles_to_print[9][0]}     {roads_to_print[tuple(["h,j,m", "e,h,j"])]}        {roads_to_print[tuple(["f,h,k", "h,k,m"])]}    {tiles_to_print[10][0]}     {roads_to_print[tuple(["f,k", "k1"])]}      ',
-            f'      {buildings_to_print.get("i1")}             {buildings_to_print.get("g,i,l")} {roads_to_print[tuple(["g,j,l", "g,i,l"])] * 5} {buildings_to_print.get("g,j,l")}             {buildings_to_print.get("h,j,m")} {roads_to_print[tuple(["h,k,m", "h,j,m"])] * 5} {buildings_to_print.get("h,k,m")}             {buildings_to_print.get("k1")}      ',
+            f'      {buildings_to_print.get("i1")}      {letters_to_print[8]}      {buildings_to_print.get("g,i,l")} {roads_to_print[tuple(["g,j,l", "g,i,l"])] * 5} {buildings_to_print.get("g,j,l")}      {letters_to_print[9]}      {buildings_to_print.get("h,j,m")} {roads_to_print[tuple(["h,k,m", "h,j,m"])] * 5} {buildings_to_print.get("h,k,m")}      {letters_to_print[10]}      {buildings_to_print.get("k1")}      ',
             f'       {roads_to_print[tuple(["i,n", "i1"])]}   {tiles_to_print[8][1]}    {roads_to_print[tuple(["g,i,l", "i,l,n"])]}         {roads_to_print[tuple(["j,l,o", "g,j,l"])]}   {tiles_to_print[9][1]}     {roads_to_print[tuple(["h,j,m", "j,m,o"])]}         {roads_to_print[tuple(["k,m,p", "h,k,m"])]}   {tiles_to_print[10][1]}    {roads_to_print[tuple(["k1", "k,p"])]}       ',
             f'        {roads_to_print[tuple(["i,n", "i1"])]}        {roads_to_print[tuple(["g,i,l", "i,l,n"])]}    {tiles_to_print[11][0]}     {roads_to_print[tuple(["j,l,o", "g,j,l"])]}        {roads_to_print[tuple(["h,j,m", "j,m,o"])]}    {tiles_to_print[12][0]}     {roads_to_print[tuple(["k,m,p", "h,k,m"])]}        {roads_to_print[tuple(["k1", "k,p"])]}        ',
-            f'         {buildings_to_print.get("i,n")} {roads_to_print[tuple(["i,l,n", "i,n"])] * 5} {buildings_to_print.get("i,l,n")}             {buildings_to_print.get("j,l,o")} {roads_to_print[tuple(["j,m,o", "j,l,o"])] * 5} {buildings_to_print.get("j,m,o")}             {buildings_to_print.get("k,m,p")} {roads_to_print[tuple(["k,p", "k,m,p"])] * 5} {buildings_to_print.get("k,p")}         ',
+            f'         {buildings_to_print.get("i,n")} {roads_to_print[tuple(["i,l,n", "i,n"])] * 5} {buildings_to_print.get("i,l,n")}      {letters_to_print[11]}      {buildings_to_print.get("j,l,o")} {roads_to_print[tuple(["j,m,o", "j,l,o"])] * 5} {buildings_to_print.get("j,m,o")}      {letters_to_print[12]}      {buildings_to_print.get("k,m,p")} {roads_to_print[tuple(["k,p", "k,m,p"])] * 5} {buildings_to_print.get("k,p")}         ',
             f'        {roads_to_print[tuple(["n2", "i,n"])]}         {roads_to_print[tuple(["l,n,q", "i,l,n"])]}   {tiles_to_print[11][1]}    {roads_to_print[tuple(["j,l,o", "l,o,q"])]}         {roads_to_print[tuple(["m,o,r", "j,m,o"])]}    {tiles_to_print[12][1]}   {roads_to_print[tuple(["k,m,p", "m,p,r"])]}         {roads_to_print[tuple(["k,p", "p1"])]}       ',
             f'       {roads_to_print[tuple(["n2", "i,n"])]}    {tiles_to_print[13][0]}     {roads_to_print[tuple(["l,n,q", "i,l,n"])]}        {roads_to_print[tuple(["j,l,o", "l,o,q"])]}    {tiles_to_print[14][0]}     {roads_to_print[tuple(["m,o,r", "j,m,o"])]}        {roads_to_print[tuple(["k,m,p", "m,p,r"])]}    {tiles_to_print[15][0]}     {roads_to_print[tuple(["k,p", "p1"])]}      ',
-            f'      {buildings_to_print.get("n2")}             {buildings_to_print.get("l,n,q")} {roads_to_print[tuple(["l,o,q", "l,n,q"])] * 5} {buildings_to_print.get("l,o,q")}             {buildings_to_print.get("m,o,r")} {roads_to_print[tuple(["m,p,r", "m,o,r"])] * 5} {buildings_to_print.get("m,p,r")}             {buildings_to_print.get("p1")}      ',
+            f'      {buildings_to_print.get("n2")}      {letters_to_print[13]}      {buildings_to_print.get("l,n,q")} {roads_to_print[tuple(["l,o,q", "l,n,q"])] * 5} {buildings_to_print.get("l,o,q")}      {letters_to_print[14]}      {buildings_to_print.get("m,o,r")} {roads_to_print[tuple(["m,p,r", "m,o,r"])] * 5} {buildings_to_print.get("m,p,r")}      {letters_to_print[15]}      {buildings_to_print.get("p1")}      ',
             f'       {roads_to_print[tuple(["n1", "n2"])]}   {tiles_to_print[13][1]}    {roads_to_print[tuple(["l,n,q", "n,q"])]}         {roads_to_print[tuple(["o,q,s", "l,o,q"])]}   {tiles_to_print[14][1]}     {roads_to_print[tuple(["m,o,r", "o,r,s"])]}         {roads_to_print[tuple(["p,r", "m,p,r"])]}   {tiles_to_print[15][1]}    {roads_to_print[tuple(["p1", "p2"])]}       ',
             f'        {roads_to_print[tuple(["n1", "n2"])]}        {roads_to_print[tuple(["l,n,q", "n,q"])]}    {tiles_to_print[16][0]}     {roads_to_print[tuple(["o,q,s", "l,o,q"])]}        {roads_to_print[tuple(["m,o,r", "o,r,s"])]}    {tiles_to_print[17][0]}     {roads_to_print[tuple(["p,r", "m,p,r"])]}        {roads_to_print[tuple(["p1", "p2"])]}        ',
-            f'         {buildings_to_print.get("n1")} {roads_to_print[tuple(["n,q", "n1"])] * 5} {buildings_to_print.get("n,q")}             {buildings_to_print.get("o,q,s")} {roads_to_print[tuple(["o,r,s", "o,q,s"])] * 5} {buildings_to_print.get("o,r,s")}             {buildings_to_print.get("p,r")} {roads_to_print[tuple(["p2", "p,r"])] * 5} {buildings_to_print.get("p2")}         ',
+            f'         {buildings_to_print.get("n1")} {roads_to_print[tuple(["n,q", "n1"])] * 5} {buildings_to_print.get("n,q")}      {letters_to_print[16]}      {buildings_to_print.get("o,q,s")} {roads_to_print[tuple(["o,r,s", "o,q,s"])] * 5} {buildings_to_print.get("o,r,s")}      {letters_to_print[17]}      {buildings_to_print.get("p,r")} {roads_to_print[tuple(["p2", "p,r"])] * 5} {buildings_to_print.get("p2")}         ',
             f'                  {roads_to_print[tuple(["q1", "n,q"])]}   {tiles_to_print[16][1]}    {roads_to_print[tuple(["o,q,s", "q,s"])]}         {roads_to_print[tuple(["r,s", "o,r,s"])]}    {tiles_to_print[17][1]}   {roads_to_print[tuple(["p1", "p2"])]}                  ',
             f'                   {roads_to_print[tuple(["q1", "n,q"])]}        {roads_to_print[tuple(["o,q,s", "q,s"])]}    {tiles_to_print[18][0]}     {roads_to_print[tuple(["r,s", "o,r,s"])]}        {roads_to_print[tuple(["p1", "p2"])]}                   ',
-            f'                    {buildings_to_print.get("q1")} {roads_to_print[tuple(["q,s", "q1"])] * 5} {buildings_to_print.get("q,s")}             {buildings_to_print.get("r,s")} {roads_to_print[tuple(["r1", "r,s"])] * 5} {buildings_to_print.get("r1")}                    ',
+            f'                    {buildings_to_print.get("q1")} {roads_to_print[tuple(["q,s", "q1"])] * 5} {buildings_to_print.get("q,s")}      {letters_to_print[18]}      {buildings_to_print.get("r,s")} {roads_to_print[tuple(["r1", "r,s"])] * 5} {buildings_to_print.get("r1")}                    ',
             f'                             {roads_to_print[tuple(["s2", "q,s"])]}   {tiles_to_print[18][1]}    {roads_to_print[tuple(["r,s", "s1"])]}                             ',
             f'                              {roads_to_print[tuple(["s2", "q,s"])]}        {roads_to_print[tuple(["r,s", "s1"])]}                              ',
             f'                               {buildings_to_print.get("s2")} {roads_to_print[tuple(["s1", "s2"])] * 5} {buildings_to_print.get("s1")}                               ',
