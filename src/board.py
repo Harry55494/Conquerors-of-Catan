@@ -6,13 +6,16 @@ from tile import tile
 
 
 def roll_dice():
-    # Statistical distribution of dice rolls is maintained by combining two random numbers between 1 and 6
+    """
+    Rolls the dice.
+    Statistical distribution of dice rolls is maintained by combining two random numbers between 1 and 6
+    :return: Dice roll result
+    """
     return random.randint(1, 6) + random.randint(1, 6)
 
 
 # noinspection DuplicatedCode
 class board:
-
     class setupError(Exception):
         pass
 
@@ -20,7 +23,7 @@ class board:
 
     def __init__(self, players: list[player], board_type='default'):
         """
-        Initialises the board
+        Initialises the board.
         :param players: The list of players to be added to the board
         :param board_type: The board layout, either the default layout, or a randomised layout
         """
@@ -278,7 +281,7 @@ class board:
                 print("That is not a valid location!")
         return location
 
-    def place_road(self, player_: player, requirement = None):
+    def place_road(self, player_: player, requirement=None):
         """
         Places a road on the board for a player
         :param requirement: Optional, a forced location for one end of the road
@@ -315,7 +318,7 @@ class board:
 
     # Moving Cards --------------------------------------------------------------
 
-    def give_player_card(self, player_: player, card_type: str, card: str, amount = 1):
+    def give_player_card(self, player_: player, card_type: str, card: str, amount=1):
         """
         Gives a player a card from the bank
         :param player_: The player to be given the card
@@ -349,6 +352,13 @@ class board:
             self.development_card_deck.append(player_.development_cards.pop(player_.development_cards.index(card)))
         else:
             print('Invalid card type')
+
+    def move_robber(self, location):
+        for tile_ in self.tiles:
+            if tile_.contains_robber:
+                tile_.contains_robber = False
+            if tile_.letter == location:
+                tile_.contains_robber = True
 
     def initial_placement(self):
         """
@@ -394,6 +404,21 @@ class board:
                             total_to_discard -= 1
                         else:
                             print('Invalid card')
+
+            self.print_board(print_letters=True)
+            print("Where would you like to move the robber?")
+            accepted = False
+            while not accepted:
+                location = input("Please enter the letter of the tile you would like to move the robber to\n")
+                location = location.lower()
+                if any([tile_.letter == location for tile_ in self.tiles]):
+                    accepted = True
+                    self.move_robber(location)
+                else:
+                    print("Invalid location")
+
+            # TODO - Move the robber and steal a card from a player
+
         else:
             for player_ in self.players:
                 cards_to_give = {}
@@ -401,7 +426,7 @@ class board:
                     if self.buildings[building].get('building') is not None:
                         tiles = self.buildings[building].get('tiles')
                         for building_tile in tiles:
-                            if building_tile.dice_number == roll:
+                            if building_tile.dice_number == roll and not building_tile.contains_robber:
                                 if self.buildings[building].get('building') == 'settlement' and self.buildings[building].get('player') == player_:
                                     # print(f'Roll of {roll} has been made and {self.buildings[building].get("player").coloured_name} has a
                                     # {self.buildings[building].get("building")} on {roll}, so receives 1x {building_tile.tile_type}')
@@ -421,7 +446,7 @@ class board:
 
     # Printing the Board -------------------------------------------------------
 
-    def print_board(self, print_letters = False):
+    def print_board(self, print_letters=False):
         """
         Outputs the board to the console
         :return: None
@@ -437,22 +462,23 @@ class board:
         b_tp = {}  # Buildings to print
         r_tp = {}  # Roads to print
 
-        terminal_width = os.get_terminal_size().columns
-
         for tile_ in self.tiles:
+            # Dice numbers of 6 and 8 are in red, to keep true to the board, as they are the highest frequency numbers
             if tile_.dice_number < 10:
                 t_tp.append([f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
-                                       (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
+                             (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
             else:
-                t_tp.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}', tile_.symbol])
+                t_tp.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
+                             tile_.symbol])
 
         for tile_ in self.tiles:
-            l_tp.append(termcolor.colored(tile_.letter, 'white')) if print_letters else l_tp.append(' ')
+            # Prints the letter if requested, then the robber symbol if the tile contains the robber
+            l_tp.append(termcolor.colored(tile_.letter, 'white')) if print_letters else l_tp.append('♝') if tile_.contains_robber else l_tp.append(' ')
 
         for building in self.buildings:
             if self.buildings[building].get('building') is not None:
                 b_tp[building] = termcolor.colored(('s' if self.buildings[building].get('building') == 'settlement' else 'C'),
-                                                                 self.buildings[building].get('player').colour)
+                                                   self.buildings[building].get('player').colour)
             elif building in ['d1', 'f2', 'i1', 'k1', 'n2', 'p1']:
                 b_tp[building] = '|'
             else:
@@ -486,7 +512,7 @@ class board:
             f'       {r_tp[tuple(["i,n", "i1"])]}   {t_tp[8][1]}    {r_tp[tuple(["g,i,l", "i,l,n"])]}         {r_tp[tuple(["j,l,o", "g,j,l"])]}   {t_tp[9][1]}     {r_tp[tuple(["h,j,m", "j,m,o"])]}         {r_tp[tuple(["k,m,p", "h,k,m"])]}   {t_tp[10][1]}    {r_tp[tuple(["k1", "k,p"])]}       ',
             f'        {r_tp[tuple(["i,n", "i1"])]}        {r_tp[tuple(["g,i,l", "i,l,n"])]}    {t_tp[11][0]}     {r_tp[tuple(["j,l,o", "g,j,l"])]}        {r_tp[tuple(["h,j,m", "j,m,o"])]}    {t_tp[12][0]}     {r_tp[tuple(["k,m,p", "h,k,m"])]}        {r_tp[tuple(["k1", "k,p"])]}        ',
             f'         {b_tp.get("i,n")} {r_tp[tuple(["i,l,n", "i,n"])] * 5} {b_tp.get("i,l,n")}      {l_tp[11]}      {b_tp.get("j,l,o")} {r_tp[tuple(["j,m,o", "j,l,o"])] * 5} {b_tp.get("j,m,o")}      {l_tp[12]}      {b_tp.get("k,m,p")} {r_tp[tuple(["k,p", "k,m,p"])] * 5} {b_tp.get("k,p")}         ',
-            f'        {r_tp[tuple(["n2", "i,n"])]}         {r_tp[tuple(["l,n,q", "i,l,n"])]}   {t_tp[11][1]}    {r_tp[tuple(["j,l,o", "l,o,q"])]}         {r_tp[tuple(["m,o,r", "j,m,o"])]}    {t_tp[12][1]}   {r_tp[tuple(["k,m,p", "m,p,r"])]}         {r_tp[tuple(["k,p", "p1"])]}       ',
+            f'        {r_tp[tuple(["n2", "i,n"])]}         {r_tp[tuple(["l,n,q", "i,l,n"])]}   {t_tp[11][1]}    {r_tp[tuple(["j,l,o", "l,o,q"])]}         {r_tp[tuple(["m,o,r", "j,m,o"])]}   {t_tp[12][1]}    {r_tp[tuple(["k,m,p", "m,p,r"])]}         {r_tp[tuple(["k,p", "p1"])]}       ',
             f'       {r_tp[tuple(["n2", "i,n"])]}    {t_tp[13][0]}     {r_tp[tuple(["l,n,q", "i,l,n"])]}        {r_tp[tuple(["j,l,o", "l,o,q"])]}    {t_tp[14][0]}     {r_tp[tuple(["m,o,r", "j,m,o"])]}        {r_tp[tuple(["k,m,p", "m,p,r"])]}    {t_tp[15][0]}     {r_tp[tuple(["k,p", "p1"])]}      ',
             f'      {b_tp.get("n2")}      {l_tp[13]}      {b_tp.get("l,n,q")} {r_tp[tuple(["l,o,q", "l,n,q"])] * 5} {b_tp.get("l,o,q")}      {l_tp[14]}      {b_tp.get("m,o,r")} {r_tp[tuple(["m,p,r", "m,o,r"])] * 5} {b_tp.get("m,p,r")}      {l_tp[15]}      {b_tp.get("p1")}      ',
             f'       {r_tp[tuple(["n1", "n2"])]}   {t_tp[13][1]}    {r_tp[tuple(["l,n,q", "n,q"])]}         {r_tp[tuple(["o,q,s", "l,o,q"])]}   {t_tp[14][1]}     {r_tp[tuple(["m,o,r", "o,r,s"])]}         {r_tp[tuple(["p,r", "m,p,r"])]}   {t_tp[15][1]}    {r_tp[tuple(["p1", "p2"])]}       ',
@@ -501,6 +527,8 @@ class board:
         ]
 
         line_length = 71
+        terminal_width = os.get_terminal_size().columns
+
         print('\n')
         print("Conquerors of Catan".center(terminal_width))
         print("\n")

@@ -1,12 +1,6 @@
 
 class tile:
 
-    dice_number = 0
-    letter = ''
-    resource = ''
-    symbol = ''
-    contains_robber = False
-
     def __init__(self, dice_number, letter, resource):
         """
         Initialises a tile object
@@ -17,6 +11,7 @@ class tile:
         self.dice_number = dice_number
         self.resource = resource
         self.letter = letter
+        self.contains_robber = False
 
         if resource == 'wheat':
             self.symbol = '🌾'
