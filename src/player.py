@@ -20,6 +20,10 @@ class player:
         self.development_cards = []
         print(self.coloured_name, 'has joined the game')
 
+    # override print function
+    def __str__(self):
+        return self.coloured_name
+
     def printHand(self):
         """
         Prints the player's hand

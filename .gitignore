@@ -1,3 +1,5 @@
 /Dockerfile
 /.dockerignore
 /docs/challenge_week/Presentation.key
+/.fleet/
+/.idea/

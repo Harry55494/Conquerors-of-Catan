@@ -1,18 +1,18 @@
 from board import *
-from player import *
+from ai_player import *
 import time
 
 if __name__ == '__main__':
 
     # Define the players and the board. Turns happen in the order specified here
-    players = [player(1, 'blue', 'Human'), player(2, 'red', 'AI')]
+    players = [player(1, 'blue'), ai_player(2, 'red')]
     board = board(board_type='default', players=players)
 
     player_has_won = False
 
     turn = 1
 
-    board.initial_placement()
+    board.initial_placement(random)
 
     for player in players:
         player.calculateVictoryPoints(board)
@@ -23,7 +23,7 @@ if __name__ == '__main__':
             board.print_board(print_letters=False)
             print('\n')
             print('- Turn ' + str(turn) + ' -')
-            print(player_.coloured_name, 'is playing')
+            print(player_, 'is playing')
 
             if player_.type == 'Human':
                 waiter = input('Press enter to roll the dice')
@@ -32,18 +32,18 @@ if __name__ == '__main__':
 
             else:
                 dice_roll = roll_dice()
-                print(f'{player_.coloured_name} rolled {dice_roll}')
+                print(f'{player_} rolled {dice_roll}')
 
-            board.process_roll(dice_roll)
+            board.process_roll(dice_roll, player_)
 
             player_.printHand()
 
-            time.sleep(5)
+            time.sleep(2)
 
             if player_.calculateVictoryPoints(board) >= 10:
                 player_has_won = True
                 os.system('clear')
                 board.print_board()
-                print(player_.coloured_name, 'has won!')
+                print(player_, 'has won!')
                 break
         turn += 1
