@@ -3,18 +3,18 @@ import termcolor
 
 class player:
 
-    def __init__(self, number, colour, type='Human'):
+    def __init__(self, number, colour, human_or_ai='Human'):
         """
         Initialises a player object
         :param number: The player number
         :param colour: The colour of the player
-        :param type: Whether the player is human controlled or not
+        :param human_or_ai: Whether the player is human controlled or not
         """
         self.number = number
         self.colour = colour
         self.name = 'Player ' + str(number)
         self.coloured_name = termcolor.colored(self.name, self.colour)
-        self.type = type
+        self.human_or_ai = human_or_ai
         self.victory_points = 0
         self.resources = []
         self.development_cards = []
@@ -24,25 +24,30 @@ class player:
     def __str__(self):
         return self.coloured_name
 
-    def printHand(self):
+    def printHand(self, type_ = 'resources'):
         """
-        Prints the player's hand
+        Prints the player's hand of either resource cards or development cards
         :return: None
         """
-        self.resources.sort()
-        print(f"You ({self.coloured_name}) have {len(self.resources)} resource card(s) in your hand.", end ='')
-        if len(self.resources) > 0:
+        if type_ in ['resource', 'resources']:
+            list_to_print = self.resources
+        else:
+            list_to_print = self.development_cards
+        list_to_print.sort()
+        print(f"You ({self.coloured_name}) have {len(list_to_print)} {type_} card(s) in your hand.", end ='')
+        if len(list_to_print) > 0:
             print(' They are:')
         card_count = {}
-        for card in self.resources:
+        for card in list_to_print:
             if card in card_count:
                 card_count[card] += 1
             else:
                 card_count[card] = 1
-        self.resources.sort()
         for card in card_count:
             print(f"{card_count[card]} x {card} ", end=' ')
         print('')
+        self.resources.sort()
+        self.development_cards.sort()
 
     def calculateVictoryPoints(self, board):
         """

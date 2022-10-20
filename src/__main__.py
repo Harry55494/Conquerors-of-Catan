@@ -1,5 +1,4 @@
 from board import *
-from ai_player import *
 import time
 
 if __name__ == '__main__':
@@ -8,9 +7,7 @@ if __name__ == '__main__':
     players = [player(1, 'blue'), ai_player(2, 'red')]
     board = board(board_type='default', players=players)
 
-    player_has_won = False
-
-    turn = 1
+    turn, player_has_won = 1, False
 
     board.initial_placement(random)
 
@@ -25,7 +22,7 @@ if __name__ == '__main__':
             print('- Turn ' + str(turn) + ' -')
             print(player_, 'is playing')
 
-            if player_.type == 'Human':
+            if player_.human_or_ai == 'Human':
                 waiter = input('Press enter to roll the dice')
                 dice_roll = roll_dice()
                 print(f'You rolled {dice_roll}')
@@ -38,7 +35,11 @@ if __name__ == '__main__':
 
             player_.printHand()
 
-            time.sleep(2)
+            board.turn_actions(player_)
+
+            print(f'{player_} has finished their go')
+
+            time.sleep(1)
 
             if player_.calculateVictoryPoints(board) >= 10:
                 player_has_won = True
