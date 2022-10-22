@@ -66,4 +66,8 @@ class player:
         for card in self.development_cards:
             if card == 'victory point':
                 self.victory_points += 1
+        if board.largest_army[0] == self:
+            self.victory_points += 2
+        if board.longest_road[0] == self:
+            self.victory_points += 2
         return self.victory_points

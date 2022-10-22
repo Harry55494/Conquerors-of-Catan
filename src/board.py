@@ -1,5 +1,6 @@
 import os
 import random
+import time
 
 from ai_player import *
 from tile import tile
@@ -42,6 +43,8 @@ class board:
 
         self.resource_deck = []
         self.development_card_deck = []
+        self.largest_army = [None, 0]
+        self.longest_road = [None, 0]
         self.tiles = [tile(9, 'a', 'wheat'),
                       tile(12, 'b', 'sheep'), tile(10, 'c', 'sheep'),
                       tile(11, 'd', 'wood'), tile(5, 'e', 'clay'), tile(8, 'f', 'wheat'),
@@ -288,24 +291,27 @@ class board:
                 print("That is not a valid location!")
         return location
 
-    def place_road(self, player_: player, requirement=None):
+    def place_road(self, player_: player, ignore_requirements=False):
         """
         Places a road on the board for a player
-        :param requirement: Optional, a forced location for one end of the road
+        :param ignore_requirements: Optional, a forced location for one end of the road
         :param player_: The player who owns the road
         :return: None
         """
-        # TODO -> Requirements should be a list of locations, and the road should be placed between them
+        current_road_endings = []
+        for tuple_, details in self.roads.items():
+            if details['player'] == player_:
+                current_road_endings.append(tuple_[0])
+                current_road_endings.append(tuple_[1])
+
         self.print_board(print_letters=True)
         accepted = False
         while not accepted:
             coordinates = []
-            if requirement is not None:
-                coordinates.append(requirement)
             while len(coordinates) < 2:
                 print(f"{player_} , where would you like to place your road?\n"
                       f"Please enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners")
-                print(f"{player_}, you must place your road next to {requirement}")
+                print(f"{player_}, you must place your road next to {ignore_requirements}")
                 location = input(f"Please enter the {len(coordinates) + 1}{'st' if len(coordinates) + 1 == 1 else 'nd'} location\n")
                 location = location.lower()
                 letters = location.split(',')
@@ -318,9 +324,10 @@ class board:
             coordinates = tuple(coordinates)
             if coordinates in self.roads:
                 if self.roads[coordinates]['player'] is None:
-                    self.roads[coordinates].update({'player': player_})
-                    accepted = True
-                    print(f"{player_} has placed a road at {coordinates}")
+                    if ignore_requirements or (coordinates[0] in current_road_endings) or (coordinates[1] in current_road_endings):
+                        self.roads[coordinates].update({'player': player_})
+                        accepted = True
+                        print(f"{player_} has placed a road at {coordinates}")
                 else:
                     print("That location is already occupied!")
 
@@ -342,7 +349,8 @@ class board:
         elif card_type == 'development':
             player_.development_cards.append(self.development_card_deck.pop(self.development_card_deck.index(card)))
         else:
-            print('Invalid card type')
+            print(f'Invalid card type - cannot give player {card}')
+            time.sleep(5)
 
     def return_player_card(self, player_: player, card_type, card):
         """
@@ -359,7 +367,52 @@ class board:
         elif card_type == 'development':
             self.development_card_deck.append(player_.development_cards.pop(player_.development_cards.index(card)))
         else:
-            print('Invalid card type')
+            print(f'Invalid card type - cannot return {card} from player')
+
+    def check_for_special_cards(self):
+        """
+        Checks whether players need to be given the largest army or longest road cards
+        :return: None
+        """
+        for player_ in self.players:
+            if (player_.development_cards.count('soldier') > self.largest_army[1]) and (player_.development_cards.count('soldier') >= 3):
+                self.largest_army = [player_, player_.development_cards.count('soldier')]
+                print(f'{player_} has the largest army with {player_.development_cards.count("soldier")} soldiers')
+        total_roads = {}
+        for road, details in self.roads.items():
+            if details['player'] in total_roads and details['player'] is not None:
+                total_roads[details['player']] += 1
+            elif details['player'] is not None:
+                total_roads[details['player']] = 1
+        # remove any with less than 5 roads
+        for player_ in total_roads.copy():
+            if total_roads[player_] < 5:
+                total_roads.pop(player_)
+        for player_ in total_roads:
+            roads_subset = []
+            for road, details in self.roads.items():
+                if details.get('player') == player_:
+                    roads_subset.append([road, details])
+            explored_already = []
+            longest_road = []
+            for i in roads_subset:
+                if i in explored_already:
+                    continue
+                else:
+                    current_list = []
+                    for j in roads_subset:
+                        if len(current_list) == 0 or \
+                                any([item[0][0] == j[0][0] for item in current_list]) or \
+                                any([item[0][1] == j[0][1] for item in current_list]) or \
+                                any([item[0][0] == j[0][1] for item in current_list]) or \
+                                any([item[0][1] == j[0][0] for item in current_list]):
+                            current_list.append(j)
+                            explored_already.append(j)
+                    if len(current_list) > len(longest_road):
+                        longest_road = current_list
+            if (len(longest_road) > self.longest_road[1]) and len(longest_road) >= 5:
+                self.longest_road = [player_, len(longest_road)]
+                print(f'{player_} has a road of length {len(longest_road)} and has been given the longest road card')
 
     def move_robber(self, location):
         for tile_ in self.tiles:
@@ -437,7 +490,8 @@ class board:
                     # Players receive resources from their second settlement
                     tiles_from_settlement = self.buildings[building]['tiles']
                     for tile_ in tiles_from_settlement:
-                        self.give_player_card(player_, 'resource', tile_.resource)
+                        if not tile_.contains_robber:
+                            self.give_player_card(player_, 'resource', tile_.resource)
 
         else:
             # Random placement
@@ -466,7 +520,8 @@ class board:
                                     # Players receive resources from their second settlement
                                     tiles_from_settlement = self.buildings[building]['tiles']
                                     for tile_ in tiles_from_settlement:
-                                        self.give_player_card(player_, 'resource', tile_.resource)
+                                        if not tile_.contains_robber:
+                                            self.give_player_card(player_, 'resource', tile_.resource)
 
     def play_development_card(self, current_player: player):
         """
@@ -475,29 +530,32 @@ class board:
         :return:
         """
         current_player.printHand('development')
-        card = input('Which card would you like to play?\n')
-        while card not in current_player.development_cards:
-            card = input('Please enter a valid card\n')
-        if card == 'soldier':
-            self.robber(current_player)
-        elif card == 'monopoly':
-            res_type = input('What resource would you like to take from all other players?\n')
-            while res_type not in ['wood', 'brick', 'sheep', 'wheat', 'ore']:
-                res_type = input('What resource would you like to monopolise?\nwood, brick, sheep, wheat, ore\n')
-            for other_player in self.players:
-                if other_player != current_player:
-                    while res_type in other_player.resources:
-                        self.return_player_card(other_player, 'resource', res_type)
-                        self.give_player_card(current_player, 'resource', res_type)
-        elif card == 'year of plenty':
-            for i in range(2):
-                res_type = input('What resource would you like to take from the bank?\n')
-                while res_type not in ['wood', 'brick', 'sheep', 'wheat', 'ore']:
-                    res_type = input('What resource would you like to monopolise?\nwood, brick, sheep, wheat, ore\n')
-                self.give_player_card(current_player, 'resource', res_type)
-        elif card == 'road building':
-            for i in range(2):
-                self.place_road(current_player)
+        if len(current_player.development_cards) > 0:
+            card = input('Which card would you like to play?\n')
+            while card not in current_player.development_cards:
+                card = input('Please enter a valid card\n')
+            if card == 'soldier':
+                self.robber(current_player)
+            elif card == 'monopoly':
+                res_type = input('What resource would you like to take from all other players?\n')
+                while res_type not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
+                    res_type = input('What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n')
+                for other_player in self.players:
+                    if other_player != current_player:
+                        while res_type in other_player.resources:
+                            self.return_player_card(other_player, 'resource', res_type)
+                            self.give_player_card(current_player, 'resource', res_type)
+            elif card == 'year of plenty':
+                for i in range(2):
+                    res_type = input('What resource would you like to take from the bank?\n')
+                    while res_type not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
+                        res_type = input('What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n')
+                    self.give_player_card(current_player, 'resource', res_type)
+            elif card == 'road building':
+                for i in range(2):
+                    self.place_road(current_player)
+        else:
+            print('You have no development cards')
 
     def trade_with_bank(self, current_player: player):
         has_enough = False
@@ -516,7 +574,7 @@ class board:
                 while resource not in can_trade_with:
                     resource = input("Please enter the resource you would like to trade with the bank\n")
             trade_for = ''
-            while trade_for not in ['wood', 'brick', 'sheep', 'wheat', 'ore']:
+            while trade_for not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
                 trade_for = input("What resource would you like to trade for?\n")
             for i in range(4):
                 self.return_player_card(current_player, 'resource', resource)
@@ -556,7 +614,7 @@ class board:
             elif decision == 'road':
                 self.place_road(player_)
             elif decision == 'development card':
-                self.give_player_card(player_, 'development', 'random')
+                self.give_player_card(player_, 'development', self.development_card_deck[0])
 
     # Turn Actions and Processing a Roll ---------------------------------------------------------
 
@@ -617,8 +675,9 @@ class board:
         """
         end_turn = False
         while not end_turn:
+            self.check_for_special_cards()
             print(f'{player_}, what would you like to do?')
-            action = input('- build or buy development card, trade with bank, play development card, view hand, end turn\n')
+            action = input('- build or buy development card, trade with bank, play development card, view hand, view building list, end turn\n')
             if action in ['build', 'buy development card', 'buy']:
                 self.build(player_)
             elif action in ['trade with bank', 'trade']:
@@ -628,6 +687,9 @@ class board:
             elif action in ['view hand', 'hand']:
                 player_.printHand()
                 player_.printHand('development')
+            elif action in ['view building list', 'building list', 'buildings']:
+                for building, resources in self.building_cost_list.items():
+                    print(f'{building}: {resources}')
             elif action in ['end turn', 'end']:
                 end_turn = True
             else:
