@@ -260,76 +260,26 @@ class board:
         self.resource_deck.sort()
         self.development_card_deck = random.sample(self.development_card_deck, len(self.development_card_deck))
 
-    # Setting up Board
+    # Helper Functions ---------------------------------------------------------
 
-    def place_building(self, player_: player, type_="settlement"):
-        """
-        Places a settlement on the board for a player
-        :param player_: The player who owns the building
-        :param type_: The type of building to place
-        :return: The location of the building
-        """
-        self.print_board(print_letters=True)
-        accepted, location = False, ''
-        while not accepted:
-            location = input(f"{player_} , where would you like to place your {type_}? "
-                             f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"
-                             f"\n(Single corner numbers increase as you move clockwise around a tile)\n")
-            location = location.lower()
-            letters = location.split(',')
-            letters = [letter.strip() for letter in letters]
-            letters.sort()
-            location = ','.join(letters)
-            if location in self.buildings:
-                if (self.buildings[location]['player'] is None) or (self.buildings[location]['player'] == player_ and type_ == 'settlement'):
-                    self.buildings[location].update({'player': player_, 'building': type_})
-                    accepted = True
-                    print(f"{player_} has placed a {type_} at {location}")
-                else:
-                    print("That location is already occupied!")
-            else:
-                print("That is not a valid location!")
-        return location
+    def check_for_nearby_settlements(self, coords):
+        coords_to_check = [coords]
+        for road, details in self.roads.items():
+            if coords in road:
+                coords_to_check.append(road[0])
+                coords_to_check.append(road[1])
+        coords_to_check = list(set(coords_to_check))
+        for coord in coords_to_check:
+            if self.buildings[coord]['player'] is not None:
+                return True
+        return False
 
-    def place_road(self, player_: player, ignore_requirements=False):
-        """
-        Places a road on the board for a player
-        :param ignore_requirements: Optional, a forced location for one end of the road
-        :param player_: The player who owns the road
-        :return: None
-        """
-        current_road_endings = []
-        for tuple_, details in self.roads.items():
-            if details['player'] == player_:
-                current_road_endings.append(tuple_[0])
-                current_road_endings.append(tuple_[1])
-
-        self.print_board(print_letters=True)
-        accepted = False
-        while not accepted:
-            coordinates = []
-            while len(coordinates) < 2:
-                print(f"{player_} , where would you like to place your road?\n"
-                      f"Please enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners")
-                print(f"{player_}, you must place your road next to {ignore_requirements}")
-                location = input(f"Please enter the {len(coordinates) + 1}{'st' if len(coordinates) + 1 == 1 else 'nd'} location\n")
-                location = location.lower()
-                letters = location.split(',')
-                letters = [letter.strip() for letter in letters]
-                letters.sort()
-                location = ','.join(letters)
-                coordinates.append(location)
-            if tuple(coordinates) not in self.roads:
-                coordinates = coordinates[::-1]
-            coordinates = tuple(coordinates)
-            if coordinates in self.roads:
-                if self.roads[coordinates]['player'] is None:
-                    if ignore_requirements or (coordinates[0] in current_road_endings) or (coordinates[1] in current_road_endings):
-                        self.roads[coordinates].update({'player': player_})
-                        accepted = True
-                        print(f"{player_} has placed a road at {coordinates}")
-                else:
-                    print("That location is already occupied!")
+    def move_robber(self, location):
+        for tile_ in self.tiles:
+            if tile_.contains_robber:
+                tile_.contains_robber = False
+            if tile_.letter == location:
+                tile_.contains_robber = True
 
     # Moving Cards --------------------------------------------------------------
 
@@ -400,6 +350,7 @@ class board:
                     continue
                 else:
                     current_list = []
+                    not_added = []
                     for j in roads_subset:
                         if len(current_list) == 0 or \
                                 any([item[0][0] == j[0][0] for item in current_list]) or \
@@ -408,67 +359,43 @@ class board:
                                 any([item[0][1] == j[0][0] for item in current_list]):
                             current_list.append(j)
                             explored_already.append(j)
+                        else:
+                            not_added.append(j)
+                    for _ in range(len(not_added)):
+                        # Loop a few more times in case some of the roads didnt connect on the first pass, but do now
+                        for j in not_added:
+                            if any([item[0][0] == j[0][0] for item in current_list]) or \
+                                    any([item[0][1] == j[0][1] for item in current_list]) or \
+                                    any([item[0][0] == j[0][1] for item in current_list]) or \
+                                    any([item[0][1] == j[0][0] for item in current_list]):
+                                current_list.append(j)
+                                explored_already.append(j)
+
+                    print([item[0] for item in current_list])
+                    junctions_count = {}
+                    for item in current_list:
+                        for junc in item[0]:
+                            if junc in junctions_count:
+                                junctions_count[junc] += 1
+                            else:
+                                junctions_count[junc] = 1
+                    print(junctions_count)
+                    for key, value in junctions_count.items():
+                        if value > 2:
+                            for i in range(value):
+                                problem_nodes = [item for item in current_list if (item[0][0] == key or item[0][1] == key)]
+                                print([node[0] for node in problem_nodes])
+
                     if len(current_list) > len(longest_road):
                         longest_road = current_list
             if (len(longest_road) > self.longest_road[1]) and len(longest_road) >= 5:
                 self.longest_road = [player_, len(longest_road)]
                 print(f'{player_} has a road of length {len(longest_road)} and has been given the longest road card')
-
-    def move_robber(self, location):
-        for tile_ in self.tiles:
-            if tile_.contains_robber:
-                tile_.contains_robber = False
-            if tile_.letter == location:
-                tile_.contains_robber = True
-
-    def robber(self, current_player_: player):
-        self.print_board(print_letters=True)
-        print(f"{current_player_}, has rolled the robber!")
-        print(f"{current_player_}, where would you like to move the robber?")
-        accepted = False
-        while not accepted:
-            location = input("Please enter the letter of the tile you would like to move the robber to\n")
-            location = location.lower()
-            if any([tile_.letter == location for tile_ in self.tiles]):
-                accepted = True
-                self.move_robber(location)
             else:
-                print("Invalid location")
-        new_robber_location = [tile_ for tile_ in self.tiles if tile_.contains_robber][0]
-        players_to_steal_from = []
-        for key in self.buildings:
-            value = self.buildings[key]
-            if key.find(new_robber_location.letter) != -1:
-                if value['player'] is not None and value['player'] not in players_to_steal_from and value['player'] != current_player_:
-                    players_to_steal_from.append(value['player'])
+                print("Road not long enough")
+                print(longest_road)
 
-        player_to_steal_from = None
-
-        if len(players_to_steal_from) > 1:
-            print("Please select a player to steal from")
-            print(player_item for player_item in players_to_steal_from)
-            player_nums = [int(player_item.number) for player_item in players_to_steal_from]
-            accepted = False
-            while not accepted:
-                choice = input("Please enter the number of the player you would like to steal from\n")
-                if choice.isdigit() and int(choice) in player_nums:
-                    accepted = True
-                    for player_ in players_to_steal_from:
-                        if player_.number == int(choice):
-                            player_to_steal_from = player_
-                else:
-                    print("Invalid choice")
-        elif len(players_to_steal_from) == 1:
-            player_to_steal_from = players_to_steal_from[0]
-        else:
-            print("No players to steal from")
-
-        if player_to_steal_from is not None:
-            print(f"{current_player_} has stolen from {player_to_steal_from}")
-            card = player_to_steal_from.resources.pop(random.randint(0, len(player_to_steal_from.resources) - 1))
-            self.give_player_card(current_player_, 'resource', card)
-
-    def initial_placement(self, random_ = False):
+    def initial_placement(self, random_=False):
         """
         Sets up the board for the game, by allowing players to place their initial settlements and roads, and then giving them the required cards
         Random placement is not true random - it will only place a settlement on a corner of a tile that will produce two or three resources, to help to avoid softlocks
@@ -484,8 +411,8 @@ class board:
 
             while len(order) > 0:
                 player_ = order.pop(0)
-                building = self.place_building(player_, 'settlement')
-                self.place_road(player_, building)
+                building = player_.place_building(self, 'settlement')
+                player_.place_road(self, building)
                 if len(order) < len(self.players):
                     # Players receive resources from their second settlement
                     tiles_from_settlement = self.buildings[building]['tiles']
@@ -501,7 +428,8 @@ class board:
                 while accepted is False:
 
                     rand_int = random.randint(0, len(self.buildings) - 1)
-                    if (self.buildings[list(self.buildings.keys())[rand_int]]['player'] is None) and not (any(map(str.isdigit, list(self.buildings.keys())[rand_int]))):
+                    if (self.buildings[list(self.buildings.keys())[rand_int]]['player'] is None) and not (
+                    any(map(str.isdigit, list(self.buildings.keys())[rand_int]))) and not self.check_for_nearby_settlements(list(self.buildings.keys())[rand_int]):
                         accepted = True
                         building = list(self.buildings.keys())[rand_int]
                         self.buildings[building].update({'player': player_, 'building': 'settlement'})
@@ -522,99 +450,6 @@ class board:
                                     for tile_ in tiles_from_settlement:
                                         if not tile_.contains_robber:
                                             self.give_player_card(player_, 'resource', tile_.resource)
-
-    def play_development_card(self, current_player: player):
-        """
-        Allows the player to play a development card
-        :param current_player:
-        :return:
-        """
-        current_player.printHand('development')
-        if len(current_player.development_cards) > 0:
-            card = input('Which card would you like to play?\n')
-            while card not in current_player.development_cards:
-                card = input('Please enter a valid card\n')
-            if card == 'soldier':
-                self.robber(current_player)
-            elif card == 'monopoly':
-                res_type = input('What resource would you like to take from all other players?\n')
-                while res_type not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
-                    res_type = input('What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n')
-                for other_player in self.players:
-                    if other_player != current_player:
-                        while res_type in other_player.resources:
-                            self.return_player_card(other_player, 'resource', res_type)
-                            self.give_player_card(current_player, 'resource', res_type)
-            elif card == 'year of plenty':
-                for i in range(2):
-                    res_type = input('What resource would you like to take from the bank?\n')
-                    while res_type not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
-                        res_type = input('What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n')
-                    self.give_player_card(current_player, 'resource', res_type)
-            elif card == 'road building':
-                for i in range(2):
-                    self.place_road(current_player)
-        else:
-            print('You have no development cards')
-
-    def trade_with_bank(self, current_player: player):
-        has_enough = False
-        can_trade_with = []
-        for resource in current_player.resources:
-            if current_player.resources.count(resource) > 3:
-                has_enough = True
-                can_trade_with.append(resource)
-        if has_enough:
-            if len(can_trade_with) == 1:
-                resource = can_trade_with[0]
-            else:
-                print("You have enough of the following resources to trade with the bank")
-                print(set(can_trade_with))
-                resource = input("Please enter the resource you would like to trade with the bank\n")
-                while resource not in can_trade_with:
-                    resource = input("Please enter the resource you would like to trade with the bank\n")
-            trade_for = ''
-            while trade_for not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
-                trade_for = input("What resource would you like to trade for?\n")
-            for i in range(4):
-                self.return_player_card(current_player, 'resource', resource)
-            self.give_player_card(current_player, 'resource', trade_for)
-        else:
-            print("You do not have enough of a resource to trade with the bank")
-
-    def build(self, player_):
-        """
-        Allows the player to build a settlement, city, or road
-        :param player_:
-        :return:
-        """
-        player_.printHand('resource')
-        decision = input(f'What would you like to buy, a road, a settlement, a city, a development card or cancel?\n')
-        while decision not in ['road', 'settlement', 'city', 'development card', 'cancel']:
-            decision = input('Please enter a valid option\n')
-        if decision == 'cancel':
-            return False
-        required_resources = self.building_cost_list.get(decision)
-        print(required_resources)
-        has_resources = True
-        for resource, amount in required_resources.items():
-            print(player_.resources.count(resource))
-            print(resource + ': ' + str(amount))
-            if player_.resources.count(resource) < amount:
-                print(f'You do not have enough resources to build a {decision}')
-                return
-        if has_resources:
-            for resource, amount in required_resources.items():
-                for i in range(amount):
-                    self.return_player_card(player_, 'resource', resource)
-            if decision == 'settlement':
-                self.place_building(player_, 'settlement')
-            elif decision == 'city':
-                self.place_building(player_, 'city')
-            elif decision == 'road':
-                self.place_road(player_)
-            elif decision == 'development card':
-                self.give_player_card(player_, 'development', self.development_card_deck[0])
 
     # Turn Actions and Processing a Roll ---------------------------------------------------------
 
@@ -640,7 +475,7 @@ class board:
                             total_to_discard -= 1
                         else:
                             print('Invalid card')
-            self.robber(current_player)
+            current_player.robber(self)
 
         else:
             for player_ in self.players:
@@ -667,34 +502,6 @@ class board:
                 for card in cards_to_give:
                     self.give_player_card(player_, 'resource', card, cards_to_give[card])
 
-    def turn_actions(self, player_):
-        """
-        Performs the actions a player can take on their turn
-        :param player_: The player whose turn it is
-        :return: None
-        """
-        end_turn = False
-        while not end_turn:
-            self.check_for_special_cards()
-            print(f'{player_}, what would you like to do?')
-            action = input('- build or buy development card, trade with bank, play development card, view hand, view building list, end turn\n')
-            if action in ['build', 'buy development card', 'buy']:
-                self.build(player_)
-            elif action in ['trade with bank', 'trade']:
-                self.trade_with_bank(player_)
-            elif action in ['play development card', 'development card', 'play dev card', 'dev card']:
-                self.play_development_card(player_)
-            elif action in ['view hand', 'hand']:
-                player_.printHand()
-                player_.printHand('development')
-            elif action in ['view building list', 'building list', 'buildings']:
-                for building, resources in self.building_cost_list.items():
-                    print(f'{building}: {resources}')
-            elif action in ['end turn', 'end']:
-                end_turn = True
-            else:
-                print('Invalid action')
-
     # Printing the Board -------------------------------------------------------
 
     def print_board(self, print_letters=False):
@@ -716,8 +523,9 @@ class board:
         for tile_ in self.tiles:
             # Dice numbers of 6 and 8 are in red, to keep true to the board, as they are the highest frequency numbers
             if tile_.dice_number < 10:
-                t_tp.append([f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else " " if tile_.dice_number == 7 else tile_.dice_number    )}',
-                             (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
+                t_tp.append([
+                                f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else " " if tile_.dice_number == 7 else tile_.dice_number)}',
+                                (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
             else:
                 t_tp.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
                              tile_.symbol])

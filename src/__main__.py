@@ -13,6 +13,13 @@ if __name__ == '__main__':
 
     board.initial_placement(random)
 
+    #for road in [['b,e,g', 'a,b,e'], ['e,g,j', 'b,e,g'], ['e,g,j', 'g,j,l'], ['j,l,o', 'g,j,l'], ['j,m,o', 'j,l,o'], ['j,l,o', 'l,o,q']]:
+    #    board.roads[tuple(road)].update({'player': players[0]})
+
+    #board.check_for_special_cards()
+
+    #sys.exit()
+
     for player in players:
         player.calculateVictoryPoints(board)
 
