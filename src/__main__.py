@@ -1,24 +1,15 @@
-import sys
-
 from board import *
 import time
 
 if __name__ == '__main__':
 
     # Define the players and the board. Turns happen in the order specified here
-    players = [player(1, 'blue'), ai_player(2, 'red')]
+    players = [ai_random(1, 'blue'), ai_random(2, 'red')]
     board = board(board_type='default', players=players)
 
-    turn, player_has_won = 1, False
+    turn, player_has_won, all_players_ai = 1, False, (all(isinstance(player, ai_player) for player in players))
 
-    board.initial_placement(random)
-
-    #for road in [['b,e,g', 'a,b,e'], ['e,g,j', 'b,e,g'], ['e,g,j', 'g,j,l'], ['j,l,o', 'g,j,l'], ['j,m,o', 'j,l,o'], ['j,l,o', 'l,o,q']]:
-    #    board.roads[tuple(road)].update({'player': players[0]})
-
-    #board.check_for_special_cards()
-
-    #sys.exit()
+    board.initial_placement()
 
     for player in players:
         player.calculateVictoryPoints(board)
@@ -27,11 +18,14 @@ if __name__ == '__main__':
         for player_ in players:
             os.system('clear' if os.name == 'posix' else 'cls')
             board.print_board(print_letters=False)
+            if all_players_ai:
+                time.sleep(0.05)
             print('\n')
             print('- Turn ' + str(turn) + ' -')
-            print(player_, 'is playing')
+            if not all_players_ai:
+                print(player_, 'is playing')
 
-            if player_.human_or_ai == 'Human':
+            if player_.__class__ == player:
                 waiter = input('Press enter to roll the dice')
                 dice_roll = roll_dice()
                 print(f'You rolled {dice_roll}')
@@ -42,13 +36,9 @@ if __name__ == '__main__':
 
             board.process_roll(dice_roll, player_)
 
-            player_.printHand()
-
-            board.turn_actions(player_)
+            player_.turn_actions(board)
 
             print(f'{player_} has finished their go')
-
-            time.sleep(1)
 
             if player_.calculateVictoryPoints(board) >= 10:
                 player_has_won = True
@@ -57,3 +47,7 @@ if __name__ == '__main__':
                 print(player_, 'has won!')
                 break
         turn += 1
+
+        if turn > 100:
+            print('Game has gone on too long. Ending game')
+            break

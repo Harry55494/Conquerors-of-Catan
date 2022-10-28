@@ -27,3 +27,6 @@ class tile:
             self.symbol = '🏜️'
             self.dice_number = 7
             self.contains_robber = True
+
+    def __str__(self):
+        return f'{self.letter}'

@@ -5,18 +5,16 @@ import termcolor
 
 class player:
 
-    def __init__(self, number, colour, human_or_ai='Human'):
+    def __init__(self, number, colour):
         """
         Initialises a player object
         :param number: The player number
         :param colour: The colour of the player
-        :param human_or_ai: Whether the player is human controlled or not
         """
         self.number = number
         self.colour = colour
         self.name = 'Player ' + str(number)
         self.coloured_name = termcolor.colored(self.name, self.colour)
-        self.human_or_ai = human_or_ai
         self.victory_points = 0
         self.resources = []
         self.development_cards = []
@@ -25,6 +23,19 @@ class player:
     # override print function
     def __str__(self):
         return self.coloured_name
+
+    def count_cards(self, card_type):
+        if card_type in ['resource', 'resources']:
+            list_ = self.resources
+        else:
+            list_ = self.development_cards
+        card_count = {}
+        for card in list_:
+            if card in card_count:
+                card_count[card] += 1
+            else:
+                card_count[card] = 1
+        return card_count
 
     def printHand(self, type_ = 'resources'):
         """
@@ -39,12 +50,7 @@ class player:
         print(f"You ({self.coloured_name}) have {len(list_to_print)} {type_} card(s) in your hand.", end ='')
         if len(list_to_print) > 0:
             print(' They are:')
-        card_count = {}
-        for card in list_to_print:
-            if card in card_count:
-                card_count[card] += 1
-            else:
-                card_count[card] = 1
+        card_count = self.count_cards(type_)
         for card in card_count:
             print(f"{card_count[card]} x {card} ", end=' ')
         print('')
@@ -105,7 +111,7 @@ class player:
                 print("That is not a valid location!")
         return location
 
-    def place_road(self, board, ignore_requirements=False):
+    def place_road(self, board, requirement=None, ignore_current_endings = True):
         """
         Places a road on the board for a player
         :param board:
@@ -122,11 +128,15 @@ class player:
         accepted = False
         while not accepted:
             coordinates = []
+            if requirement is not None:
+                coordinates.append(requirement)
             while len(coordinates) < 2:
                 print(f"{self} , where would you like to place your road?\n"
                       f"Please enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners")
-                print(f"{self}, you must place your road next to {ignore_requirements}")
+                if requirement is not None:
+                    print(f"Your road must connect to {requirement}")
                 location = input(f"Please enter the {len(coordinates) + 1}{'st' if len(coordinates) + 1 == 1 else 'nd'} location\n")
+
                 location = location.lower()
                 letters = location.split(',')
                 letters = [letter.strip() for letter in letters]
@@ -138,12 +148,17 @@ class player:
             coordinates = tuple(coordinates)
             if coordinates in board.roads:
                 if board.roads[coordinates]['player'] is None:
-                    if ignore_requirements or (coordinates[0] in current_road_endings) or (coordinates[1] in current_road_endings):
+                    if ignore_current_endings or (coordinates[0] in current_road_endings) or (coordinates[1] in current_road_endings):
                         board.roads[coordinates].update({'player': self})
                         accepted = True
                         print(f"{self} has placed a road at {coordinates}")
                 else:
                     print("That location is already occupied!")
+
+    def initial_placement(self, board):
+        building = self.place_building(board, 'settlement')
+        self.place_road(board, building, True)
+        return building
 
     # Turn Functions ------------------------------------------------
 
@@ -194,6 +209,19 @@ class player:
             card = player_to_steal_from.resources.pop(random.randint(0, len(player_to_steal_from.resources) - 1))
             board.give_player_card(self, 'resource', card)
 
+    def robber_discard(self, board):
+        total_to_discard = len(self.resources) // 2
+        print(f'{self} has {len(self.resources)} resources and must discard half')
+        while total_to_discard > 0:
+            print(f'{self} has {total_to_discard} resources to discard')
+            self.printHand()
+            card = input('Which card would you like to discard? ')
+            if card in self.resources:
+                board.return_player_card(self, card)
+                total_to_discard -= 1
+            else:
+                print('Invalid card')
+
     def build(self, board):
         """
         Allows the player to build a settlement, city, or road
@@ -218,7 +246,7 @@ class player:
         if has_resources:
             for resource, amount in required_resources.items():
                 for i in range(amount):
-                    board.return_player_card(self, 'resource', resource)
+                    board.return_player_card(self, resource)
             if decision == 'settlement':
                 self.place_building(board, 'settlement')
             elif decision == 'city':
@@ -248,7 +276,7 @@ class player:
             while trade_for not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
                 trade_for = input("What resource would you like to trade for?\n")
             for i in range(4):
-                board.return_player_card(self, 'resource', resource)
+                board.return_player_card(self, resource)
             board.give_player_card(self, 'resource', trade_for)
         else:
             print("You do not have enough of a resource to trade with the bank")
@@ -273,7 +301,7 @@ class player:
                 for other_player in board.players:
                     if other_player != self:
                         while res_type in other_player.resources:
-                            board.return_player_card(other_player, 'resource', res_type)
+                            board.return_player_card(other_player, res_type)
                             board.give_player_card(self, 'resource', res_type)
             elif card == 'year of plenty':
                 for i in range(2):
@@ -293,6 +321,7 @@ class player:
         :param board:
         :return: None
         """
+        self.printHand('resources')
         end_turn = False
         while not end_turn:
             board.check_for_special_cards()

@@ -1,8 +1,8 @@
 import os
-import random
 import time
 
-from ai_player import *
+from player import *
+from ai_random import *
 from tile import tile
 
 
@@ -294,7 +294,10 @@ class board:
         """
         if card_type == 'resource' and not card == 'desert':
             for i in range(amount):
-                player_.resources.append(self.resource_deck.pop(self.resource_deck.index(card)))
+                try:
+                    player_.resources.append(self.resource_deck.pop(self.resource_deck.index(card)))
+                except ValueError:
+                    print('Not enough cards in the bank')
             print(f'{player_} has been given {amount}x {card} card(s)')
         elif card_type == 'development':
             player_.development_cards.append(self.development_card_deck.pop(self.development_card_deck.index(card)))
@@ -302,19 +305,18 @@ class board:
             print(f'Invalid card type - cannot give player {card}')
             time.sleep(5)
 
-    def return_player_card(self, player_: player, card_type, card):
+    def return_player_card(self, player_: player, card):
         """
         Returns a card to the bank
         :param player_: The player to take the card from
-        :param card_type: The card type to be taken - resource or development
         :param card: The specific card, e.g. 'wheat' or 'soldier'
         :return: None
         """
-        if card_type == 'resource':
+        if card in player_.resources:
             self.resource_deck.append(player_.resources.pop(player_.resources.index(card)))
             print(f'{player_} has returned a {card}')
             print(f'There are now {len(self.resource_deck)} cards left in the resource deck')
-        elif card_type == 'development':
+        elif card in player_.development_cards:
             self.development_card_deck.append(player_.development_cards.pop(player_.development_cards.index(card)))
         else:
             print(f'Invalid card type - cannot return {card} from player')
@@ -362,7 +364,7 @@ class board:
                         else:
                             not_added.append(j)
                     for _ in range(len(not_added)):
-                        # Loop a few more times in case some of the roads didnt connect on the first pass, but do now
+                        # Loop a few more times in case some roads didn't connect on the first pass, but do now
                         for j in not_added:
                             if any([item[0][0] == j[0][0] for item in current_list]) or \
                                     any([item[0][1] == j[0][1] for item in current_list]) or \
@@ -382,7 +384,7 @@ class board:
                     print(junctions_count)
                     for key, value in junctions_count.items():
                         if value > 2:
-                            for i in range(value):
+                            for _ in range(value):
                                 problem_nodes = [item for item in current_list if (item[0][0] == key or item[0][1] == key)]
                                 print([node[0] for node in problem_nodes])
 
@@ -395,7 +397,7 @@ class board:
                 print("Road not long enough")
                 print(longest_road)
 
-    def initial_placement(self, random_=False):
+    def initial_placement(self):
         """
         Sets up the board for the game, by allowing players to place their initial settlements and roads, and then giving them the required cards
         Random placement is not true random - it will only place a settlement on a corner of a tile that will produce two or three resources, to help to avoid softlocks
@@ -407,49 +409,16 @@ class board:
         rev_order.reverse()
         order = order + rev_order
 
-        if not random_:
-
-            while len(order) > 0:
-                player_ = order.pop(0)
-                building = player_.place_building(self, 'settlement')
-                player_.place_road(self, building)
-                if len(order) < len(self.players):
-                    # Players receive resources from their second settlement
-                    tiles_from_settlement = self.buildings[building]['tiles']
-                    for tile_ in tiles_from_settlement:
-                        if not tile_.contains_robber:
-                            self.give_player_card(player_, 'resource', tile_.resource)
-
-        else:
-            # Random placement
-            while len(order) > 0:
-                player_ = order.pop(0)
-                accepted = False
-                while accepted is False:
-
-                    rand_int = random.randint(0, len(self.buildings) - 1)
-                    if (self.buildings[list(self.buildings.keys())[rand_int]]['player'] is None) and not (
-                    any(map(str.isdigit, list(self.buildings.keys())[rand_int]))) and not self.check_for_nearby_settlements(list(self.buildings.keys())[rand_int]):
-                        accepted = True
-                        building = list(self.buildings.keys())[rand_int]
-                        self.buildings[building].update({'player': player_, 'building': 'settlement'})
-                        potential_roads = []
-                        for road in self.roads:
-                            if building in road:
-                                potential_roads.append(road)
-
-                        accepted_road = False
-                        while accepted_road is False:
-                            rand_int = random.randint(0, len(potential_roads) - 1)
-                            if self.roads[list(self.roads.keys())[rand_int]]['player'] is None:
-                                accepted_road = True
-                                self.roads[potential_roads[rand_int]].update({'player': player_})
-                                if len(order) < len(self.players):
-                                    # Players receive resources from their second settlement
-                                    tiles_from_settlement = self.buildings[building]['tiles']
-                                    for tile_ in tiles_from_settlement:
-                                        if not tile_.contains_robber:
-                                            self.give_player_card(player_, 'resource', tile_.resource)
+        while len(order) > 0:
+            player_ = order.pop(0)
+            print(f'{player_} is placing settlement number {2 - order.count(player_)}')
+            location = player_.initial_placement(self)
+            if len(order) < len(self.players):
+                # Players receive resources from their second settlement
+                tiles_from_settlement = self.buildings[location]['tiles']
+                for tile_ in tiles_from_settlement:
+                    if not tile_.contains_robber:
+                        self.give_player_card(player_, 'resource', tile_.resource)
 
     # Turn Actions and Processing a Roll ---------------------------------------------------------
 
@@ -464,17 +433,7 @@ class board:
             print("The robber has been rolled")
             for player_ in self.players:
                 if len(player_.resources) >= 7:
-                    total_to_discard = len(player_.resources) // 2
-                    print(f'{player_} has {len(player_.resources)} resources and must discard half')
-                    while total_to_discard > 0:
-                        print(f'{player_} has {total_to_discard} resources to discard')
-                        player_.printHand()
-                        card = input('Which card would you like to discard? ')
-                        if card in player_.resources:
-                            self.return_player_card(player_, 'resource', card)
-                            total_to_discard -= 1
-                        else:
-                            print('Invalid card')
+                    player_.robber_discard(self)
             current_player.robber(self)
 
         else:
@@ -603,6 +562,6 @@ class board:
         print(f'🌾 🌲 🐑 🧱 🪨    ❔        '.center(terminal_width), end='')
         print(f'Bank has {len(self.resource_deck)} resource cards and {len(self.development_card_deck)} development cards          '.center(terminal_width))
         for player_ in self.players:
-            text = f'{player_} ({player_.human_or_ai})'.ljust(25)
+            text = f'{player_}'.ljust(25)
             print(f'     {text}   |  VP: {player_.victory_points}'.center(terminal_width))
         print('\n')
