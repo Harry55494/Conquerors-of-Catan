@@ -4,6 +4,10 @@ import termcolor
 
 
 class player:
+    """
+    Player class
+    Implements player specific functions for the board.
+    """
 
     def __init__(self, number, colour):
         """
@@ -25,11 +29,13 @@ class player:
         return self.coloured_name
 
     def count_cards(self, card_type):
+        card_count = {}
         if card_type in ['resource', 'resources']:
             list_ = self.resources
+            for resource in ['wheat', 'wood', 'sheep', 'clay', 'rock']:
+                card_count[resource] = 0
         else:
             list_ = self.development_cards
-        card_count = {}
         for card in list_:
             if card in card_count:
                 card_count[card] += 1

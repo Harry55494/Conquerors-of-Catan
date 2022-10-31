@@ -263,6 +263,11 @@ class board:
     # Helper Functions ---------------------------------------------------------
 
     def check_for_nearby_settlements(self, coords):
+        """
+        Checks if there are any settlements or cities within 1 hex of the given coordinates.
+        :param coords:
+        :return: True if there are settlements or cities within 1 hex of the given coordinates, False otherwise.
+        """
         coords_to_check = [coords]
         for road, details in self.roads.items():
             if coords in road:
@@ -281,6 +286,14 @@ class board:
             if tile_.letter == location:
                 tile_.contains_robber = True
 
+    def has_potential_road(self, player_):
+        road_endings = []
+        for road in self.roads:
+            if self.roads[road]['player'] == player_:
+                road_endings.append(road[0])
+                road_endings.append(road[1])
+        return len(road_endings) > 0
+
     # Moving Cards --------------------------------------------------------------
 
     def give_player_card(self, player_: player, card_type: str, card: str, amount=1):
@@ -298,9 +311,9 @@ class board:
                     player_.resources.append(self.resource_deck.pop(self.resource_deck.index(card)))
                 except ValueError:
                     print('Not enough cards in the bank')
-            print(f'{player_} has been given {amount}x {card} card(s)')
+            #print(f'{player_} has been given {amount}x {card} card(s)')
         elif card_type == 'development':
-            player_.development_cards.append(self.development_card_deck.pop(self.development_card_deck.index(card)))
+            player_.development_cards.append(self.development_card_deck.pop(0))
         else:
             print(f'Invalid card type - cannot give player {card}')
             time.sleep(5)
@@ -314,8 +327,8 @@ class board:
         """
         if card in player_.resources:
             self.resource_deck.append(player_.resources.pop(player_.resources.index(card)))
-            print(f'{player_} has returned a {card}')
-            print(f'There are now {len(self.resource_deck)} cards left in the resource deck')
+            #print(f'{player_} has returned a {card}')
+            #print(f'There are now {len(self.resource_deck)} cards left in the resource deck')
         elif card in player_.development_cards:
             self.development_card_deck.append(player_.development_cards.pop(player_.development_cards.index(card)))
         else:
@@ -373,7 +386,7 @@ class board:
                                 current_list.append(j)
                                 explored_already.append(j)
 
-                    print([item[0] for item in current_list])
+                    #print([item[0] for item in current_list])
                     junctions_count = {}
                     for item in current_list:
                         for junc in item[0]:
@@ -381,21 +394,18 @@ class board:
                                 junctions_count[junc] += 1
                             else:
                                 junctions_count[junc] = 1
-                    print(junctions_count)
+                    #print(junctions_count)
                     for key, value in junctions_count.items():
                         if value > 2:
                             for _ in range(value):
                                 problem_nodes = [item for item in current_list if (item[0][0] == key or item[0][1] == key)]
-                                print([node[0] for node in problem_nodes])
+                                #print([node[0] for node in problem_nodes])
 
                     if len(current_list) > len(longest_road):
                         longest_road = current_list
             if (len(longest_road) > self.longest_road[1]) and len(longest_road) >= 5:
                 self.longest_road = [player_, len(longest_road)]
                 print(f'{player_} has a road of length {len(longest_road)} and has been given the longest road card')
-            else:
-                print("Road not long enough")
-                print(longest_road)
 
     def initial_placement(self):
         """
