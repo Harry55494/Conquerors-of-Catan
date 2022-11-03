@@ -96,24 +96,29 @@ class ai_random(ai_player):
     def play_development_card(self, board):
 
         card = self.development_cards.pop(self.development_cards.index(random.choice(self.development_cards)))
-        print(f'{self} is playing a development card - {card}')
-        time.sleep(2)
-        if card == 'soldier':
-            self.robber(board)
-        elif card == 'monopoly':
-            res_type = random.choice(['wheat', 'sheep', 'rock', 'brick', 'wood'])
-            for other_player in board.players:
-                if other_player != self:
-                    while res_type in other_player.resources:
-                        board.return_player_card(other_player, res_type)
-                        board.give_player_card(self, 'resource', res_type)
-        elif card == 'year of plenty':
-            for i in range(2):
+        if card == 'victory point':
+            self.development_cards.append('victory point')
+            return
+        else:
+            print(f'{self} is playing a development card - {card}')
+            if card == 'soldier':
+                self.robber(board)
+            elif card == 'monopoly':
                 res_type = random.choice(['wheat', 'sheep', 'rock', 'brick', 'wood'])
-                board.give_player_card(self, 'resource', res_type)
-        elif card == 'road building':
-            for i in range(2):
-                self.place_road(board)
+                for other_player in board.players:
+                    if other_player != self:
+                        while res_type in other_player.resources:
+                            board.return_player_card(other_player, res_type)
+                            board.give_player_card(self, 'resource', res_type)
+            elif card == 'year of plenty':
+                for i in range(2):
+                    res_type = random.choice(['wheat', 'sheep', 'rock', 'brick', 'wood'])
+                    board.give_player_card(self, 'resource', res_type)
+            elif card == 'road building':
+                for i in range(2):
+                    self.place_road(board)
+            board.return_player_card(self, card)
+
 
     def buy_development_card(self, board):
         if self.count_cards('resources')['wheat'] >= 1 and self.count_cards('resources')['sheep'] >= 1 and self.count_cards('resources')['rock'] >= 1:
@@ -170,4 +175,7 @@ class ai_random(ai_player):
         if hand['sheep'] >= 1 and hand['rock'] >= 1 and hand['wheat'] >= 1 and random.randint(0, 1) == 1:
             self.buy_development_card(board)
         if len(self.development_cards) > 0 and random.randint(0, 1) == 1:
-            self.play_development_card(board)
+            if 'victory point' in self.development_cards and len(self.development_cards) == 1:
+                pass
+            else:
+                self.play_development_card(board)

@@ -40,6 +40,8 @@ class board:
             raise self.setupError('Player numbers must be unique')
         if len(player_colours) != len(set(player_colours)):
             raise self.setupError('Player colours must be unique')
+        if len(self.players) > 5:
+            raise self.setupError('There can be a maximum of 5 players')
 
         self.resource_deck = []
         self.development_card_deck = []
