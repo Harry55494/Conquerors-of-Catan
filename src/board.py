@@ -315,7 +315,11 @@ class board:
                     print('Not enough cards in the bank')
             #print(f'{player_} has been given {amount}x {card} card(s)')
         elif card_type == 'development':
-            player_.development_cards.append(self.development_card_deck.pop(0))
+            try:
+                player_.development_cards.append(self.development_card_deck.pop(0))
+            except IndexError:
+                print('Not enough cards in the bank')
+                return False
         else:
             print(f'Invalid card type - cannot give player {card}')
             time.sleep(5)
@@ -342,9 +346,9 @@ class board:
         :return: None
         """
         for player_ in self.players:
-            if (player_.development_cards.count('soldier') > self.largest_army[1]) and (player_.development_cards.count('soldier') >= 3):
-                self.largest_army = [player_, player_.development_cards.count('soldier')]
-                print(f'{player_} has the largest army with {player_.development_cards.count("soldier")} soldiers')
+            if (player_.played_robber_cards > self.largest_army[1]) and (player_.played_robber_cards >= 3):
+                self.largest_army = [player_, player_.played_robber_cards]
+                print(f'{player_} has the largest army with {player_.played_robber_cards} soldiers')
         total_roads = {}
         for road, details in self.roads.items():
             if details['player'] in total_roads and details['player'] is not None:
@@ -503,7 +507,7 @@ class board:
 
         for tile_ in self.tiles:
             # Prints the letter if requested, then the robber symbol if the tile contains the robber
-            l_tp.append(termcolor.colored(tile_.letter, 'white')) if print_letters else l_tp.append('♝') if tile_.contains_robber else l_tp.append(' ')
+            l_tp.append(termcolor.colored(tile_.letter, 'white')) if print_letters else l_tp.append('r') if tile_.contains_robber else l_tp.append(' ')
 
         for building in self.buildings:
             if self.buildings[building].get('building') is not None:
@@ -561,7 +565,6 @@ class board:
 
         print('\n')
         print("Conquerors of Catan".center(terminal_width))
-        print("\n")
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
@@ -575,5 +578,9 @@ class board:
         print(f'Bank has {len(self.resource_deck)} resource cards and {len(self.development_card_deck)} development cards          '.center(terminal_width))
         for player_ in self.players:
             text = f'{player_}'.ljust(25)
-            print(f'     {text}   |  VP: {player_.victory_points}'.center(terminal_width))
-        print('\n')
+            LR = 'LR' if player_ == self.longest_road[0] else '  '
+            LA = 'LA' if player_ == self.largest_army[0] else '  '
+            Soldiers = f'{player_.played_robber_cards}' + 'S' if player_.played_robber_cards > 0 else '  '
+            print(f'          {text}   |  VP: {player_.victory_points}   |   Cards: {len(player_.resources)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}'.center(terminal_width))
+            #print("\n")
+        #print('\n')

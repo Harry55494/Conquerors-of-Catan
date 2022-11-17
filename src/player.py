@@ -22,6 +22,7 @@ class player:
         self.victory_points = 0
         self.resources = []
         self.development_cards = []
+        self.played_robber_cards = 0
         print(self.coloured_name, 'has joined the game')
 
     # override print function
@@ -120,8 +121,9 @@ class player:
     def place_road(self, board, requirement=None, ignore_current_endings = True):
         """
         Places a road on the board for a player
+        :param ignore_current_endings:
+        :param requirement:
         :param board:
-        :param ignore_requirements: Optional, a forced location for one end of the road
         :return: None
         """
         current_road_endings = []

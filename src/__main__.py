@@ -46,7 +46,6 @@ if __name__ == '__main__':
             else:
                 time.sleep(3)
 
-
             if player_.calculateVictoryPoints(board) >= 10:
                 player_has_won = True
                 os.system('clear')

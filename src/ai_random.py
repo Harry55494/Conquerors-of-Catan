@@ -38,10 +38,14 @@ class ai_random(ai_player):
 
     def place_road(self, board):
         road_endings = []
+        total_roads = 0
         for road in board.roads:
             if board.roads[road]['player'] == self:
+                total_roads += 1
                 road_endings.append(road[0])
                 road_endings.append(road[1])
+        if total_roads == 15:
+            return False
         not_accepted = True
         while not_accepted:
             rand_int = random.randint(0, len(board.roads) - 1)
@@ -54,7 +58,21 @@ class ai_random(ai_player):
                             board.return_player_card(self, resource)
 
     def place_building(self, board, building='settlement'):
+
+        settlements_count = 0
+        cities_count = 0
+        for building in board.buildings:
+            if board.buildings[building]['player'] == self:
+                if board.buildings[building]['building'] == 'settlement':
+                    settlements_count += 1
+                elif board.buildings[building]['building'] == 'city':
+                    cities_count += 1
+
         if building == 'settlement':
+
+            if settlements_count == 5:
+                return False
+
             road_endings = []
             for road in board.roads:
                 if board.roads[road]['player'] == self:
@@ -102,7 +120,10 @@ class ai_random(ai_player):
         else:
             print(f'{self} is playing a development card - {card}')
             if card == 'soldier':
-                self.robber(board)
+                if self.development_cards.count('soldier') > self.played_robber_cards:
+                    self.robber(board)
+                    self.played_robber_cards += 1
+
             elif card == 'monopoly':
                 res_type = random.choice(['wheat', 'sheep', 'rock', 'brick', 'wood'])
                 for other_player in board.players:
@@ -117,8 +138,8 @@ class ai_random(ai_player):
             elif card == 'road building':
                 for i in range(2):
                     self.place_road(board)
-            board.return_player_card(self, card)
-
+            if not card == 'soldier':
+                board.return_player_card(self, card)
 
     def buy_development_card(self, board):
         if self.count_cards('resources')['wheat'] >= 1 and self.count_cards('resources')['sheep'] >= 1 and self.count_cards('resources')['rock'] >= 1:
