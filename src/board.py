@@ -296,6 +296,13 @@ class board:
                 road_endings.append(road[1])
         return len(road_endings) > 0
 
+    def count_roads(self, player_):
+        count = 0
+        for road in self.roads:
+            if self.roads[road]['player'] == player_:
+                count += 1
+        return count
+
     # Moving Cards --------------------------------------------------------------
 
     def give_player_card(self, player_: player, card_type: str, card: str, amount=1):
