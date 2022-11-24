@@ -23,6 +23,9 @@ class ai_minimax(ai_player):
         # 4. Number of development cards
         # 5. Position of settlements and cities, based on scarcity of resources
 
+        # Resources of other opponents
+        # Resource Scarcity
+
         # No need to calculate the number of settlements and cities, as this is already calculated in the victory points
         # No need to calculate how many resource cards a player has in their hand, as this would suggest players to horde cards instead of spending
 
