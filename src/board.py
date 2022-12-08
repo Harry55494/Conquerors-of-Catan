@@ -1,8 +1,7 @@
 import os
-import time
 
-from player import *
 from ai_random import *
+from player import *
 from tile import tile
 
 
@@ -303,6 +302,33 @@ class board:
                 count += 1
         return count
 
+    def calculate_resource_rarity(self):
+        """
+        Calculates the rarity of each resource on the board. The higher the number, the more rare
+        :return: A dictionary with the resource as the key and the rarity as the value.
+        """
+        resource_rarity_scores = {"wood": 0, "clay": 0, "sheep": 0, "wheat": 0, "rock": 0}
+        for tile in self.tiles:
+            if tile.resource != "desert":
+                if tile.dice_number in [2, 12]:
+                    resource_rarity_scores[tile.resource] += 5
+                elif tile.dice_number in [3, 11]:
+                    resource_rarity_scores[tile.resource] += 4
+                elif tile.dice_number in [4, 10]:
+                    resource_rarity_scores[tile.resource] += 3
+                elif tile.dice_number in [5, 9]:
+                    resource_rarity_scores[tile.resource] += 2
+                elif tile.dice_number in [6, 8]:
+                    resource_rarity_scores[tile.resource] += 1
+        resource_rarity_scores = {k: v / sum(resource_rarity_scores.values()) for k, v in resource_rarity_scores.items()}
+        normalised_scores = {}
+        print(resource_rarity_scores)
+        for item, score in resource_rarity_scores.items():
+            normalised_score = (score - min(resource_rarity_scores.values())) / (max(resource_rarity_scores.values()) - min(resource_rarity_scores.values()))
+            normalised_scores.update({item: normalised_score})
+        print(normalised_scores)
+        return normalised_scores
+
     # Moving Cards --------------------------------------------------------------
 
     def give_player_card(self, player_: player, card_type: str, card: str, amount=1):
@@ -568,7 +594,11 @@ class board:
         ]
 
         line_length = 71
-        terminal_width = os.get_terminal_size().columns
+        try:
+            terminal_width = os.get_terminal_size().columns
+        except OSError:
+            print("Unable to get terminal size, using default width of 71")
+            terminal_width = 240
 
         print('\n')
         print("Conquerors of Catan".center(terminal_width))

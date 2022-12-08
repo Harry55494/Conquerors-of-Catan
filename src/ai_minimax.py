@@ -43,6 +43,8 @@ class ai_minimax(ai_player):
 
         if current_vp >= 10:
             return 1000000
+        if current_vp == 9:  # Bonus points for being close to winning
+            score += 50
 
         if current_vp > other_players[0].calculateVictoryPoints(board):
             score += 50
@@ -55,6 +57,10 @@ class ai_minimax(ai_player):
 
         # Number of resources player has access to -----------------------------
         # This is relative to the number of resources a player would get on a turn if every dice roll was rolled.
+
+        # Higher numbers are less common, so they should be weighted more
+
+        rarity = board.calculate_resource_rarity()
 
         resources = []
         for key, item in board.buildings.items():
