@@ -1,4 +1,5 @@
-/docs/challenge_week/Presentation.key
 /.fleet/
 /.idea/
 /tests/
+*.key
+*.log

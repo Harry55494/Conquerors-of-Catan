@@ -1,5 +1,6 @@
 from player import *
 
+
 class ai_player(player):
     """
     AI Player Interface Class
@@ -7,7 +8,7 @@ class ai_player(player):
     Is inherited by other AI Player classes, each with their own strategy for calculating moves
     """
 
-    def __init__(self, number, colour, strategy: str = 'random'):
+    def __init__(self, number, colour, strategy: str = "random"):
         """
         Initialises an ai_player object.
         AI players inherit from the player class, but have different methods for calculating their moves
@@ -16,10 +17,10 @@ class ai_player(player):
         """
 
         if self.__class__ is ai_player:
-            raise TypeError('ai_player cannot be instantiated directly')
+            raise TypeError("ai_player cannot be instantiated directly")
 
         super().__init__(number=number, colour=colour)
         self.strategy = strategy
 
     def __str__(self):
-        return f'{self.coloured_name}  (AI - {self.strategy.capitalize()})'
+        return f"{self.coloured_name}  (AI - {self.strategy.capitalize()})"

@@ -8,39 +8,40 @@ class ai_random(ai_player):
     def __init__(self, number, colour):
         super().__init__(number=number, colour=colour, strategy='random')
 
-    def initial_placement(self, board):
+    def initial_placement(self, interface):
         accepted = False
         building = ''
         while accepted is False:
 
-            rand_int = random.randint(0, len(board.buildings) - 1)
-            if (board.buildings[list(board.buildings.keys())[rand_int]]['player'] is None) and not (
-                    any(map(str.isdigit, list(board.buildings.keys())[rand_int]))) and not \
-                    board.check_for_nearby_settlements(list(board.buildings.keys())[rand_int]):
+            rand_int = random.randint(0, len(interface.get_buildings_list()) - 1)
+            if (interface.get_buildings_list()[list(interface.get_buildings_list().keys())[rand_int]][
+                    'player'] is None) and not (
+                    any(map(str.isdigit, list(interface.get_buildings_list().keys())[rand_int]))) and not \
+                    interface.check_for_nearby_settlements(list(interface.get_buildings_list().keys())[rand_int]):
                 accepted = True
-                building = list(board.buildings.keys())[rand_int]
-                board.buildings[building].update({'player': self, 'building': 'settlement'})
+                building = list(interface.get_buildings_list().keys())[rand_int]
+                interface.place_settlement(self, building)
                 potential_roads = []
-                for road in board.roads:
+                for road in interface.get_roads_list():
                     if building in road:
                         potential_roads.append(road)
 
                 accepted_road = False
                 while accepted_road is False:
                     rand_int = random.randint(0, len(potential_roads) - 1)
-                    if board.roads[list(board.roads.keys())[rand_int]]['player'] is None:
+                    if interface.get_roads_list()[list(interface.get_roads_list().keys())[rand_int]]['player'] is None:
                         accepted_road = True
-                        board.roads[potential_roads[rand_int]].update({'player': self})
+                        interface.place_road(self, potential_roads[rand_int])
 
         print(f'{self} has placed their initial settlement at {building}')
 
         return building
 
-    def place_road(self, board):
+    def choose_road_location(self, interface):
         road_endings = []
         total_roads = 0
-        for road in board.roads:
-            if board.roads[road]['player'] == self:
+        for road in interface.get_roads_list():
+            if interface.get_roads_list()[road]['player'] == self:
                 total_roads += 1
                 road_endings.append(road[0])
                 road_endings.append(road[1])
@@ -48,55 +49,55 @@ class ai_random(ai_player):
             return False
         not_accepted = True
         while not_accepted:
-            rand_int = random.randint(0, len(board.roads) - 1)
-            if board.roads[list(board.roads.keys())[rand_int]]['player'] is None:
-                if list(board.roads.keys())[rand_int][0] in road_endings or list(board.roads.keys())[rand_int][1] in road_endings:
-                    board.roads[list(board.roads.keys())[rand_int]].update({'player': self})
-                    not_accepted = False
-                    for resource, amount in board.building_cost_list.get('road').items():
-                        for i in range(amount):
-                            board.return_player_card(self, resource)
+            rand_int = random.randint(0, len(interface.get_roads_list()) - 1)
+            if interface.get_roads_list()[list(interface.get_roads_list().keys())[rand_int]]['player'] is None:
+                if list(interface.get_roads_list().keys())[rand_int][0] in road_endings or \
+                        list(interface.get_roads_list().keys())[rand_int][1] in road_endings:
+                    return list(interface.get_roads_list().keys())[rand_int]
 
-    def place_building(self, board, building='settlement'):
+    def choose_placement_location(self, interface, building_type='settlement'):
 
         settlements_count = 0
         cities_count = 0
-        for building in board.buildings:
-            if board.buildings[building]['player'] == self:
-                if board.buildings[building]['building'] == 'settlement':
+        for building in interface.get_buildings_list():
+            if interface.get_buildings_list()[building]['player'] == self:
+                if interface.get_buildings_list()[building]['building'] == 'settlement':
                     settlements_count += 1
-                elif board.buildings[building]['building'] == 'city':
+                elif interface.get_buildings_list()[building]['building'] == 'city':
                     cities_count += 1
 
-        if building == 'settlement':
+        if building_type == 'settlement':
 
             if settlements_count == 5:
+                print(f'{self} has no more settlements to place')
                 return False
 
             road_endings = []
-            for road in board.roads:
-                if board.roads[road]['player'] == self:
-                    if not board.check_for_nearby_settlements(road[0]):
+            for road in interface.get_roads_list():
+                if interface.get_roads_list()[road]['player'] == self:
+                    if not interface.check_for_nearby_settlements(road[0]):
                         road_endings.append(road[0])
-                    if not board.check_for_nearby_settlements(road[1]):
+                    if not interface.check_for_nearby_settlements(road[1]):
                         road_endings.append(road[1])
             if len(road_endings) == 0:
+                print(f'{self} has no places they can build settlements')
                 return False
             not_accepted = True
             while not_accepted:
                 time.sleep(0.1)
                 rand_int = random.randint(0, len(road_endings) - 1)
                 location = road_endings[rand_int]
-                if (board.buildings[location]['player'] is None or board.buildings[location]['player'] == self and building == 'settlement') and not board.check_for_nearby_settlements(location):
-                    board.buildings[location].update({'player': self, 'building': 'settlement'})
-                    not_accepted = False
-                    for resource, amount in board.building_cost_list.get('settlement').items():
-                        for j in range(amount):
-                            board.return_player_card(self, resource)
-        elif building == 'city':
+                if (interface.get_buildings_list()[location]['player'] is None or
+                    interface.get_buildings_list()[location][
+                        'player'] == self and building == 'settlement') and not interface.check_for_nearby_settlements(
+                    location):
+                    return location
+
+        elif building_type == 'city':
             settlements = []
-            for building in board.buildings:
-                if board.buildings[building]['player'] == self and board.buildings[building]['building'] == 'settlement':
+            for building in interface.get_buildings_list():
+                if interface.get_buildings_list()[building]['player'] == self and \
+                        interface.get_buildings_list()[building]['building'] == 'settlement':
                     settlements.append(building)
             if len(settlements) == 0:
                 return False
@@ -104,99 +105,89 @@ class ai_random(ai_player):
             while not_accepted:
                 rand_int = random.randint(0, len(settlements) - 1)
                 location = settlements[rand_int]
-                if board.buildings[location]['player'] == self and board.buildings[location]['building'] == 'settlement':
-                    board.buildings[location].update({'player': self, 'building': 'city'})
-                    not_accepted = False
-                    for resource, amount in board.building_cost_list.get('city').items():
-                        for i in range(amount):
-                            board.return_player_card(self, resource)
+                if interface.get_buildings_list()[location]['player'] == self and \
+                        interface.get_buildings_list()[location]['building'] == 'settlement':
+                    return location
 
-    def play_development_card(self, board):
+        else:
+            print('Invalid building type')
 
-        card = self.development_cards.pop(self.development_cards.index(random.choice(self.development_cards)))
+    def play_development_card(self, interface):
+
+        card = self.development_cards[self.development_cards.index(random.choice(self.development_cards))]
         if card == 'victory point':
-            self.development_cards.append('victory point')
             return
         else:
             print(f'{self} is playing a development card - {card}')
             if card == 'soldier':
                 if self.development_cards.count('soldier') > self.played_robber_cards:
-                    self.robber(board)
+                    self.robber(interface)
                     self.played_robber_cards += 1
 
             elif card == 'monopoly':
                 res_type = random.choice(['wheat', 'sheep', 'rock', 'brick', 'wood'])
-                for other_player in board.players:
+                for other_player in interface.get_players_list():
                     if other_player != self:
                         while res_type in other_player.resources:
-                            board.return_player_card(other_player, res_type)
-                            board.give_player_card(self, 'resource', res_type)
+                            interface.return_player_card(other_player, res_type)
+                            interface.give_player_card(self, 'resource', res_type)
             elif card == 'year of plenty':
                 for i in range(2):
                     res_type = random.choice(['wheat', 'sheep', 'rock', 'brick', 'wood'])
-                    board.give_player_card(self, 'resource', res_type)
+                    interface.give_player_card(self, 'resource', res_type)
             elif card == 'road building':
                 for i in range(2):
-                    self.place_road(board)
+                    self.choose_road_location(interface)
             if not card == 'soldier':
-                board.return_player_card(self, card)
+                interface.return_player_card(self, card)
 
-    def buy_development_card(self, board):
-        if self.count_cards('resources')['wheat'] >= 1 and self.count_cards('resources')['sheep'] >= 1 and self.count_cards('resources')['rock'] >= 1:
-            board.return_player_card(self, 'wheat')
-            board.return_player_card(self, 'sheep')
-            board.return_player_card(self, 'rock')
-            board.give_player_card(self, 'development', 'development')
-            return True
-        else:
-            return False
-
-    def trade_with_bank(self, board, give, get):
-        if self.count_cards('resources')[give] >= 4:
-            board.return_player_card(self, give)
-            board.return_player_card(self, give)
-            board.return_player_card(self, give)
-            board.return_player_card(self, give)
-            board.give_player_card(self, 'resource', get)
-            return True
-        else:
-            return False
-
-    def robber(self, board):
+    def robber(self, interface):
         tile_letters = []
-        for tile in board.tiles:
+
+        for tile in interface.get_tiles_list():
             if tile.resource != 'desert':
                 tile_letters.append(tile.letter)
-        board.move_robber(tile_letters[random.randint(0, len(tile_letters) - 1)])
+        interface.move_robber(tile_letters[random.randint(0, len(tile_letters) - 1)])
         # TODO - add stealing from other players
 
-    def robber_discard(self, board):
+    def robber_discard(self, interface):
         while len(self.resources) > 7:
             rand_int = random.randint(0, len(self.resources) - 1)
-            board.return_player_card(self, self.resources[rand_int])
+            interface.return_player_card(self, self.resources[rand_int])
 
-    def turn_actions(self, board):
+    def turn_actions(self, board, interface):
         hand = self.count_cards('resources')
         buildings_count = {'settlements': 0, 'cities': 0}
-        for building in board.buildings:
-            if board.buildings[building]['player'] == self:
-                if board.buildings[building]['building'] == 'settlement':
+        for building in interface.get_buildings_list():
+            if interface.get_buildings_list()[building]['player'] == self:
+                if interface.get_buildings_list()[building]['building'] == 'settlement':
                     buildings_count['settlements'] += 1
-                elif board.buildings[building]['building'] == 'city':
+                elif interface.get_buildings_list()[building]['building'] == 'city':
                     buildings_count['cities'] += 1
         for card in hand:
             if hand[card] >= 4:
-                self.trade_with_bank(board, card, random.choice(list(board.resource_deck)))
+                interface.trade_with_bank(self, card, random.choice(list(interface.get_resource_deck())))
+        hand = self.count_cards('resources')
         if hand['wheat'] >= 2 and hand['rock'] >= 3 and buildings_count['settlements'] > 0:
-            self.place_building(board, 'city')
-        if hand['wheat'] >= 1 and hand['sheep'] >= 1 and hand['wood'] >= 1 and hand['clay'] >= 1 and buildings_count['settlements'] < 11:
-            self.place_building(board)
-        if hand['wood'] >= 1 and hand['clay'] >= 1 and board.has_potential_road(self) and random.randint(0, 1) == 1:
-            self.place_road(board)
-        if hand['sheep'] >= 1 and hand['rock'] >= 1 and hand['wheat'] >= 1 and random.randint(0, 1) == 1:
-            self.buy_development_card(board)
+            location = self.choose_placement_location(interface, 'city')
+            if location:
+                interface.place_city(self, location)
+        hand = self.count_cards('resources')
+        if hand['wheat'] >= 1 and hand['sheep'] >= 1 and hand['wood'] >= 1 and hand['clay'] >= 1 and buildings_count[
+            'settlements'] < 11:
+            location = self.choose_placement_location(interface)
+            if location:
+                interface.place_settlement(self, location)
+        hand = self.count_cards('resources')
+        if hand['wood'] >= 1 and hand['clay'] >= 1 and interface.has_potential_road(self) and random.randint(0, 1) == 1:
+            location = self.choose_road_location(interface)
+            if location:
+                interface.place_road(self, location)
+        hand = self.count_cards('resources')
+        if hand['sheep'] >= 1 and hand['rock'] >= 1 and hand['wheat'] >= 1 and random.randint(0, 2) == 1:
+            interface.buy_development_card(self)
         if len(self.development_cards) > 0 and random.randint(0, 1) == 1:
             if 'victory point' in self.development_cards and len(self.development_cards) == 1:
                 pass
             else:
-                self.play_development_card(board)
+                self.play_development_card(interface)

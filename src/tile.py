@@ -1,6 +1,4 @@
-
 class tile:
-
     def __init__(self, dice_number, letter, resource):
         """
         Initialises a tile object
@@ -13,20 +11,20 @@ class tile:
         self.letter = letter
         self.contains_robber = False
 
-        if resource == 'wheat':
-            self.symbol = '🌾'
-        elif resource == 'wood':
-            self.symbol = '🌲'
-        elif resource == 'sheep':
-            self.symbol = '🐑'
-        elif resource == 'clay':
-            self.symbol = '🧱'
-        elif resource == 'rock':
-            self.symbol = '🪨'
-        elif resource == 'desert':
-            self.symbol = '🏜️'
+        if resource == "wheat":
+            self.symbol = "🌾"
+        elif resource == "wood":
+            self.symbol = "🌲"
+        elif resource == "sheep":
+            self.symbol = "🐑"
+        elif resource == "clay":
+            self.symbol = "🧱"
+        elif resource == "rock":
+            self.symbol = "🪨"
+        elif resource == "desert":
+            self.symbol = "🏜️"
             self.dice_number = 7
             self.contains_robber = True
 
     def __str__(self):
-        return f'{self.letter}'
+        return f"{self.letter}"

@@ -1,5 +1,3 @@
-import random
-
 import termcolor
 
 
@@ -29,7 +27,7 @@ class player:
     def __str__(self):
         return self.coloured_name
 
-    def count_cards(self, card_type):
+    def count_cards(self, card_type) -> dict:
         card_count = {}
         if card_type in ['resource', 'resources']:
             list_ = self.resources
@@ -44,7 +42,7 @@ class player:
                 card_count[card] = 1
         return card_count
 
-    def printHand(self, type_ = 'resources'):
+    def printHand(self, type_ = 'resources') -> None:
         """
         Prints the player's hand of either resource cards or development cards
         :return: None
@@ -64,39 +62,54 @@ class player:
         self.resources.sort()
         self.development_cards.sort()
 
-    def calculateVictoryPoints(self, board):
+    def calculateVictoryPoints(self, interface, output = False) -> int:
         """
         Calculates the player's victory points, from both their settlements/cities and their development cards
-        :param board: The board, so that buildings can be checked
+        :param interface: The interface, so that _buildings can be checked
         :return: The player's victory points
         """
         self.victory_points = 0
-        for building in board.buildings:
-            if board.buildings[building] is not None:
-                if board.buildings[building].get('player') == self:
-                    if board.buildings[building].get('building') == 'settlement':
+        sources = {"settlements": 0, "cities": 0, "development cards": 0, "longest_road": 0, "largest_army": 0}
+        for building in interface.get_buildings_list():
+            if interface.get_buildings_list()[building] is not None:
+                if interface.get_buildings_list()[building].get('player') == self:
+                    if interface.get_buildings_list()[building].get('building') == 'settlement':
                         self.victory_points += 1
-                    elif board.buildings[building].get('building') == 'city':
+                        sources["settlements"] += 1
+                    elif interface.get_buildings_list()[building].get('building') == 'city':
                         self.victory_points += 2
+                        sources["cities"] += 1
         for card in self.development_cards:
             if card == 'victory point':
                 self.victory_points += 1
-        if board.largest_army[0] == self:
+                sources["development cards"] += 1
+        if interface.get_largest_army()[0] == self:
             self.victory_points += 2
-        if board.longest_road[0] == self:
+            sources["largest_army"] += 1
+        if interface.get_longest_road()[0] == self:
             self.victory_points += 2
+            sources["longest_road"] += 1
+
+        if output:
+            print(f"Player has {self.victory_points} victory points")
+            for source in sources:
+                if sources[source] > 0:
+                    print(f"{source}: {sources[source]}")
+                    if source == "development cards":
+                        print(self.development_cards)
+
         return self.victory_points
 
     # Placing Roads and Settlements ------------------------------------------------
 
-    def place_building(self, board, type_="settlement"):
+    def choose_placement_location(self, interface, type_="settlement"):
         """
-        Places a settlement on the board for a player
-        :param board:
+        Chooses a place on the board to place a settlement or city
+        :param interface:
         :param type_: The type of building to place
         :return: The location of the building
         """
-        board.print_board(print_letters=True)
+        interface.print_board(print_letters=True)
         accepted, location = False, ''
         while not accepted:
             location = input(f"{self} , where would you like to place your {type_}? "
@@ -107,32 +120,30 @@ class player:
             letters = [letter.strip() for letter in letters]
             letters.sort()
             location = ','.join(letters)
-            if location in board.buildings:
-                if (board.buildings[location]['player'] is None or board.buildings[location]['player'] == self and type_ == 'settlement') and not board.check_for_nearby_settlements(location):
-                    board.buildings[location].update({'player': self, 'building': type_})
+            if location in interface.get_buildings_list():
+                if (interface.get_buildings_list()[location]['player'] is None or interface.get_buildings_list()[location]['player'] == self and type_ == 'settlement') and not interface.check_for_nearby_settlements(location):
                     accepted = True
-                    print(f"{self} has placed a {type_} at {location}")
                 else:
                     print("That location is already occupied!")
             else:
                 print("That is not a valid location!")
         return location
 
-    def place_road(self, board, requirement=None, ignore_current_endings = True):
+    def choose_road_location(self, interface, requirement=None, ignore_current_endings = True):
         """
         Places a road on the board for a player
         :param ignore_current_endings:
         :param requirement:
-        :param board:
+        :param interface:
         :return: None
         """
         current_road_endings = []
-        for tuple_, details in board.roads.items():
+        for tuple_, details in interface.get_roads_list().items():
             if details['player'] == self:
                 current_road_endings.append(tuple_[0])
                 current_road_endings.append(tuple_[1])
 
-        board.print_board(print_letters=True)
+        interface.print_board(print_letters=True)
         accepted = False
         while not accepted:
             coordinates = []
@@ -151,42 +162,46 @@ class player:
                 letters.sort()
                 location = ','.join(letters)
                 coordinates.append(location)
-            if tuple(coordinates) not in board.roads:
+            if tuple(coordinates) not in interface.get_roads_list():
                 coordinates = coordinates[::-1]
             coordinates = tuple(coordinates)
-            if coordinates in board.roads:
-                if board.roads[coordinates]['player'] is None:
+            if coordinates in interface.get_roads_list():
+                if interface.get_roads_list()[coordinates]['player'] is None:
                     if ignore_current_endings or (coordinates[0] in current_road_endings) or (coordinates[1] in current_road_endings):
-                        board.roads[coordinates].update({'player': self})
-                        accepted = True
-                        print(f"{self} has placed a road at {coordinates}")
+                        return coordinates
                 else:
                     print("That location is already occupied!")
 
-    def initial_placement(self, board):
-        building = self.place_building(board, 'settlement')
-        self.place_road(board, building, True)
+    def initial_placement(self, interface):
+        building = self.choose_placement_location(interface, 'settlement')
+        interface.place_settlement(self, building)
+        interface.place_road(self, self.choose_road_location(interface, building, True))
         return building
 
     # Turn Functions ------------------------------------------------
 
-    def robber(self, board):
-        board.print_board(print_letters=True)
+    def robber(self, interface):
+        """
+        Perform the robber actions for a player
+        :param interface:
+        :return:
+        """
+        interface.print_board(print_letters=True)
         print(f"{self}, has rolled the robber!")
         print(f"{self}, where would you like to move the robber?")
         accepted = False
         while not accepted:
             location = input("Please enter the letter of the tile you would like to move the robber to\n")
             location = location.lower()
-            if any([tile_.letter == location for tile_ in board.tiles]):
+            if any([tile_.letter == location for tile_ in interface.get_tiles_list()]):
                 accepted = True
-                board.move_robber(location)
+                interface.move_robber(location)
             else:
                 print("Invalid location")
-        new_robber_location = [tile_ for tile_ in board.tiles if tile_.contains_robber][0]
+        new_robber_location = [tile_ for tile_ in interface.get_tiles_list() if tile_.contains_robber][0]
         players_to_steal_from = []
-        for key in board.buildings:
-            value = board.buildings[key]
+        for key in interface.get_buildings_list():
+            value = interface.get_buildings_list()[key]
             if key.find(new_robber_location.letter) != -1:
                 if value['player'] is not None and value['player'] not in players_to_steal_from and value['player'] != self:
                     players_to_steal_from.append(value['player'])
@@ -213,11 +228,9 @@ class player:
             print("No players to steal from")
 
         if player_to_steal_from is not None:
-            print(f"{self} has stolen from {player_to_steal_from}")
-            card = player_to_steal_from.resources.pop(random.randint(0, len(player_to_steal_from.resources) - 1))
-            board.give_player_card(self, 'resource', card)
+            interface.steal_from_player(player_to_steal_from, self)
 
-    def robber_discard(self, board):
+    def robber_discard(self, interface):
         total_to_discard = len(self.resources) // 2
         print(f'{self} has {len(self.resources)} resources and must discard half')
         while total_to_discard > 0:
@@ -225,15 +238,15 @@ class player:
             self.printHand()
             card = input('Which card would you like to discard? ')
             if card in self.resources:
-                board.return_player_card(self, card)
+                interface.return_player_card(self, card)
                 total_to_discard -= 1
             else:
                 print('Invalid card')
 
-    def build(self, board):
+    def build(self, interface):
         """
         Allows the player to build a settlement, city, or road
-        :param board:
+        :param interface:
         :return:
         """
         self.printHand('resource')
@@ -242,29 +255,29 @@ class player:
             decision = input('Please enter a valid option\n')
         if decision == 'cancel':
             return False
-        required_resources = board.building_cost_list.get(decision)
+        required_resources = interface.get_building_cost_list.get(decision)
         print(required_resources)
         has_resources = True
         for resource, amount in required_resources.items():
             print(self.resources.count(resource))
             print(resource + ': ' + str(amount))
             if self.resources.count(resource) < amount:
-                print(f'You do not have enough resources to build a {decision}')
+                print(f'You do not have enough resources to acquire a {decision}')
                 return
         if has_resources:
             for resource, amount in required_resources.items():
                 for i in range(amount):
-                    board.return_player_card(self, resource)
+                    interface.return_player_card(self, resource)
             if decision == 'settlement':
-                self.place_building(board, 'settlement')
+                interface.place_settlement(self, self.choose_placement_location(interface, 'settlement'))
             elif decision == 'city':
-                self.place_building(board, 'city')
+                interface.place_city(self, self.choose_placement_location(interface, 'city'))
             elif decision == 'road':
-                self.place_road(board)
+                interface.place_road(self, self.choose_road_location(interface, None, False))
             elif decision == 'development card':
-                board.give_player_card(self, 'development', board.development_card_deck[0])
+                interface.buy_development_card(self)
 
-    def trade_with_bank(self, board):
+    def trade_with_bank(self, interface):
         has_enough = False
         can_trade_with = []
         for resource in self.resources:
@@ -283,16 +296,14 @@ class player:
             trade_for = ''
             while trade_for not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
                 trade_for = input("What resource would you like to trade for?\n")
-            for i in range(4):
-                board.return_player_card(self, resource)
-            board.give_player_card(self, 'resource', trade_for)
+            interface.trade_with_bank(self, resource, trade_for)
         else:
             print("You do not have enough of a resource to trade with the bank")
 
-    def play_development_card(self, board):
+    def play_development_card(self, interface):
         """
         Allows the player to play a development card
-        :param board:
+        :param interface: The interface object
         :return:
         """
         self.printHand('development')
@@ -300,52 +311,45 @@ class player:
             card = input('Which card would you like to play?\n')
             while card not in self.development_cards:
                 card = input('Please enter a valid card\n')
-            if card == 'soldier':
-                board.robber(self)
-            elif card == 'monopoly':
+            args = []
+            if card == 'monopoly':
                 res_type = input('What resource would you like to take from all other players?\n')
                 while res_type not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
                     res_type = input('What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n')
-                for other_player in board.players:
-                    if other_player != self:
-                        while res_type in other_player.resources:
-                            board.return_player_card(other_player, res_type)
-                            board.give_player_card(self, 'resource', res_type)
+                args.append(res_type)
             elif card == 'year of plenty':
                 for i in range(2):
                     res_type = input('What resource would you like to take from the bank?\n')
                     while res_type not in ['wood', 'clay', 'sheep', 'wheat', 'ore']:
                         res_type = input('What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n')
-                    board.give_player_card(self, 'resource', res_type)
-            elif card == 'road building':
-                for i in range(2):
-                    self.place_road(board)
+                    args.append(res_type)
+            interface.play_development_card(self, card, args)
         else:
             print('You have no development cards')
 
-    def turn_actions(self, board):
+    def turn_actions(self, board, interface):
         """
         Performs the actions a player can take on their turn
+        :param interface:
         :param board:
         :return: None
         """
         self.printHand('resources')
         end_turn = False
         while not end_turn:
-            board.check_for_special_cards()
             print(f'{self}, what would you like to do?')
             action = input('- build or buy development card, trade with bank, play development card, view hand, view building list, end turn\n')
             if action in ['build', 'buy development card', 'buy']:
-                board.build(self)
+                self.build(interface)
             elif action in ['trade with bank', 'trade']:
-                self.trade_with_bank(board)
+                self.trade_with_bank(interface)
             elif action in ['play development card', 'development card', 'play dev card', 'dev card']:
                 self.play_development_card(board)
             elif action in ['view hand', 'hand']:
                 self.printHand()
                 self.printHand('development')
-            elif action in ['view building list', 'building list', 'buildings']:
-                for building, resources in board.building_cost_list.items():
+            elif action in ['view building list', 'building list', '_buildings']:
+                for building, resources in interface.get_building_cost_list.items():
                     print(f'{building}: {resources}')
             elif action in ['end turn', 'end']:
                 end_turn = True

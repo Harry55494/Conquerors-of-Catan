@@ -65,7 +65,7 @@ class board:
 
         # Buildings map contains a grid reference, the building type, and the player who owns it. Also contains the tile type, so that the resources to
         # give can be calculated
-        self.buildings = {
+        self._buildings = {
             'a1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a']]},
             'a2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a']]},
             'b1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['b']]},
@@ -261,46 +261,7 @@ class board:
         self.resource_deck.sort()
         self.development_card_deck = random.sample(self.development_card_deck, len(self.development_card_deck))
 
-    # Helper Functions ---------------------------------------------------------
-
-    def check_for_nearby_settlements(self, coords):
-        """
-        Checks if there are any settlements or cities within 1 hex of the given coordinates.
-        :param coords:
-        :return: True if there are settlements or cities within 1 hex of the given coordinates, False otherwise.
-        """
-        coords_to_check = [coords]
-        for road, details in self.roads.items():
-            if coords in road:
-                coords_to_check.append(road[0])
-                coords_to_check.append(road[1])
-        coords_to_check = list(set(coords_to_check))
-        for coord in coords_to_check:
-            if self.buildings[coord]['player'] is not None:
-                return True
-        return False
-
-    def move_robber(self, location):
-        for tile_ in self.tiles:
-            if tile_.contains_robber:
-                tile_.contains_robber = False
-            if tile_.letter == location:
-                tile_.contains_robber = True
-
-    def has_potential_road(self, player_):
-        road_endings = []
-        for road in self.roads:
-            if self.roads[road]['player'] == player_:
-                road_endings.append(road[0])
-                road_endings.append(road[1])
-        return len(road_endings) > 0
-
-    def count_roads(self, player_):
-        count = 0
-        for road in self.roads:
-            if self.roads[road]['player'] == player_:
-                count += 1
-        return count
+    # Helpers
 
     def calculate_resource_rarity(self):
         """
@@ -331,49 +292,7 @@ class board:
 
     # Moving Cards --------------------------------------------------------------
 
-    def give_player_card(self, player_: player, card_type: str, card: str, amount=1):
-        """
-        Gives a player a card from the bank
-        :param player_: The player to be given the card
-        :param card_type: The card type to be given - resource or development
-        :param card: The specific card, e.g. 'wheat' or 'soldier'
-        :param amount: The amount to be given
-        :return: None
-        """
-        if card_type == 'resource' and not card == 'desert':
-            for i in range(amount):
-                try:
-                    player_.resources.append(self.resource_deck.pop(self.resource_deck.index(card)))
-                except ValueError:
-                    print('Not enough cards in the bank')
-            #print(f'{player_} has been given {amount}x {card} card(s)')
-        elif card_type == 'development':
-            try:
-                player_.development_cards.append(self.development_card_deck.pop(0))
-            except IndexError:
-                print('Not enough cards in the bank')
-                return False
-        else:
-            print(f'Invalid card type - cannot give player {card}')
-            time.sleep(5)
-
-    def return_player_card(self, player_: player, card):
-        """
-        Returns a card to the bank
-        :param player_: The player to take the card from
-        :param card: The specific card, e.g. 'wheat' or 'soldier'
-        :return: None
-        """
-        if card in player_.resources:
-            self.resource_deck.append(player_.resources.pop(player_.resources.index(card)))
-            #print(f'{player_} has returned a {card}')
-            #print(f'There are now {len(self.resource_deck)} cards left in the resource deck')
-        elif card in player_.development_cards:
-            self.development_card_deck.append(player_.development_cards.pop(player_.development_cards.index(card)))
-        else:
-            print(f'Invalid card type - cannot return {card} from player')
-
-    def check_for_special_cards(self):
+    def update_special_cards(self):
         """
         Checks whether players need to be given the largest army or longest road cards
         :return: None
@@ -425,7 +344,7 @@ class board:
                                 current_list.append(j)
                                 explored_already.append(j)
 
-                    #print([item[0] for item in current_list])
+                    # print([item[0] for item in current_list])
                     junctions_count = {}
                     for item in current_list:
                         for junc in item[0]:
@@ -433,82 +352,18 @@ class board:
                                 junctions_count[junc] += 1
                             else:
                                 junctions_count[junc] = 1
-                    #print(junctions_count)
+                    # print(junctions_count)
                     for key, value in junctions_count.items():
                         if value > 2:
                             for _ in range(value):
                                 problem_nodes = [item for item in current_list if (item[0][0] == key or item[0][1] == key)]
-                                #print([node[0] for node in problem_nodes])
+                                # print([node[0] for node in problem_nodes])
 
                     if len(current_list) > len(longest_road):
                         longest_road = current_list
             if (len(longest_road) > self.longest_road[1]) and len(longest_road) >= 5:
                 self.longest_road = [player_, len(longest_road)]
                 print(f'{player_} has a road of length {len(longest_road)} and has been given the longest road card')
-
-    def initial_placement(self):
-        """
-        Sets up the board for the game, by allowing players to place their initial settlements and roads, and then giving them the required cards
-        Random placement is not true random - it will only place a settlement on a corner of a tile that will produce two or three resources, to help to avoid softlocks
-        :return: None
-        """
-        print('\n -- Board Setup --\n')
-        order = [player_ for player_ in self.players]
-        rev_order = order.copy()
-        rev_order.reverse()
-        order = order + rev_order
-
-        while len(order) > 0:
-            player_ = order.pop(0)
-            print(f'{player_} is placing settlement number {2 - order.count(player_)}')
-            location = player_.initial_placement(self)
-            if len(order) < len(self.players):
-                # Players receive resources from their second settlement
-                tiles_from_settlement = self.buildings[location]['tiles']
-                for tile_ in tiles_from_settlement:
-                    if not tile_.contains_robber:
-                        self.give_player_card(player_, 'resource', tile_.resource)
-
-    # Turn Actions and Processing a Roll ---------------------------------------------------------
-
-    def process_roll(self, roll: int, current_player: player):
-        """
-        Processes a roll of the dice and performs the necessary board actions
-        :param current_player: The player who rolled the dice
-        :param roll: The number from the dice roll
-        :return: None
-        """
-        if roll == 7:
-            print("The robber has been rolled")
-            for player_ in self.players:
-                if len(player_.resources) >= 7:
-                    player_.robber_discard(self)
-            current_player.robber(self)
-
-        else:
-            for player_ in self.players:
-                cards_to_give = {}
-                for building in self.buildings:
-                    if self.buildings[building].get('building') is not None:
-                        tiles = self.buildings[building].get('tiles')
-                        for building_tile in tiles:
-                            if building_tile.dice_number == roll and not building_tile.contains_robber:
-                                if self.buildings[building].get('building') == 'settlement' and self.buildings[building].get('player') == player_:
-                                    # print(f'Roll of {roll} has been made and {self.buildings[building].get("player")} has a
-                                    # {self.buildings[building].get("building")} on {roll}, so receives 1x {building_tile.tile_type}')
-                                    if building_tile.resource in cards_to_give:
-                                        cards_to_give[building_tile.resource] += 1
-                                    else:
-                                        cards_to_give[building_tile.resource] = 1
-                                elif self.buildings[building].get('building') == 'city' and self.buildings[building].get('player') == player_:
-                                    # print(f'Roll of {roll} has been made and {self.buildings[building].get("player")} has a
-                                    # {self.buildings[building].get("building")} on {roll}, so receives 2x {building_tile.tile_type}')
-                                    if building_tile.resource in cards_to_give:
-                                        cards_to_give[building_tile.resource] += 2
-                                    else:
-                                        cards_to_give[building_tile.resource] = 2
-                for card in cards_to_give:
-                    self.give_player_card(player_, 'resource', card, cards_to_give[card])
 
     # Printing the Board -------------------------------------------------------
 
@@ -532,8 +387,8 @@ class board:
             # Dice numbers of 6 and 8 are in red, to keep true to the board, as they are the highest frequency numbers
             if tile_.dice_number < 10:
                 t_tp.append([
-                                f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else " " if tile_.dice_number == 7 else tile_.dice_number)}',
-                                (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
+                    f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else " " if tile_.dice_number == 7 else tile_.dice_number)}',
+                    (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
             else:
                 t_tp.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
                              tile_.symbol])
@@ -542,10 +397,10 @@ class board:
             # Prints the letter if requested, then the robber symbol if the tile contains the robber
             l_tp.append(termcolor.colored(tile_.letter, 'white')) if print_letters else l_tp.append('r') if tile_.contains_robber else l_tp.append(' ')
 
-        for building in self.buildings:
-            if self.buildings[building].get('building') is not None:
-                b_tp[building] = termcolor.colored(('s' if self.buildings[building].get('building') == 'settlement' else 'C'),
-                                                   self.buildings[building].get('player').colour)
+        for building in self._buildings:
+            if self._buildings[building].get('building') is not None:
+                b_tp[building] = termcolor.colored(('s' if self._buildings[building].get('building') == 'settlement' else 'C'),
+                                                   self._buildings[building].get('player').colour)
             elif building in ['d1', 'f2', 'i1', 'k1', 'n2', 'p1']:
                 b_tp[building] = '|'
             else:
@@ -559,6 +414,7 @@ class board:
 
         # I am aware this absolutely horrendous to try and read. It started simply as just the outlines of hexagons, and very quickly required a lot of
         # moving parts. However, it works, and I won't need to edit it later on. If I have time, I'll come back and make it more readable.
+
         lines_to_print = [
             f'                               {b_tp.get("a1")} {r_tp[tuple(["a1", "a2"])] * 5} {b_tp.get("a2")}                               ',
             f'                              {r_tp[tuple(["a,b", "a1"])]}        {r_tp[tuple(["a2", "a,c"])]}                             ',
@@ -618,6 +474,12 @@ class board:
             LR = 'LR' if player_ == self.longest_road[0] else '  '
             LA = 'LA' if player_ == self.largest_army[0] else '  '
             Soldiers = f'{player_.played_robber_cards}' + 'S' if player_.played_robber_cards > 0 else '  '
-            print(f'          {text}   |  VP: {player_.victory_points}   |   Cards: {len(player_.resources)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}'.center(terminal_width))
-            #print("\n")
-        #print('\n')
+            print(
+                f'          {text}   |  VP: {player_.victory_points}   |   Cards: {len(player_.resources)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}'.center(
+                    terminal_width))
+            # print("\n")
+        # print('\n')
+
+    @property
+    def buildings(self):
+        return self._buildings
