@@ -327,30 +327,33 @@ class player:
         else:
             print('You have no development cards')
 
-    def turn_actions(self, board, interface):
+    def turn_actions(self, interface):
         """
         Performs the actions a player can take on their turn
         :param interface:
-        :param board:
         :return: None
         """
-        self.printHand('resources')
         end_turn = False
         while not end_turn:
+            interface.print_board()
+            self.printHand('resources')
+            self.printHand('development')
             print(f'{self}, what would you like to do?')
-            action = input('- build or buy development card, trade with bank, play development card, view hand, view building list, end turn\n')
-            if action in ['build', 'buy development card', 'buy']:
+            moves = interface.return_possible_moves(self)
+            moves.append('view building list')
+            moves.append('end turn')
+            for move in moves:
+                print(f'- {move.title()}')
+            action = input().lower()
+            if action in ['view building list', 'building list', '_buildings']:
+                for building, resources in interface.get_building_cost_list.items():
+                    print(f'{building}: {resources}')
+            elif action in ['build', 'buy development card', 'buy'] or action.__contains__('build'):
                 self.build(interface)
             elif action in ['trade with bank', 'trade']:
                 self.trade_with_bank(interface)
             elif action in ['play development card', 'development card', 'play dev card', 'dev card']:
-                self.play_development_card(board)
-            elif action in ['view hand', 'hand']:
-                self.printHand()
-                self.printHand('development')
-            elif action in ['view building list', 'building list', '_buildings']:
-                for building, resources in interface.get_building_cost_list.items():
-                    print(f'{building}: {resources}')
+                self.play_development_card(interface)
             elif action in ['end turn', 'end']:
                 end_turn = True
             else:

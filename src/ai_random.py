@@ -148,46 +148,75 @@ class ai_random(ai_player):
             if tile.resource != 'desert':
                 tile_letters.append(tile.letter)
         interface.move_robber(tile_letters[random.randint(0, len(tile_letters) - 1)])
-        # TODO - add stealing from other players
+
+        players_to_steal_from = []
+        for key in interface.get_buildings_list():
+            value = interface.get_buildings_list()[key]
+            if key.find([tile_ for tile_ in interface.get_tiles_list() if tile_.contains_robber][0].letter) != -1:
+                if value['player'] is not None and value['player'] not in players_to_steal_from and value['player'] != self:
+                    players_to_steal_from.append(value['player'])
+
+        if len(players_to_steal_from) == 0:
+            return
+        if len(players_to_steal_from) == 1:
+            player_to_steal_from = players_to_steal_from[0]
+        else:
+            player_to_steal_from = players_to_steal_from[random.randint(0, len(players_to_steal_from) - 1)]
+        interface.steal_from_player(player_to_steal_from, self)
 
     def robber_discard(self, interface):
         while len(self.resources) > 7:
             rand_int = random.randint(0, len(self.resources) - 1)
             interface.return_player_card(self, self.resources[rand_int])
 
-    def turn_actions(self, board, interface):
-        hand = self.count_cards('resources')
-        buildings_count = {'settlements': 0, 'cities': 0}
-        for building in interface.get_buildings_list():
-            if interface.get_buildings_list()[building]['player'] == self:
-                if interface.get_buildings_list()[building]['building'] == 'settlement':
-                    buildings_count['settlements'] += 1
-                elif interface.get_buildings_list()[building]['building'] == 'city':
-                    buildings_count['cities'] += 1
-        for card in hand:
-            if hand[card] >= 4:
-                interface.trade_with_bank(self, card, random.choice(list(interface.get_resource_deck())))
-        hand = self.count_cards('resources')
-        if hand['wheat'] >= 2 and hand['rock'] >= 3 and buildings_count['settlements'] > 0:
-            location = self.choose_placement_location(interface, 'city')
-            if location:
-                interface.place_city(self, location)
-        hand = self.count_cards('resources')
-        if hand['wheat'] >= 1 and hand['sheep'] >= 1 and hand['wood'] >= 1 and hand['clay'] >= 1 and buildings_count[
-            'settlements'] < 11:
-            location = self.choose_placement_location(interface)
-            if location:
-                interface.place_settlement(self, location)
-        hand = self.count_cards('resources')
-        if hand['wood'] >= 1 and hand['clay'] >= 1 and interface.has_potential_road(self) and random.randint(0, 1) == 1:
-            location = self.choose_road_location(interface)
-            if location:
-                interface.place_road(self, location)
-        hand = self.count_cards('resources')
-        if hand['sheep'] >= 1 and hand['rock'] >= 1 and hand['wheat'] >= 1 and random.randint(0, 2) == 1:
-            interface.buy_development_card(self)
-        if len(self.development_cards) > 0 and random.randint(0, 1) == 1:
-            if 'victory point' in self.development_cards and len(self.development_cards) == 1:
-                pass
-            else:
+    def turn_actions(self, interface):
+
+        no_place_to_build_settlement = False
+        no_place_to_build_city = False
+        no_place_to_build_road = False
+
+        while True:
+
+            possible_moves = interface.return_possible_moves(self)
+
+            if len(possible_moves) == 0:
+                print(f'{self} has no possible moves')
+                break
+
+            if 'trade with bank' in possible_moves:
+                interface.trade_with_bank(self, next(card for card in self.resources if self.resources.count(card) >= 4), random.choice(list(interface.get_resource_deck())))
+                continue
+
+            if 'build city' in possible_moves and not no_place_to_build_city:
+                location = self.choose_placement_location(interface, 'city')
+                if location:
+                    interface.place_city(self, location)
+                else:
+                    no_place_to_build_city = True
+                continue
+
+            if 'build settlement' in possible_moves and not no_place_to_build_settlement:
+                location = self.choose_placement_location(interface, 'settlement')
+                if location:
+                    interface.place_settlement(self, location)
+                else:
+                    no_place_to_build_settlement = True
+                continue
+
+            if 'build road' in possible_moves and random.randint(0, 1) == 1 and not no_place_to_build_road:
+                road = self.choose_road_location(interface)
+                if road:
+                    interface.place_road(self, road)
+                    no_place_to_build_city = False
+                    no_place_to_build_settlement = False
+                else:
+                    no_place_to_build_road = True
+                continue
+
+            if 'play development card' in possible_moves and random.randint(0, 1) == 1:
                 self.play_development_card(interface)
+
+            if 'buy development card' in possible_moves and random.randint(0, 2) == 1:
+                interface.buy_development_card(self)
+
+            break

@@ -19,7 +19,7 @@ class boardInterface:
         Initialises a boardInterface object.
         Object is used to interact with the board object in a standardised way e.g. takes cards from a player
         Acts similarly to a board master
-        :param board:
+        :param players: A list of players
         """
         self.board = board(board_type='default', players=players)
         self.turn_number = 0
@@ -172,9 +172,40 @@ class boardInterface:
         :param player_: The player to check
         :return: A list of possible moves
         """
+        hand = player_.count_cards('resources')
+        buildings_count = {'settlements': 0, 'cities': 0}
+        for building in self.get_buildings_list():
+            if self.get_buildings_list()[building]['player'] == player_:
+                if self.get_buildings_list()[building]['building'] == 'settlement':
+                    buildings_count['settlements'] += 1
+                elif self.get_buildings_list()[building]['building'] == 'city':
+                    buildings_count['cities'] += 1
         moves = []
-        if len(player_.development_cards) > 0:
-            moves.append('play_development_card')
+        # Check if the player can trade with the bank
+        for card in hand:
+            if hand[card] >= 4:
+                moves.append('trade with bank')
+
+        # Check if player can build a city
+        if hand['wheat'] >= 2 and hand['rock'] >= 3 and 0 < self.count_structure(player_, 'settlement') and self.count_structure(player_, 'city') < 4:
+            moves.append('build city')
+
+        # Check if player can build a settlement
+        if hand['wheat'] >= 1 and hand['sheep'] >= 1 and hand['wood'] >= 1 and hand['clay'] >= 1 and buildings_count['settlements'] < 5:
+            moves.append('build settlement')
+
+        # Check if player can build a road
+        if hand['wood'] >= 1 and hand['clay'] >= 1 and self.has_potential_road(player_) and self.count_structure(player_, 'road') < 15:
+            moves.append('build road')
+
+        # Check if player can buy a development card
+        if hand['sheep'] >= 1 and hand['rock'] >= 1 and hand['wheat'] >= 1:
+            moves.append('buy development card')
+
+        # Check if the player can play a development card
+        if len(player_.development_cards) > 0 and len(player_.development_cards) > player_.development_cards.count('victory point'):
+            moves.append('play development card')
+
         return moves
 
     def place_settlement(self, player_, location):
@@ -291,6 +322,8 @@ class boardInterface:
                 if len(player_.resources) >= 7:
                     player_.robber_discard(self)
             current_player.robber(self)
+            if isinstance(current_player, player):
+                time.sleep(3)
 
         else:
             for player_ in self.get_players_list():
