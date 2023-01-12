@@ -64,13 +64,13 @@ class ai_minimax(ai_player):
         # rarity = board.calculate_resource_rarity()
 
         resources = []
-        for key, item in interface.get_buildings_list.items():
-            if interface.get_buildings_list[key]["player"] == self:
-                if interface.get_buildings_list[key]["building"] == "settlement":
-                    resources.append(item for item in interface.get_buildings_list[key]["tiles"])
-                elif interface.get_buildings_list[key]["building"] == "city":
-                    resources.append(item for item in interface.get_buildings_list[key]["tiles"])
-                    resources.append(item for item in interface.get_buildings_list[key]["tiles"])
+        for key, item in interface.get_buildings_list().items():
+            if interface.get_buildings_list()[key]["player"] == self:
+                if interface.get_buildings_list()[key]["building"] == "settlement":
+                    resources.append(item for item in interface.get_buildings_list()[key]["tiles"])
+                elif interface.get_buildings_list()[key]["building"] == "city":
+                    resources.append(item for item in interface.get_buildings_list()[key]["tiles"])
+                    resources.append(item for item in interface.get_buildings_list()[key]["tiles"])
         score += len(resources) * 3
 
         # Number of development cards ------------------------------------------
@@ -84,31 +84,31 @@ class ai_minimax(ai_player):
 if __name__ == "__main__":
 
     players = [ai_minimax(1, "green"), ai_minimax(2, "yellow")]
-    board = board(board_type="default", players=players)
-    for building in board._buildings:
+    interface = boardInterface(players)
+    for building in interface.get_buildings_list():
         if random.randint(0, 4) == 4:
-            board._buildings[building].update(
+            interface.get_buildings_list()[building].update(
                 {
                     "player": players[random.randint(0, len(players) - 1)],
                     "building": "settlement" if random.randint(0, 4) != 0 else "city",
                 }
             )
         if random.randint(0, 3) == 3:
-            board._buildings[building].update({"player": None, "building": None})
+            interface.get_buildings_list()[building].update({"player": None, "building": None})
 
-    for road in board.roads:
+    for road in interface.get_roads_list():
         if random.randint(0, 3) == 3:
-            board.roads[road].update(
+            interface.get_roads_list()[road].update(
                 {"player": players[random.randint(0, len(players) - 1)]}
             )
 
         if random.randint(0, 3) == 3:
-            board.roads[road].update({"player": None})
+            interface.get_roads_list()[road].update({"player": None})
 
     for player in players:
-        player.calculateVictoryPoints(board)
-    board.update_special_cards()
-    board.print_board()
+        player.calculateVictoryPoints(interface)
+    interface.board.update_special_cards()
+    interface.print_board()
     print("\n")
     for player in players:
-        print(f"Score for {player} = {player.evaluateBoard(board)}")
+        print(f"Score for {player} = {player.evaluateBoard(interface)}")

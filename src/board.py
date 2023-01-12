@@ -1,6 +1,7 @@
 import os
 
 from ai_random import *
+from ai_minimax import *
 from player import *
 from tile import tile
 
@@ -301,6 +302,7 @@ class board:
             if (player_.played_robber_cards > self.largest_army[1]) and (player_.played_robber_cards >= 3):
                 self.largest_army = [player_, player_.played_robber_cards]
                 print(f'{player_} has the largest army with {player_.played_robber_cards} soldiers')
+
         total_roads = {}
         for road, details in self.roads.items():
             if details['player'] in total_roads and details['player'] is not None:

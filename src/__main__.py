@@ -3,7 +3,7 @@ from board_interface import *
 if __name__ == '__main__':
 
     # Define the players and the board. Turns happen in the order specified here
-    players = [player(1, 'blue'), ai_random(2, 'red')]
+    players = [ai_random(1, 'blue'), ai_random(2, 'red'), ai_minimax(3, 'yellow')]
     interface = boardInterface(players)
     os.system('clear' if os.name == 'posix' else 'cls')
 

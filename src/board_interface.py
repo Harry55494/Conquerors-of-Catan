@@ -1,5 +1,4 @@
 import logging
-import sys
 
 from board import *
 
@@ -12,7 +11,7 @@ class boardInterface:
             self.move = move
             self.message = f'The move {move} is not valid'
             super().__init__(self.message)
-            sys.exit()
+            raise self
 
     def __init__(self, players: list[player]):
         """
@@ -322,7 +321,7 @@ class boardInterface:
                 if len(player_.resources) >= 7:
                     player_.robber_discard(self)
             current_player.robber(self)
-            if isinstance(current_player, player):
+            if not isinstance(current_player, ai_player):
                 time.sleep(3)
 
         else:

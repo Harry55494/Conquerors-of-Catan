@@ -1,3 +1,5 @@
+import sys
+
 from player import *
 
 
@@ -7,6 +9,13 @@ class ai_player(player):
     Implements the player class, but has methods for discovering moves.
     Is inherited by other AI Player classes, each with their own strategy for calculating moves
     """
+
+    class notImplementedError(Exception):
+        def __init__(self, function):
+            self.function = function
+            self.message = f'Function {function} not implemented in {sys._getframe(1).f_locals["self"].__class__.__name__}'
+            super().__init__(self.message)
+            raise self
 
     def __init__(self, number, colour, strategy: str = "random"):
         """
@@ -24,3 +33,26 @@ class ai_player(player):
 
     def __str__(self):
         return f"{self.coloured_name}  (AI - {self.strategy.capitalize()})"
+
+    # Raise an error if the function is not implemented in the child class
+
+    def choose_placement_location(self, interface, type_="settlement"):
+        raise self.notImplementedError("choose_placement_location")
+
+    def choose_road_location(self, interface):
+        raise self.notImplementedError("choose_road_location")
+
+    def initial_placement(self, interface):
+        raise self.notImplementedError("initial_placement")
+
+    def robber(self, interface):
+        raise self.notImplementedError("robber")
+
+    def robber_discard(self, interface):
+        raise self.notImplementedError("robber_discard")
+
+    def play_development_card(self, interface):
+        raise self.notImplementedError("play_development_card")
+
+    def turn_actions(self, interface):
+        raise self.notImplementedError("turn_actions")
