@@ -1,5 +1,7 @@
 import random
 
+import copy
+
 from ai_player import ai_player
 
 
@@ -64,13 +66,24 @@ class ai_minimax(ai_player):
         # rarity = board.calculate_resource_rarity()
 
         resources = []
+
+        # Rating settlements and cities
         for key, item in interface.get_buildings_list().items():
             if interface.get_buildings_list()[key]["player"] == self:
+
+                # Rate based on number of resources available
                 if interface.get_buildings_list()[key]["building"] == "settlement":
                     resources.append(item for item in interface.get_buildings_list()[key]["tiles"])
                 elif interface.get_buildings_list()[key]["building"] == "city":
                     resources.append(item for item in interface.get_buildings_list()[key]["tiles"])
                     resources.append(item for item in interface.get_buildings_list()[key]["tiles"])
+
+                # Rate based on frequency of dice roll
+                score += sum([tile.frequency for tile in interface.get_buildings_list()[key]["tiles"]])
+
+                # Rate settlement higher if there are more tiles nearby
+                num_tiles = len([item for item in interface.get_buildings_list()[key]["tiles"]])
+                score += num_tiles * 2
         score += len(resources) * 3
 
         # Number of development cards ------------------------------------------
@@ -80,8 +93,62 @@ class ai_minimax(ai_player):
 
         return score
 
+    def get_potential_building_locations(self, interface, building = 'settlement'):
+        """
+        Returns a list of potential locations for a building to be placed
+        :param interface:
+        :param building:
+        :return:
+        """
+        list = []
+        if building == 'settlement':
+            for key, item in interface.get_buildings_list().items():
+                if not interface.get_buildings_list()[key]["building"]:
+                    if not interface.check_for_nearby_settlements(key):
+                        list.append(key)
+        else:
+            for key, item in interface.get_buildings_list().items():
+                if interface.get_buildings_list()[key]["player"] == self and interface.get_buildings_list()[key]["building"] == "settlement":
+                    list.append(key)
+
+        return list
+
+    def get_potential_road_locations(self, interface):
+        pass
+
+    def initial_placement(self, interface):
+
+        potential_locations = self.get_potential_building_locations(interface)
+
+        location_score_map = {}
+        for location in potential_locations:
+
+            interface_clone = copy.deepcopy(interface)
+            interface_clone.place_settlement(self, location, free=True)
+
+            location_score_map[location] = self.evaluateBoard(interface_clone)
+
+        best_location = max(location_score_map, key=location_score_map.get)
+        interface.place_settlement(self, best_location)
+
+        road_score_map = {}
+
+        for road in [road for road in interface.get_roads_list() if best_location in road]:
+            interface_clone = copy.deepcopy(interface)
+            interface_clone.place_road(self, road, free=True)
+            road_score_map[road] = self.evaluateBoard(interface_clone)
+
+        best_road = max(road_score_map, key=road_score_map.get)
+        interface.place_road(self, best_road)
+
+        return best_location
+
+
+
 
 if __name__ == "__main__":
+
+    from board_interface import *
 
     players = [ai_minimax(1, "green"), ai_minimax(2, "yellow")]
     interface = boardInterface(players)

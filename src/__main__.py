@@ -1,9 +1,10 @@
 from board_interface import *
+from src.ai_minimax import ai_minimax
 
 if __name__ == '__main__':
 
     # Define the players and the board. Turns happen in the order specified here
-    players = [ai_random(1, 'blue'), ai_random(2, 'red'), ai_minimax(3, 'yellow')]
+    players = [ai_random(3, 'blue'), ai_random(2, 'red'), ai_minimax(1, 'yellow')]
     interface = boardInterface(players)
     os.system('clear' if os.name == 'posix' else 'cls')
 
@@ -50,6 +51,8 @@ if __name__ == '__main__':
                 player_has_won = True
                 os.system('clear')
                 interface.print_board()
+                print('\n')
+                print('- Turn ' + str(turn) + ' -')
                 print(player_, 'has won!')
                 player_.calculateVictoryPoints(interface, True)
                 break

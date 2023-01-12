@@ -207,19 +207,22 @@ class boardInterface:
 
         return moves
 
-    def place_settlement(self, player_, location):
+    def place_settlement(self, player_, location, free=False):
         if self.count_structure(player_, 'settlement') >= 5:
             print('You cannot build any more settlements')
             return False
 
-        print(f'{player_.name} is placing a settlement')
+        if not free:
+            print(f'{player_.name} is placing a settlement')
         if self.get_buildings_list()[location]['player'] is not None:
             raise self.moveNotValid("Settlement already placed at location")
-        for resource, amount in self.board.building_cost_list.get('settlement').items():
-            for j in range(amount):
-                self.return_player_card(player_, resource)
+        if not free:
+            for resource, amount in self.board.building_cost_list.get('settlement').items():
+                for j in range(amount):
+                    self.return_player_card(player_, resource)
         self.board._buildings[location].update({'player': player_, 'building': 'settlement'})
-        self.log_action(f'{player_.name} placed a settlement at {location}')
+        if not free:
+            self.log_action(f'{player_.name} placed a settlement at {location}')
         return True
 
     def place_city(self, player_, location):
@@ -238,16 +241,18 @@ class boardInterface:
         self.log_action(f'{player_.name} placed a city at {location}')
         return True
 
-    def place_road(self, player_, location):
+    def place_road(self, player_, location, free=False):
         if self.count_structure(player_, 'road') >= 15:
             print("You cannot build any more roads")
             return False
         try:
             self.board.roads[location].update({'player': player_})
             for resource, amount in self.board.building_cost_list.get('road').items():
-                for i in range(amount):
-                    self.return_player_card(player_, resource)
-            self.log_action(f'{player_.name} placed a road at {location}')
+                if not free:
+                    for i in range(amount):
+                        self.return_player_card(player_, resource)
+            if not free:
+                self.log_action(f'{player_.name} placed a road at {location}')
             return True
         except KeyError:
             raise self.moveNotValid("A road cannot be placed at this location")

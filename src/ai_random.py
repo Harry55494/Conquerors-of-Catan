@@ -87,10 +87,8 @@ class ai_random(ai_player):
                 time.sleep(0.1)
                 rand_int = random.randint(0, len(road_endings) - 1)
                 location = road_endings[rand_int]
-                if (interface.get_buildings_list()[location]['player'] is None or
-                    interface.get_buildings_list()[location][
-                        'player'] == self and building == 'settlement') and not interface.check_for_nearby_settlements(
-                    location):
+                if interface.get_buildings_list()[location]['player'] is None \
+                        and not interface.check_for_nearby_settlements(location):
                     return location
 
         elif building_type == 'city':

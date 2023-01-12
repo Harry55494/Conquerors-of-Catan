@@ -29,6 +29,7 @@ class board:
         :param board_type: The board layout, either the default layout, or a randomised layout
         """
 
+        players = sorted(players, key=lambda x: x.number)
         self.players = players
 
         # Player Checking

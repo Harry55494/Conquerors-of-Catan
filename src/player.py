@@ -65,6 +65,7 @@ class player:
     def calculateVictoryPoints(self, interface, output = False) -> int:
         """
         Calculates the player's victory points, from both their settlements/cities and their development cards
+        :param output: Whether to print the victory points
         :param interface: The interface, so that _buildings can be checked
         :return: The player's victory points
         """
@@ -96,7 +97,7 @@ class player:
                 if sources[source] > 0:
                     print(f"{source}: {sources[source]}")
                     if source == "development cards":
-                        print(self.development_cards)
+                        self.printHand('development cards')
 
         return self.victory_points
 
