@@ -1,7 +1,7 @@
 import os
 
-from ai_random import *
 from ai_minimax import *
+import random
 from player import *
 from tile import tile
 
@@ -22,246 +22,587 @@ class board:
 
     # Board Setup ---------------------------------------------------------------
 
-    def __init__(self, players: list[player], board_type='default'):
+    def __init__(self, players: list[player], board_type="default"):
         """
         Initialises the board.
         :param players: The list of players to be added to the board
         :param board_type: The board layout, either the default layout, or a randomised layout
         """
 
-        players = sorted(players, key=lambda x: x.number)
         self.players = players
 
         # Player Checking
         if len(self.players) < 2:
-            raise self.setupError('There must be at least 2 players')
+            raise self.setupError("There must be at least 2 players")
         player_nums = [player_.number for player_ in self.players]
         player_colours = [player_.colour for player_ in self.players]
         if len(player_nums) != len(set(player_nums)):
-            raise self.setupError('Player numbers must be unique')
+            raise self.setupError("Player numbers must be unique")
         if len(player_colours) != len(set(player_colours)):
-            raise self.setupError('Player colours must be unique')
+            raise self.setupError("Player colours must be unique")
         if len(self.players) > 5:
-            raise self.setupError('There can be a maximum of 5 players')
+            raise self.setupError("There can be a maximum of 5 players")
 
         self.resource_deck = []
         self.development_card_deck = []
         self.largest_army = [None, 0]
         self.longest_road = [None, 0]
-        self.tiles = [tile(9, 'a', 'wheat'),
-                      tile(12, 'b', 'sheep'), tile(10, 'c', 'sheep'),
-                      tile(11, 'd', 'wood'), tile(5, 'e', 'clay'), tile(8, 'f', 'wheat'),
-                      tile(6, 'g', 'rock'), tile(4, 'h', 'wood'),
-                      tile(4, 'i', 'clay'), tile(11, 'j', 'wheat'), tile(3, 'k', 'rock'),
-                      tile(3, 'l', 'wood'), tile(9, 'm', 'sheep'),
-                      tile(7, 'n', 'desert'), tile(10, 'o', 'sheep'), tile(6, 'p', 'wood'),
-                      tile(8, 'q', 'clay'), tile(2, 'r', 'wheat'),
-                      tile(5, 's', 'rock')]
+        self.tiles = [
+            tile(9, "a", "wheat"),
+            tile(12, "b", "sheep"),
+            tile(10, "c", "sheep"),
+            tile(11, "d", "wood"),
+            tile(5, "e", "clay"),
+            tile(8, "f", "wheat"),
+            tile(6, "g", "rock"),
+            tile(4, "h", "wood"),
+            tile(4, "i", "clay"),
+            tile(11, "j", "wheat"),
+            tile(3, "k", "rock"),
+            tile(3, "l", "wood"),
+            tile(9, "m", "sheep"),
+            tile(7, "n", "desert"),
+            tile(10, "o", "sheep"),
+            tile(6, "p", "wood"),
+            tile(8, "q", "clay"),
+            tile(2, "r", "wheat"),
+            tile(5, "s", "rock"),
+        ]
 
         self.building_cost_list = {
-            'road': {'wood': 1, 'clay': 1},
-            'settlement': {'wood': 1, 'clay': 1, 'wheat': 1, 'sheep': 1},
-            'city': {'rock': 3, 'wheat': 2},
-            'development card': {'rock': 1, 'wheat': 1, 'sheep': 1}
+            "road": {"wood": 1, "clay": 1},
+            "settlement": {"wood": 1, "clay": 1, "wheat": 1, "sheep": 1},
+            "city": {"rock": 3, "wheat": 2},
+            "development card": {"rock": 1, "wheat": 1, "sheep": 1},
         }
 
         # Buildings map contains a grid reference, the building type, and the player who owns it. Also contains the tile type, so that the resources to
         # give can be calculated
         self._buildings = {
-            'a1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a']]},
-            'a2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a']]},
-            'b1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['b']]},
-            'a,b': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a', 'b']]},
-            'a,c': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a', 'c']]},
-            'c1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['c']]},
-            'd2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['d']]},
-            'b,d': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['b', 'd']]},
-            'a,b,e': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a', 'b', 'c']]},
-            'a,c,e': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['a', 'c', 'e']]},
-            'c,f': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['c', 'f']]},
-            'f1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['f']]},
-            'd1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['d']]},
-            'b,d,g': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['b', 'd', 'g']]},
-            'b,e,g': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['b', 'e', 'g']]},
-            'c,e,h': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['c', 'e', 'h']]},
-            'c,f,h': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['c', 'f', 'h']]},
-            'f2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['f']]},
-            'd,i': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['d', 'i']]},
-            'd,g,i': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['d', 'g', 'i']]},
-            'e,g,j': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['e', 'g', 'j']]},
-            'e,h,j': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['e', 'h', 'j']]},
-            'f,h,k': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['f', 'h', 'k']]},
-            'f,k': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['f', 'k']]},
-            'i1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['i']]},
-            'g,i,l': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['g', 'i', 'l']]},
-            'g,j,l': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['g', 'j', 'l']]},
-            'h,j,m': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['h', 'j', 'm']]},
-            'h,k,m': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['h', 'k', 'm']]},
-            'k1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['k']]},
-            'i,n': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['i', 'n']]},
-            'i,l,n': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['i', 'l', 'n']]},
-            'j,l,o': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['j', 'l', 'o']]},
-            'j,m,o': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['j', 'm', 'o']]},
-            'k,m,p': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['k', 'm', 'p']]},
-            'k,p': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['k', 'p']]},
-            'n2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['n']]},
-            'l,n,q': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['l', 'n', 'q']]},
-            'l,o,q': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['l', 'o', 'q']]},
-            'm,o,r': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['m', 'o', 'r']]},
-            'm,p,r': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['m', 'p', 'r']]},
-            'p1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['p']]},
-            'n1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['n']]},
-            'n,q': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['n', 'q']]},
-            'o,q,s': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['o', 'q', 's']]},
-            'o,r,s': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['o', 'r', 's']]},
-            'p,r': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['p', 'r']]},
-            'p2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['p']]},
-            'q1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['q']]},
-            'q,s': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['q', 's']]},
-            'r,s': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['r', 's']]},
-            'r1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['r']]},
-            's2': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['s']]},
-            's1': {'player': None, 'building': None, 'tiles': [tile_ for tile_ in self.tiles if tile_.letter in ['s']]}
+            "a1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["a"]],
+            },
+            "a2": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["a"]],
+            },
+            "b1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["b"]],
+            },
+            "a,b": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["a", "b"]],
+            },
+            "a,c": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["a", "c"]],
+            },
+            "c1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["c"]],
+            },
+            "d2": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["d"]],
+            },
+            "b,d": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["b", "d"]],
+            },
+            "a,b,e": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["a", "b", "c"]
+                ],
+            },
+            "a,c,e": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["a", "c", "e"]
+                ],
+            },
+            "c,f": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["c", "f"]],
+            },
+            "f1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["f"]],
+            },
+            "d1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["d"]],
+            },
+            "b,d,g": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["b", "d", "g"]
+                ],
+            },
+            "b,e,g": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["b", "e", "g"]
+                ],
+            },
+            "c,e,h": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["c", "e", "h"]
+                ],
+            },
+            "c,f,h": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["c", "f", "h"]
+                ],
+            },
+            "f2": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["f"]],
+            },
+            "d,i": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["d", "i"]],
+            },
+            "d,g,i": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["d", "g", "i"]
+                ],
+            },
+            "e,g,j": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["e", "g", "j"]
+                ],
+            },
+            "e,h,j": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["e", "h", "j"]
+                ],
+            },
+            "f,h,k": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["f", "h", "k"]
+                ],
+            },
+            "f,k": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["f", "k"]],
+            },
+            "i1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["i"]],
+            },
+            "g,i,l": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["g", "i", "l"]
+                ],
+            },
+            "g,j,l": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["g", "j", "l"]
+                ],
+            },
+            "h,j,m": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["h", "j", "m"]
+                ],
+            },
+            "h,k,m": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["h", "k", "m"]
+                ],
+            },
+            "k1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["k"]],
+            },
+            "i,n": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["i", "n"]],
+            },
+            "i,l,n": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["i", "l", "n"]
+                ],
+            },
+            "j,l,o": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["j", "l", "o"]
+                ],
+            },
+            "j,m,o": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["j", "m", "o"]
+                ],
+            },
+            "k,m,p": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["k", "m", "p"]
+                ],
+            },
+            "k,p": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["k", "p"]],
+            },
+            "n2": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["n"]],
+            },
+            "l,n,q": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["l", "n", "q"]
+                ],
+            },
+            "l,o,q": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["l", "o", "q"]
+                ],
+            },
+            "m,o,r": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["m", "o", "r"]
+                ],
+            },
+            "m,p,r": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["m", "p", "r"]
+                ],
+            },
+            "p1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["p"]],
+            },
+            "n1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["n"]],
+            },
+            "n,q": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["n", "q"]],
+            },
+            "o,q,s": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["o", "q", "s"]
+                ],
+            },
+            "o,r,s": {
+                "player": None,
+                "building": None,
+                "tiles": [
+                    tile_ for tile_ in self.tiles if tile_.letter in ["o", "r", "s"]
+                ],
+            },
+            "p,r": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["p", "r"]],
+            },
+            "p2": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["p"]],
+            },
+            "q1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["q"]],
+            },
+            "q,s": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["q", "s"]],
+            },
+            "r,s": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["r", "s"]],
+            },
+            "r1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["r"]],
+            },
+            "s2": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["s"]],
+            },
+            "s1": {
+                "player": None,
+                "building": None,
+                "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["s"]],
+            },
         }
 
         # Roads map contains the start and end reference, which player owns the road and the symbol that needs to be printed to form the hexagons correctly
         self.roads = {
             # Hex a
-            tuple(['a1', 'a2']): {'player': None, 'symbol': r'-'},
-            tuple(['a2', 'a,c']): {'player': None, 'symbol': r'\ '},
-            tuple(['a,c', 'a,c,e']): {'player': None, 'symbol': r'/ '},
-            tuple(['a,c,e', 'a,b,e']): {'player': None, 'symbol': r'-'},
-            tuple(['a,b,e', 'a,b']): {'player': None, 'symbol': r'\ '},
-            tuple(['a,b', 'a1']): {'player': None, 'symbol': r'/ '},
+            tuple(["a1", "a2"]): {"player": None, "symbol": r"-"},
+            tuple(["a2", "a,c"]): {"player": None, "symbol": r"\ "},
+            tuple(["a,c", "a,c,e"]): {"player": None, "symbol": r"/ "},
+            tuple(["a,c,e", "a,b,e"]): {"player": None, "symbol": r"-"},
+            tuple(["a,b,e", "a,b"]): {"player": None, "symbol": r"\ "},
+            tuple(["a,b", "a1"]): {"player": None, "symbol": r"/ "},
             # Hex b
-            tuple(['a,b', 'b1']): {'player': None, 'symbol': r'-'},
-            tuple(['b1', 'b,d']): {'player': None, 'symbol': r'/'},
-            tuple(['b,d', 'b,d,g']): {'player': None, 'symbol': r'\ '},
-            tuple(['b,d,g', 'b,e,g']): {'player': None, 'symbol': r'-'},
-            tuple(['b,e,g', 'a,b,e']): {'player': None, 'symbol': r'/'},
+            tuple(["a,b", "b1"]): {"player": None, "symbol": r"-"},
+            tuple(["b1", "b,d"]): {"player": None, "symbol": r"/"},
+            tuple(["b,d", "b,d,g"]): {"player": None, "symbol": r"\ "},
+            tuple(["b,d,g", "b,e,g"]): {"player": None, "symbol": r"-"},
+            tuple(["b,e,g", "a,b,e"]): {"player": None, "symbol": r"/"},
             # Hex c
-            tuple(['a,c', 'c1']): {'player': None, 'symbol': r'-'},
-            tuple(['c1', 'c,f']): {'player': None, 'symbol': r'\ '},
-            tuple(['c,f', 'c,f,h']): {'player': None, 'symbol': r'/'},
-            tuple(['c,f,h', 'c,e,h']): {'player': None, 'symbol': r'-'},
-            tuple(['c,e,h', 'a,c,e']): {'player': None, 'symbol': r'\ '},
+            tuple(["a,c", "c1"]): {"player": None, "symbol": r"-"},
+            tuple(["c1", "c,f"]): {"player": None, "symbol": r"\ "},
+            tuple(["c,f", "c,f,h"]): {"player": None, "symbol": r"/"},
+            tuple(["c,f,h", "c,e,h"]): {"player": None, "symbol": r"-"},
+            tuple(["c,e,h", "a,c,e"]): {"player": None, "symbol": r"\ "},
             # Hex d
-            tuple(['b,d,g', 'd,g,i']): {'player': None, 'symbol': r'/'},
-            tuple(['d,g,i', 'd,i']): {'player': None, 'symbol': r'-'},
-            tuple(['d,i', 'd1']): {'player': None, 'symbol': r'\ '},
-            tuple(['d1', 'd2']): {'player': None, 'symbol': r'/'},
-            tuple(['d2', 'b,d']): {'player': None, 'symbol': r'-'},
+            tuple(["b,d,g", "d,g,i"]): {"player": None, "symbol": r"/"},
+            tuple(["d,g,i", "d,i"]): {"player": None, "symbol": r"-"},
+            tuple(["d,i", "d1"]): {"player": None, "symbol": r"\ "},
+            tuple(["d1", "d2"]): {"player": None, "symbol": r"/"},
+            tuple(["d2", "b,d"]): {"player": None, "symbol": r"-"},
             # Hex e
-            tuple(['c,e,h', 'e,h,j']): {'player': None, 'symbol': r'/'},
-            tuple(['e,h,j', 'e,g,j']): {'player': None, 'symbol': r'-'},
-            tuple(['e,g,j', 'b,e,g']): {'player': None, 'symbol': r'\ '},
+            tuple(["c,e,h", "e,h,j"]): {"player": None, "symbol": r"/"},
+            tuple(["e,h,j", "e,g,j"]): {"player": None, "symbol": r"-"},
+            tuple(["e,g,j", "b,e,g"]): {"player": None, "symbol": r"\ "},
             # Hex f
-            tuple(['c,f', 'f1']): {'player': None, 'symbol': r'-'},
-            tuple(['f1', 'f2']): {'player': None, 'symbol': r'\ '},
-            tuple(['f2', 'f,k']): {'player': None, 'symbol': r'/'},
-            tuple(['f,k', 'f,h,k']): {'player': None, 'symbol': r'-'},
-            tuple(['f,h,k', 'c,f,h']): {'player': None, 'symbol': r'\ '},
+            tuple(["c,f", "f1"]): {"player": None, "symbol": r"-"},
+            tuple(["f1", "f2"]): {"player": None, "symbol": r"\ "},
+            tuple(["f2", "f,k"]): {"player": None, "symbol": r"/"},
+            tuple(["f,k", "f,h,k"]): {"player": None, "symbol": r"-"},
+            tuple(["f,h,k", "c,f,h"]): {"player": None, "symbol": r"\ "},
             # Hex g
-            tuple(['e,g,j', 'g,j,l']): {'player': None, 'symbol': r'/'},
-            tuple(['g,j,l', 'g,i,l']): {'player': None, 'symbol': r'-'},
-            tuple(['g,i,l', 'd,g,i']): {'player': None, 'symbol': r'\ '},
+            tuple(["e,g,j", "g,j,l"]): {"player": None, "symbol": r"/"},
+            tuple(["g,j,l", "g,i,l"]): {"player": None, "symbol": r"-"},
+            tuple(["g,i,l", "d,g,i"]): {"player": None, "symbol": r"\ "},
             # Hex h
-            tuple(['f,h,k', 'h,k,m']): {'player': None, 'symbol': r'/'},
-            tuple(['h,k,m', 'h,j,m']): {'player': None, 'symbol': r'-'},
-            tuple(['h,j,m', 'e,h,j']): {'player': None, 'symbol': r'\ '},
+            tuple(["f,h,k", "h,k,m"]): {"player": None, "symbol": r"/"},
+            tuple(["h,k,m", "h,j,m"]): {"player": None, "symbol": r"-"},
+            tuple(["h,j,m", "e,h,j"]): {"player": None, "symbol": r"\ "},
             # Hex i
-            tuple(['g,i,l', 'i,l,n']): {'player': None, 'symbol': r'/'},
-            tuple(['i,l,n', 'i,n']): {'player': None, 'symbol': r'-'},
-            tuple(['i,n', 'i1']): {'player': None, 'symbol': r'\ '},
-            tuple(['i1', 'd,i']): {'player': None, 'symbol': r'/'},
+            tuple(["g,i,l", "i,l,n"]): {"player": None, "symbol": r"/"},
+            tuple(["i,l,n", "i,n"]): {"player": None, "symbol": r"-"},
+            tuple(["i,n", "i1"]): {"player": None, "symbol": r"\ "},
+            tuple(["i1", "d,i"]): {"player": None, "symbol": r"/"},
             # Hex j
-            tuple(['h,j,m', 'j,m,o']): {'player': None, 'symbol': r'/'},
-            tuple(['j,m,o', 'j,l,o']): {'player': None, 'symbol': r'-'},
-            tuple(['j,l,o', 'g,j,l']): {'player': None, 'symbol': r'\ '},
+            tuple(["h,j,m", "j,m,o"]): {"player": None, "symbol": r"/"},
+            tuple(["j,m,o", "j,l,o"]): {"player": None, "symbol": r"-"},
+            tuple(["j,l,o", "g,j,l"]): {"player": None, "symbol": r"\ "},
             # Hex k
-            tuple(['f,k', 'k1']): {'player': None, 'symbol': r'\ '},
-            tuple(['k1', 'k,p']): {'player': None, 'symbol': r'/'},
-            tuple(['k,p', 'k,m,p']): {'player': None, 'symbol': r'-'},
-            tuple(['k,m,p', 'h,k,m']): {'player': None, 'symbol': r'\ '},
+            tuple(["f,k", "k1"]): {"player": None, "symbol": r"\ "},
+            tuple(["k1", "k,p"]): {"player": None, "symbol": r"/"},
+            tuple(["k,p", "k,m,p"]): {"player": None, "symbol": r"-"},
+            tuple(["k,m,p", "h,k,m"]): {"player": None, "symbol": r"\ "},
             # Hex l
-            tuple(['j,l,o', 'l,o,q']): {'player': None, 'symbol': r'/'},
-            tuple(['l,o,q', 'l,n,q']): {'player': None, 'symbol': r'-'},
-            tuple(['l,n,q', 'i,l,n']): {'player': None, 'symbol': r'\ '},
+            tuple(["j,l,o", "l,o,q"]): {"player": None, "symbol": r"/"},
+            tuple(["l,o,q", "l,n,q"]): {"player": None, "symbol": r"-"},
+            tuple(["l,n,q", "i,l,n"]): {"player": None, "symbol": r"\ "},
             # Hex m
-            tuple(['k,m,p', 'm,p,r']): {'player': None, 'symbol': r'/'},
-            tuple(['m,p,r', 'm,o,r']): {'player': None, 'symbol': r'-'},
-            tuple(['m,o,r', 'j,m,o']): {'player': None, 'symbol': r'\ '},
+            tuple(["k,m,p", "m,p,r"]): {"player": None, "symbol": r"/"},
+            tuple(["m,p,r", "m,o,r"]): {"player": None, "symbol": r"-"},
+            tuple(["m,o,r", "j,m,o"]): {"player": None, "symbol": r"\ "},
             # Hex n
-            tuple(['l,n,q', 'n,q']): {'player': None, 'symbol': r'/'},
-            tuple(['n,q', 'n1']): {'player': None, 'symbol': r'-'},
-            tuple(['n1', 'n2']): {'player': None, 'symbol': r'\ '},
-            tuple(['n2', 'i,n']): {'player': None, 'symbol': r'/'},
+            tuple(["l,n,q", "n,q"]): {"player": None, "symbol": r"/"},
+            tuple(["n,q", "n1"]): {"player": None, "symbol": r"-"},
+            tuple(["n1", "n2"]): {"player": None, "symbol": r"\ "},
+            tuple(["n2", "i,n"]): {"player": None, "symbol": r"/"},
             # Hex o
-            tuple(['m,o,r', 'o,r,s']): {'player': None, 'symbol': r'/'},
-            tuple(['o,r,s', 'o,q,s']): {'player': None, 'symbol': r'-'},
-            tuple(['o,q,s', 'l,o,q']): {'player': None, 'symbol': r'\ '},
+            tuple(["m,o,r", "o,r,s"]): {"player": None, "symbol": r"/"},
+            tuple(["o,r,s", "o,q,s"]): {"player": None, "symbol": r"-"},
+            tuple(["o,q,s", "l,o,q"]): {"player": None, "symbol": r"\ "},
             # Hex p
-            tuple(['k,p', 'p1']): {'player': None, 'symbol': r'\ '},
-            tuple(['p1', 'p2']): {'player': None, 'symbol': r'/'},
-            tuple(['p2', 'p,r']): {'player': None, 'symbol': r'-'},
-            tuple(['p,r', 'm,p,r']): {'player': None, 'symbol': r'\ '},
+            tuple(["k,p", "p1"]): {"player": None, "symbol": r"\ "},
+            tuple(["p1", "p2"]): {"player": None, "symbol": r"/"},
+            tuple(["p2", "p,r"]): {"player": None, "symbol": r"-"},
+            tuple(["p,r", "m,p,r"]): {"player": None, "symbol": r"\ "},
             # Hex q
-            tuple(['o,q,s', 'q,s']): {'player': None, 'symbol': r'/'},
-            tuple(['q,s', 'q1']): {'player': None, 'symbol': r'-'},
-            tuple(['q1', 'n,q']): {'player': None, 'symbol': r'\ '},
+            tuple(["o,q,s", "q,s"]): {"player": None, "symbol": r"/"},
+            tuple(["q,s", "q1"]): {"player": None, "symbol": r"-"},
+            tuple(["q1", "n,q"]): {"player": None, "symbol": r"\ "},
             # Hex r
-            tuple(['p,r', 'r1']): {'player': None, 'symbol': r'/'},
-            tuple(['r1', 'r,s']): {'player': None, 'symbol': r'-'},
-            tuple(['r,s', 'o,r,s']): {'player': None, 'symbol': r'\ '},
+            tuple(["p,r", "r1"]): {"player": None, "symbol": r"/"},
+            tuple(["r1", "r,s"]): {"player": None, "symbol": r"-"},
+            tuple(["r,s", "o,r,s"]): {"player": None, "symbol": r"\ "},
             # Hex s
-            tuple(['r,s', 's1']): {'player': None, 'symbol': r'/'},
-            tuple(['s1', 's2']): {'player': None, 'symbol': r'-'},
-            tuple(['s2', 'q,s']): {'player': None, 'symbol': r'\ '},
+            tuple(["r,s", "s1"]): {"player": None, "symbol": r"/"},
+            tuple(["s1", "s2"]): {"player": None, "symbol": r"-"},
+            tuple(["s2", "q,s"]): {"player": None, "symbol": r"\ "},
         }
 
         # Create the tiles and board
-        if board_type != 'default':
+        if board_type != "default":
 
             # If the layout is random, form the tiles from the possible options in the correct order
             self.tiles = []
-            potential_tiles = ['wood', 'wood', 'wood', 'wood', 'sheep', 'sheep', 'sheep', 'sheep', 'wheat', 'wheat', 'wheat', 'wheat', 'clay', 'clay', 'clay',
-                               'rock', 'rock', 'rock', 'rock', 'desert']
-            number_order = [9, 12, 10, 11, 5, 8, 6, 4, 4, 11, 3, 3, 9, 7, 10, 6, 8, 2, 5]
-            letter_order = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's']
+            potential_tiles = [
+                "wood",
+                "wood",
+                "wood",
+                "wood",
+                "sheep",
+                "sheep",
+                "sheep",
+                "sheep",
+                "wheat",
+                "wheat",
+                "wheat",
+                "wheat",
+                "clay",
+                "clay",
+                "clay",
+                "rock",
+                "rock",
+                "rock",
+                "rock",
+                "desert",
+            ]
+            number_order = [
+                9,
+                12,
+                10,
+                11,
+                5,
+                8,
+                6,
+                4,
+                4,
+                11,
+                3,
+                3,
+                9,
+                7,
+                10,
+                6,
+                8,
+                2,
+                5,
+            ]
+            letter_order = [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g",
+                "h",
+                "i",
+                "j",
+                "k",
+                "l",
+                "m",
+                "n",
+                "o",
+                "p",
+                "q",
+                "r",
+                "s",
+            ]
             i = 0
             while len(self.tiles) < 19:
-                tile_type = potential_tiles.pop(random.randint(0, len(potential_tiles) - 1))
-                if tile_type == 'desert':
+                tile_type = potential_tiles.pop(
+                    random.randint(0, len(potential_tiles) - 1)
+                )
+                if tile_type == "desert":
                     # Desert tile_ must always have the number 7
                     self.tiles.append(tile(7, (letter_order.pop(0)), tile_type))
                     number_order.pop(number_order.index(7))
                 else:
-                    self.tiles.append(tile(number_order[i], (letter_order.pop(0)), tile_type))
+                    self.tiles.append(
+                        tile(number_order[i], (letter_order.pop(0)), tile_type)
+                    )
                     i += 1
 
         # Add the required cards to their decks
 
         for i in range(19):
-            self.resource_deck.append('wheat')
-            self.resource_deck.append('wood')
-            self.resource_deck.append('sheep')
-            self.resource_deck.append('clay')
-            self.resource_deck.append('rock')
+            self.resource_deck.append("wheat")
+            self.resource_deck.append("wood")
+            self.resource_deck.append("sheep")
+            self.resource_deck.append("clay")
+            self.resource_deck.append("rock")
 
         for i in range(14):
-            self.development_card_deck.append('soldier')
+            self.development_card_deck.append("soldier")
 
         for i in range(2):
-            self.development_card_deck.append('monopoly')
-            self.development_card_deck.append('year of plenty')
-            self.development_card_deck.append('road building')
+            self.development_card_deck.append("monopoly")
+            self.development_card_deck.append("year of plenty")
+            self.development_card_deck.append("road building")
 
         for i in range(5):
-            self.development_card_deck.append('victory point')
+            self.development_card_deck.append("victory point")
 
         # Shuffle and Sort Decks
         self.resource_deck.sort()
-        self.development_card_deck = random.sample(self.development_card_deck, len(self.development_card_deck))
+        self.development_card_deck = random.sample(
+            self.development_card_deck, len(self.development_card_deck)
+        )
 
     # Helpers
 
@@ -270,7 +611,13 @@ class board:
         Calculates the rarity of each resource on the board. The higher the number, the more rare
         :return: A dictionary with the resource as the key and the rarity as the value.
         """
-        resource_rarity_scores = {"wood": 0, "clay": 0, "sheep": 0, "wheat": 0, "rock": 0}
+        resource_rarity_scores = {
+            "wood": 0,
+            "clay": 0,
+            "sheep": 0,
+            "wheat": 0,
+            "rock": 0,
+        }
         for tile in self.tiles:
             if tile.resource != "desert":
                 if tile.dice_number in [2, 12]:
@@ -283,11 +630,17 @@ class board:
                     resource_rarity_scores[tile.resource] += 2
                 elif tile.dice_number in [6, 8]:
                     resource_rarity_scores[tile.resource] += 1
-        resource_rarity_scores = {k: v / sum(resource_rarity_scores.values()) for k, v in resource_rarity_scores.items()}
+        resource_rarity_scores = {
+            k: v / sum(resource_rarity_scores.values())
+            for k, v in resource_rarity_scores.items()
+        }
         normalised_scores = {}
         print(resource_rarity_scores)
         for item, score in resource_rarity_scores.items():
-            normalised_score = (score - min(resource_rarity_scores.values())) / (max(resource_rarity_scores.values()) - min(resource_rarity_scores.values()))
+            normalised_score = (score - min(resource_rarity_scores.values())) / (
+                max(resource_rarity_scores.values())
+                - min(resource_rarity_scores.values())
+            )
             normalised_scores.update({item: normalised_score})
         print(normalised_scores)
         return normalised_scores
@@ -300,16 +653,20 @@ class board:
         :return: None
         """
         for player_ in self.players:
-            if (player_.played_robber_cards > self.largest_army[1]) and (player_.played_robber_cards >= 3):
+            if (player_.played_robber_cards > self.largest_army[1]) and (
+                player_.played_robber_cards >= 3
+            ):
                 self.largest_army = [player_, player_.played_robber_cards]
-                print(f'{player_} has the largest army with {player_.played_robber_cards} soldiers')
+                print(
+                    f"{player_} has the largest army with {player_.played_robber_cards} soldiers"
+                )
 
         total_roads = {}
         for road, details in self.roads.items():
-            if details['player'] in total_roads and details['player'] is not None:
-                total_roads[details['player']] += 1
-            elif details['player'] is not None:
-                total_roads[details['player']] = 1
+            if details["player"] in total_roads and details["player"] is not None:
+                total_roads[details["player"]] += 1
+            elif details["player"] is not None:
+                total_roads[details["player"]] = 1
         # remove any with less than 5 roads
         for player_ in total_roads.copy():
             if total_roads[player_] < 5:
@@ -317,7 +674,7 @@ class board:
         for player_ in total_roads:
             roads_subset = []
             for road, details in self.roads.items():
-                if details.get('player') == player_:
+                if details.get("player") == player_:
                     roads_subset.append([road, details])
             explored_already = []
             longest_road = []
@@ -328,11 +685,13 @@ class board:
                     current_list = []
                     not_added = []
                     for j in roads_subset:
-                        if len(current_list) == 0 or \
-                                any([item[0][0] == j[0][0] for item in current_list]) or \
-                                any([item[0][1] == j[0][1] for item in current_list]) or \
-                                any([item[0][0] == j[0][1] for item in current_list]) or \
-                                any([item[0][1] == j[0][0] for item in current_list]):
+                        if (
+                            len(current_list) == 0
+                            or any([item[0][0] == j[0][0] for item in current_list])
+                            or any([item[0][1] == j[0][1] for item in current_list])
+                            or any([item[0][0] == j[0][1] for item in current_list])
+                            or any([item[0][1] == j[0][0] for item in current_list])
+                        ):
                             current_list.append(j)
                             explored_already.append(j)
                         else:
@@ -340,10 +699,12 @@ class board:
                     for _ in range(len(not_added)):
                         # Loop a few more times in case some roads didn't connect on the first pass, but do now
                         for j in not_added:
-                            if any([item[0][0] == j[0][0] for item in current_list]) or \
-                                    any([item[0][1] == j[0][1] for item in current_list]) or \
-                                    any([item[0][0] == j[0][1] for item in current_list]) or \
-                                    any([item[0][1] == j[0][0] for item in current_list]):
+                            if (
+                                any([item[0][0] == j[0][0] for item in current_list])
+                                or any([item[0][1] == j[0][1] for item in current_list])
+                                or any([item[0][0] == j[0][1] for item in current_list])
+                                or any([item[0][1] == j[0][0] for item in current_list])
+                            ):
                                 current_list.append(j)
                                 explored_already.append(j)
 
@@ -359,14 +720,20 @@ class board:
                     for key, value in junctions_count.items():
                         if value > 2:
                             for _ in range(value):
-                                problem_nodes = [item for item in current_list if (item[0][0] == key or item[0][1] == key)]
+                                problem_nodes = [
+                                    item
+                                    for item in current_list
+                                    if (item[0][0] == key or item[0][1] == key)
+                                ]
                                 # print([node[0] for node in problem_nodes])
 
                     if len(current_list) > len(longest_road):
                         longest_road = current_list
             if (len(longest_road) > self.longest_road[1]) and len(longest_road) >= 5:
                 self.longest_road = [player_, len(longest_road)]
-                print(f'{player_} has a road of length {len(longest_road)} and has been given the longest road card')
+                print(
+                    f"{player_} has a road of length {len(longest_road)} and has been given the longest road card"
+                )
 
     # Printing the Board -------------------------------------------------------
 
@@ -376,7 +743,12 @@ class board:
         :return: None
         """
 
-        os.system('clear')
+        display_mode = False
+        if display_mode:
+            terminal_height = os.get_terminal_size().lines + 10
+            print(f"\033[{terminal_height}A\033[2K", end="")
+        else:
+            os.system("cls" if os.name == "nt" else "clear")
 
         # *_tp = *_to_print
         # Shorthand to make the code more readable
@@ -389,31 +761,57 @@ class board:
         for tile_ in self.tiles:
             # Dice numbers of 6 and 8 are in red, to keep true to the board, as they are the highest frequency numbers
             if tile_.dice_number < 10:
-                t_tp.append([
-                    f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else " " if tile_.dice_number == 7 else tile_.dice_number)}',
-                    (tile_.symbol + ' ' if tile_.resource != 'desert' else tile_.symbol)])
+                t_tp.append(
+                    [
+                        f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else " " if tile_.dice_number == 7 else tile_.dice_number)}',
+                        (
+                            tile_.symbol + " "
+                            if tile_.resource != "desert"
+                            else tile_.symbol
+                        ),
+                    ]
+                )
             else:
-                t_tp.append([f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
-                             tile_.symbol])
+                t_tp.append(
+                    [
+                        f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
+                        tile_.symbol,
+                    ]
+                )
 
         for tile_ in self.tiles:
             # Prints the letter if requested, then the robber symbol if the tile contains the robber
-            l_tp.append(termcolor.colored(tile_.letter, 'white')) if print_letters else l_tp.append('r') if tile_.contains_robber else l_tp.append(' ')
+            l_tp.append(
+                termcolor.colored(tile_.letter, "white")
+            ) if print_letters else l_tp.append(
+                "r"
+            ) if tile_.contains_robber else l_tp.append(
+                " "
+            )
 
         for building in self._buildings:
-            if self._buildings[building].get('building') is not None:
-                b_tp[building] = termcolor.colored(('s' if self._buildings[building].get('building') == 'settlement' else 'C'),
-                                                   self._buildings[building].get('player').colour)
-            elif building in ['d1', 'f2', 'i1', 'k1', 'n2', 'p1']:
-                b_tp[building] = '|'
+            if self._buildings[building].get("building") is not None:
+                b_tp[building] = termcolor.colored(
+                    (
+                        "s"
+                        if self._buildings[building].get("building") == "settlement"
+                        else "C"
+                    ),
+                    self._buildings[building].get("player").colour,
+                )
+            elif building in ["d1", "f2", "i1", "k1", "n2", "p1"]:
+                b_tp[building] = "|"
             else:
-                b_tp[building] = ' '
+                b_tp[building] = " "
 
         for road in self.roads:
-            if self.roads[road].get('player') is not None:
-                r_tp[road] = termcolor.colored(self.roads[road].get('symbol'), self.roads[road].get('player').colour)
+            if self.roads[road].get("player") is not None:
+                r_tp[road] = termcolor.colored(
+                    self.roads[road].get("symbol"),
+                    self.roads[road].get("player").colour,
+                )
             else:
-                r_tp[road] = self.roads[road].get('symbol')
+                r_tp[road] = self.roads[road].get("symbol")
 
         # I am aware this absolutely horrendous to try and read. It started simply as just the outlines of hexagons, and very quickly required a lot of
         # moving parts. However, it works, and I won't need to edit it later on. If I have time, I'll come back and make it more readable.
@@ -459,7 +857,7 @@ class board:
             print("Unable to get terminal size, using default width of 71")
             terminal_width = 240
 
-        print('\n')
+        print("\n")
         print("Conquerors of Catan".center(terminal_width))
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
@@ -470,16 +868,26 @@ class board:
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
         print("\n")
-        print(f'🌾 🌲 🐑 🧱 🪨    ❔        '.center(terminal_width), end='')
-        print(f'Bank has {len(self.resource_deck)} resource cards and {len(self.development_card_deck)} development cards          '.center(terminal_width))
+        print(f"🌾 🌲 🐑 🧱 🪨    ❔        ".center(terminal_width), end="")
+        print(
+            f"Bank has {len(self.resource_deck)} resource cards and {len(self.development_card_deck)} development cards          ".center(
+                terminal_width
+            )
+        )
         for player_ in self.players:
-            text = f'{player_}'.ljust(25)
-            LR = 'LR' if player_ == self.longest_road[0] else '  '
-            LA = 'LA' if player_ == self.largest_army[0] else '  '
-            Soldiers = f'{player_.played_robber_cards}' + 'S' if player_.played_robber_cards > 0 else '  '
+            text = f"{player_}".ljust(25)
+            LR = "LR" if player_ == self.longest_road[0] else "  "
+            LA = "LA" if player_ == self.largest_army[0] else "  "
+            Soldiers = (
+                f"{player_.played_robber_cards}" + "S"
+                if player_.played_robber_cards > 0
+                else "  "
+            )
             print(
-                f'          {text}   |  VP: {player_.victory_points}   |   Cards: {len(player_.resources)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}'.center(
-                    terminal_width))
+                f"          {text}   |  VP: {player_.victory_points}   |   Cards: {len(player_.resources)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
+                    terminal_width
+                )
+            )
             # print("\n")
         # print('\n')
 

@@ -1,6 +1,11 @@
-import logging
+import random
+import time
 
 from board import *
+
+import logging
+
+from src import player
 
 
 class boardInterface:
@@ -9,7 +14,7 @@ class boardInterface:
     class moveNotValid(Exception):
         def __init__(self, move):
             self.move = move
-            self.message = f'The move {move} is not valid'
+            self.message = f"The move {move} is not valid"
             super().__init__(self.message)
             raise self
 
@@ -20,22 +25,26 @@ class boardInterface:
         Acts similarly to a board master
         :param players: A list of players
         """
-        self.board = board(board_type='default', players=players)
+        self.minimax_mode = False
+        self.board = board(board_type="default", players=players)
         self.turn_number = 0
 
-        with open('logs/board_actions.log', 'w') as f:
+        with open("logs/board_actions.log", "w") as f:
             pass
 
-        self.logger = logging.getLogger('boardInterface')
+        self.logger = logging.getLogger("boardInterface")
         self.logger.setLevel(logging.DEBUG)
-        file_format = logging.Formatter('[%(asctime)s] %(message)s')
-        fh = logging.FileHandler('logs/board_actions.log')
+        file_format = logging.Formatter("[%(asctime)s] %(message)s")
+        fh = logging.FileHandler("logs/board_actions.log")
         fh.setFormatter(file_format)
         self.logger.addHandler(fh)
         self.logger.debug("Board Interface created")
 
     def log_action(self, action):
         self.logger.debug(f"[Turn: {str(self.turn_number).ljust(3)}] {action}")
+
+    def set_minimax(self, state):
+        self.minimax_mode = state
 
     # Getters and Setters
     def get_resource_deck(self):
@@ -70,7 +79,7 @@ class boardInterface:
     def has_potential_road(self, player_) -> int:
         road_endings = []
         for road in self.board.roads:
-            if self.board.roads[road]['player'] == player_:
+            if self.board.roads[road]["player"] == player_:
                 road_endings.append(road[0])
                 road_endings.append(road[1])
         return len(road_endings) > 0
@@ -82,15 +91,22 @@ class boardInterface:
             if tile_.letter == location:
                 tile_.contains_robber = True
 
-    def steal_from_player(self, player_to_steal_from: player, player_to_give_to: player) -> None:
-        card = player_to_steal_from.resources.pop(random.randint(0, len(player_to_steal_from.resources) - 1))
-        self.give_player_card(player_to_give_to, 'resource', card)
+    def steal_from_player(
+        self, player_to_steal_from: player, player_to_give_to: player
+    ) -> None:
+        if len(player_to_steal_from.resources) > 0:
+            card = player_to_steal_from.resources.pop(
+                random.randint(0, len(player_to_steal_from.resources) - 1)
+            )
+            self.give_player_card(player_to_give_to, "resource", card)
+        else:
+            print(f"{player_to_steal_from.name} has no cards to steal")
 
     def count_structure(self, player_, structure):
         count = 0
-        if structure == 'road':
+        if structure == "road":
             for road in self.get_roads_list():
-                if self.get_roads_list()[road]['player'] == player_:
+                if self.get_roads_list()[road]["player"] == player_:
                     count += 1
             return count
         for building in self.get_buildings_list():
@@ -113,11 +129,13 @@ class boardInterface:
                 position_to_check.append(road[1])
         position_to_check = list(set(position_to_check))
         for coord in position_to_check:
-            if self.get_buildings_list()[coord]['player'] is not None:
+            if self.get_buildings_list()[coord]["player"] is not None:
                 return True
         return False
 
-    def give_player_card(self, player_: player, card_type: str, card: str, amount=1) -> bool:
+    def give_player_card(
+        self, player_: player, card_type: str, card: str, amount=1
+    ) -> bool:
         """
         Gives a player a card from the bank
         :param player_: The player to be given the card
@@ -126,24 +144,36 @@ class boardInterface:
         :param amount: The amount to be given
         :return: None
         """
-        if card_type == 'resource' and not card == 'desert':
+        if card_type == "resource" and not card == "desert":
             for i in range(amount):
                 try:
-                    player_.resources.append(self.board.resource_deck.pop(self.board.resource_deck.index(card)))
+                    player_.resources.append(
+                        self.board.resource_deck.pop(
+                            self.board.resource_deck.index(card)
+                        )
+                    )
                 except ValueError:
-                    print('Not enough cards in the bank')
-            self.log_action(f'{player_.name} was given {amount} {card} from the bank')
-        elif card_type == 'development':
+                    print("Not enough cards in the bank")
+            if not self.minimax_mode:
+                self.log_action(
+                    f"{player_.name} was given {amount} {card} from the bank"
+                )
+        elif card_type == "development":
             try:
                 card_given = self.board.development_card_deck.pop(0)
                 player_.development_cards.append(card_given)
-                self.log_action(f'{player_.name} was given a {card_given} card from the bank')
-                self.log_action(f'{player_.name} now has {len(player_.development_cards)} development cards')
+                if not self.minimax_mode:
+                    self.log_action(
+                        f"{player_.name} was given a {card_given} card from the bank"
+                    )
+                    self.log_action(
+                        f"{player_.name} now has {len(player_.development_cards)} development cards"
+                    )
             except IndexError:
-                print('Not enough cards in the bank')
+                print("Not enough cards in the bank")
                 return False
         else:
-            print(f'Invalid card type - cannot give player {card}')
+            print(f"Invalid card type - cannot give player {card}")
             time.sleep(5)
 
     def return_player_card(self, player_: player, card):
@@ -154,13 +184,25 @@ class boardInterface:
         :return: None
         """
         if card in ["wheat", "wood", "clay", "sheep", "rock"]:
-            self.board.resource_deck.append(player_.resources.pop(player_.resources.index(card)))
-            self.log_action(f"{player_.name} returned a {card} card to the bank")
-        elif card in ["knight", "victory point", "road building", "year of plenty", "monopoly"]:
-            self.board.development_card_deck.append(player_.development_cards.pop(player_.development_cards.index(card)))
-            self.log_action(f"{player_.name} returned a {card} card to the bank")
+            self.board.resource_deck.append(
+                player_.resources.pop(player_.resources.index(card))
+            )
+            if not self.minimax_mode:
+                self.log_action(f"{player_.name} returned a {card} card to the bank")
+        elif card in [
+            "knight",
+            "victory point",
+            "road building",
+            "year of plenty",
+            "monopoly",
+        ]:
+            self.board.development_card_deck.append(
+                player_.development_cards.pop(player_.development_cards.index(card))
+            )
+            if not self.minimax_mode:
+                self.log_action(f"{player_.name} returned a {card} card to the bank")
         else:
-            print(f'Invalid card type - cannot return {card} from player')
+            print(f"Invalid card type - cannot return {card} from player")
             time.sleep(5)
 
     # Moves -------------------------------------------------------------------------------------------------------------
@@ -171,100 +213,132 @@ class boardInterface:
         :param player_: The player to check
         :return: A list of possible moves
         """
-        hand = player_.count_cards('resources')
-        buildings_count = {'settlements': 0, 'cities': 0}
+        hand = player_.count_cards("resources")
+        buildings_count = {"settlements": 0, "cities": 0}
         for building in self.get_buildings_list():
-            if self.get_buildings_list()[building]['player'] == player_:
-                if self.get_buildings_list()[building]['building'] == 'settlement':
-                    buildings_count['settlements'] += 1
-                elif self.get_buildings_list()[building]['building'] == 'city':
-                    buildings_count['cities'] += 1
+            if self.get_buildings_list()[building]["player"] == player_:
+                if self.get_buildings_list()[building]["building"] == "settlement":
+                    buildings_count["settlements"] += 1
+                elif self.get_buildings_list()[building]["building"] == "city":
+                    buildings_count["cities"] += 1
         moves = []
         # Check if the player can trade with the bank
         for card in hand:
             if hand[card] >= 4:
-                moves.append('trade with bank')
+                moves.append("trade with bank")
 
         # Check if player can build a city
-        if hand['wheat'] >= 2 and hand['rock'] >= 3 and 0 < self.count_structure(player_, 'settlement') and self.count_structure(player_, 'city') < 4:
-            moves.append('build city')
+        if (
+            hand["wheat"] >= 2
+            and hand["rock"] >= 3
+            and 0 < self.count_structure(player_, "settlement")
+            and self.count_structure(player_, "city") < 4
+        ):
+            moves.append("build city")
 
         # Check if player can build a settlement
-        if hand['wheat'] >= 1 and hand['sheep'] >= 1 and hand['wood'] >= 1 and hand['clay'] >= 1 and buildings_count['settlements'] < 5:
-            moves.append('build settlement')
+        if (
+            hand["wheat"] >= 1
+            and hand["sheep"] >= 1
+            and hand["wood"] >= 1
+            and hand["clay"] >= 1
+            and buildings_count["settlements"] < 5
+        ):
+            moves.append("build settlement")
 
         # Check if player can build a road
-        if hand['wood'] >= 1 and hand['clay'] >= 1 and self.has_potential_road(player_) and self.count_structure(player_, 'road') < 15:
-            moves.append('build road')
+        if (
+            hand["wood"] >= 1
+            and hand["clay"] >= 1
+            and self.has_potential_road(player_)
+            and self.count_structure(player_, "road") < 15
+        ):
+            moves.append("build road")
 
         # Check if player can buy a development card
-        if hand['sheep'] >= 1 and hand['rock'] >= 1 and hand['wheat'] >= 1:
-            moves.append('buy development card')
+        if hand["sheep"] >= 1 and hand["rock"] >= 1 and hand["wheat"] >= 1:
+            moves.append("buy development card")
 
         # Check if the player can play a development card
-        if len(player_.development_cards) > 0 and len(player_.development_cards) > player_.development_cards.count('victory point'):
-            moves.append('play development card')
+        if len(player_.development_cards) > 0 and len(
+            player_.development_cards
+        ) > player_.development_cards.count("victory point"):
+            moves.append("play development card")
 
         return moves
 
-    def place_settlement(self, player_, location, free=False):
-        if self.count_structure(player_, 'settlement') >= 5:
-            print('You cannot build any more settlements')
+    def place_settlement(self, player_, location):
+        if self.count_structure(player_, "settlement") >= 5:
+            print("You cannot build any more settlements")
             return False
 
-        if not free:
-            print(f'{player_.name} is placing a settlement')
-        if self.get_buildings_list()[location]['player'] is not None:
+        if not self.minimax_mode:
+            print(f"{player_.name} is placing a settlement")
+        if self.get_buildings_list()[location]["player"] is not None:
             raise self.moveNotValid("Settlement already placed at location")
-        if not free:
-            for resource, amount in self.board.building_cost_list.get('settlement').items():
+        if not self.minimax_mode:
+            for resource, amount in self.board.building_cost_list.get(
+                "settlement"
+            ).items():
                 for j in range(amount):
                     self.return_player_card(player_, resource)
-        self.board._buildings[location].update({'player': player_, 'building': 'settlement'})
-        if not free:
-            self.log_action(f'{player_.name} placed a settlement at {location}')
+        self.board._buildings[location].update(
+            {"player": player_, "building": "settlement"}
+        )
+        if not self.minimax_mode:
+            self.log_action(f"{player_.name} placed a settlement at {location}")
         return True
 
     def place_city(self, player_, location):
-        if self.count_structure(player_, 'city') >= 4:
-            print('You cannot build any more cities')
+        if self.count_structure(player_, "city") >= 4:
+            print("You cannot build any more cities")
             return False
-        print(f'{player_.name} is placing a city')
-        if self.get_buildings_list()[location]['player'] is not player_:
+        if not self.minimax_mode:
+            print(f"{player_.name} is placing a city")
+        if self.get_buildings_list()[location]["player"] is not player_:
             raise self.moveNotValid("Cannot upgrade a settlement that is not yours")
-        if self.get_buildings_list()[location]['building'] != 'settlement':
-            raise self.moveNotValid("Cannot upgrade a building that is not a settlement")
-        for resource, amount in self.board.building_cost_list.get('city').items():
+        if self.get_buildings_list()[location]["building"] != "settlement":
+            raise self.moveNotValid(
+                "Cannot upgrade a building that is not a settlement"
+            )
+        for resource, amount in self.board.building_cost_list.get("city").items():
             for j in range(amount):
                 self.return_player_card(player_, resource)
-        self.board._buildings[location].update({'player': player_, 'building': 'city'})
-        self.log_action(f'{player_.name} placed a city at {location}')
+        self.board._buildings[location].update({"player": player_, "building": "city"})
+        if not self.minimax_mode:
+            self.log_action(f"{player_.name} placed a city at {location}")
         return True
 
-    def place_road(self, player_, location, free=False):
-        if self.count_structure(player_, 'road') >= 15:
+    def place_road(self, player_, location, free_from_dev_card=False):
+        if self.count_structure(player_, "road") >= 15:
             print("You cannot build any more roads")
             return False
         try:
-            self.board.roads[location].update({'player': player_})
-            for resource, amount in self.board.building_cost_list.get('road').items():
-                if not free:
+            self.board.roads[location].update({"player": player_})
+            for resource, amount in self.board.building_cost_list.get("road").items():
+                if not self.minimax_mode and not free_from_dev_card:
                     for i in range(amount):
                         self.return_player_card(player_, resource)
-            if not free:
-                self.log_action(f'{player_.name} placed a road at {location}')
+            if not self.minimax_mode:
+                self.log_action(
+                    f'{player_.name} placed a road at {location} {"(free from development card)" if free_from_dev_card else ""}'
+                )
             return True
         except KeyError:
             raise self.moveNotValid("A road cannot be placed at this location")
 
     def buy_development_card(self, player_) -> bool:
-        if player_.count_cards('resources')['wheat'] >= 1 and player_.count_cards('resources')['sheep'] >= 1 and \
-                player_.count_cards('resources')['rock'] >= 1:
-            self.return_player_card(player_, 'wheat')
-            self.return_player_card(player_, 'sheep')
-            self.return_player_card(player_, 'rock')
-            self.give_player_card(player_, 'development', 'development_card')
-            self.log_action(f'{player_} bought a development card')
+        if (
+            player_.count_cards("resources")["wheat"] >= 1
+            and player_.count_cards("resources")["sheep"] >= 1
+            and player_.count_cards("resources")["rock"] >= 1
+        ):
+            self.return_player_card(player_, "wheat")
+            self.return_player_card(player_, "sheep")
+            self.return_player_card(player_, "rock")
+            self.give_player_card(player_, "development", "development_card")
+            if not self.minimax_mode:
+                self.log_action(f"{player_.name} bought a development card")
             return True
         else:
             return False
@@ -277,13 +351,14 @@ class boardInterface:
         :param get: The resource to be received
         :return: None
         """
-        if player_.count_cards('resources')[give] >= 4:
-            self.log_action(f'{player_.name} is trading 4x {give} for 1x {get}')
+        if player_.count_cards("resources")[give] >= 4:
+            if not self.minimax_mode:
+                self.log_action(f"{player_.name} is trading 4x {give} for 1x {get}")
             for i in range(4):
                 self.return_player_card(player_, give)
-            self.give_player_card(player_, 'resource', get)
+            self.give_player_card(player_, "resource", get)
         else:
-            print('Not enough resources to trade')
+            print("Not enough resources to trade")
 
     def play_development_card(self, player_, card_to_play, *args):
         """
@@ -293,23 +368,26 @@ class boardInterface:
         :return:
         """
         card = card_to_play
-        if card == 'soldier':
-            player_.robber()
-        elif card == 'monopoly':
+        if card == "soldier":
+            player_.robber(self)
+        elif card == "monopoly":
             res_type = args[0]
             for other_player in self.get_players_list():
-                if other_player != self:
+                if other_player != player_:
                     while res_type in other_player.resources:
                         self.return_player_card(other_player, res_type)
-                        self.give_player_card(player_, 'resource', res_type)
-        elif card == 'year of plenty':
+                        self.give_player_card(player_, "resource", res_type)
+        elif card == "year of plenty":
             for i in range(2):
                 res_type = args[i]
-                self.give_player_card(player_, 'resource', res_type)
-        elif card == 'road building':
+                self.give_player_card(player_, "resource", res_type)
+        elif card == "road building":
             for i in range(2):
-                self.place_road(player_, player_.choose_road_location())
-        self.return_player_card(player_, card_to_play)
+                self.place_road(
+                    player_, player_.choose_road_location(self), free_from_dev_card=True
+                )
+        if card != "soldier":
+            self.return_player_card(player_, card)
 
     # Turn Actions and Processing a Roll ---------------------------------------------------------
 
@@ -333,20 +411,35 @@ class boardInterface:
             for player_ in self.get_players_list():
                 cards_to_give = {}
                 for building in self.get_buildings_list():
-                    if self.get_buildings_list()[building].get('building') is not None:
-                        tiles = self.get_buildings_list()[building].get('tiles')
+                    if self.get_buildings_list()[building].get("building") is not None:
+                        tiles = self.get_buildings_list()[building].get("tiles")
                         for building_tile in tiles:
-                            if building_tile.dice_number == roll and not building_tile.contains_robber:
-                                if self.get_buildings_list()[building].get('building') == 'settlement' and self.get_buildings_list()[building].get(
-                                        'player') == player_:
+                            if (
+                                building_tile.dice_number == roll
+                                and not building_tile.contains_robber
+                            ):
+                                if (
+                                    self.get_buildings_list()[building].get("building")
+                                    == "settlement"
+                                    and self.get_buildings_list()[building].get(
+                                        "player"
+                                    )
+                                    == player_
+                                ):
                                     # print(f'Roll of {roll} has been made and {self._buildings[building].get("player")} has a
                                     # {self._buildings[building].get("building")} on {roll}, so receives 1x {building_tile.tile_type}')
                                     if building_tile.resource in cards_to_give:
                                         cards_to_give[building_tile.resource] += 1
                                     else:
                                         cards_to_give[building_tile.resource] = 1
-                                elif self.get_buildings_list()[building].get('building') == 'city' and self.get_buildings_list()[building].get(
-                                        'player') == player_:
+                                elif (
+                                    self.get_buildings_list()[building].get("building")
+                                    == "city"
+                                    and self.get_buildings_list()[building].get(
+                                        "player"
+                                    )
+                                    == player_
+                                ):
                                     # print(f'Roll of {roll} has been made and {self._buildings[building].get("player")} has a
                                     # {self._buildings[building].get("building")} on {roll}, so receives 2x {building_tile.tile_type}')
                                     if building_tile.resource in cards_to_give:
@@ -354,7 +447,9 @@ class boardInterface:
                                     else:
                                         cards_to_give[building_tile.resource] = 2
                 for card in cards_to_give:
-                    self.give_player_card(player_, 'resource', card, cards_to_give[card])
+                    self.give_player_card(
+                        player_, "resource", card, cards_to_give[card]
+                    )
 
     # Initial Placement --------
 
@@ -364,25 +459,37 @@ class boardInterface:
         Random placement is not true random - it will only place a settlement on a corner of a tile that will produce two or three resources, to help to avoid softlocks
         :return: None
         """
-        print('\n -- Board Setup --\n')
-        order = [player_ for player_ in self.board.players]
+        print("\n -- Board Setup --\n")
+        self.log_action("Board Setup")
+        order = [player_ for player_ in self.get_players_list()]
         rev_order = order.copy()
         rev_order.reverse()
         order = order + rev_order
 
         while len(order) > 0:
             player_ = order.pop(0)
-            print(f'{player_} is placing settlement number {2 - order.count(player_)}')
+            print(f"{player_} is placing settlement number {2 - order.count(player_)}")
 
-            for resource in self.get_building_cost_list()['settlement']:
-                self.give_player_card(player_, 'resource', resource, self.get_building_cost_list()['settlement'][resource])
-            for resource in self.get_building_cost_list()['road']:
-                self.give_player_card(player_, 'resource', resource, self.get_building_cost_list()['road'][resource])
+            for resource in self.get_building_cost_list()["settlement"]:
+                self.give_player_card(
+                    player_,
+                    "resource",
+                    resource,
+                    self.get_building_cost_list()["settlement"][resource],
+                )
+            for resource in self.get_building_cost_list()["road"]:
+                self.give_player_card(
+                    player_,
+                    "resource",
+                    resource,
+                    self.get_building_cost_list()["road"][resource],
+                )
 
             location = player_.initial_placement(self)
             if len(order) < len(self.board.players):
                 # Players receive resources from their second settlement
-                tiles_from_settlement = self.get_buildings_list()[location]['tiles']
+                tiles_from_settlement = self.get_buildings_list()[location]["tiles"]
                 for tile_ in tiles_from_settlement:
                     if not tile_.contains_robber:
-                        self.give_player_card(player_, 'resource', tile_.resource)
+                        self.give_player_card(player_, "resource", tile_.resource)
+        self.log_action("Board Setup Complete")
