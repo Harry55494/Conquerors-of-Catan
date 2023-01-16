@@ -77,46 +77,47 @@ class ai_minimax(ai_player):
 
         # Rating settlements and cities
         for key, item in interface.get_buildings_list().items():
-            if interface.get_buildings_list()[key]["player"] == self:
+            if interface.get_buildings_list()[key]["player"] is not None:
+                if interface.get_buildings_list()[key]["player"].number == self.number:
 
-                # Rate based on number of resources available
-                if interface.get_buildings_list()[key]["building"] == "settlement":
-                    resources.append(
+                    # Rate based on number of resources available
+                    if interface.get_buildings_list()[key]["building"] == "settlement":
+                        resources.append(
+                            item for item in interface.get_buildings_list()[key]["tiles"]
+                        )
+                        score += 10
+                    elif interface.get_buildings_list()[key]["building"] == "city":
+                        resources.append(
+                            item for item in interface.get_buildings_list()[key]["tiles"]
+                        )
+                        resources.append(
+                            item for item in interface.get_buildings_list()[key]["tiles"]
+                        )
+                        score += 15
+
+                    # Rate based on frequency of dice roll
+                    score += (
+                        sum(
+                            [
+                                tile.frequency
+                                for tile in interface.get_buildings_list()[key]["tiles"]
+                            ]
+                        )
+                        * 2
+                    )
+
+                    # Rate settlement higher if there are more tiles nearby
+                    num_tiles = len(
+                        [item for item in interface.get_buildings_list()[key]["tiles"]]
+                    )
+                    score += num_tiles * 2
+
+                    # Rate higher if there is one of each tile nearby
+                    nearby_resources = [
                         item for item in interface.get_buildings_list()[key]["tiles"]
-                    )
-                    score += 10
-                elif interface.get_buildings_list()[key]["building"] == "city":
-                    resources.append(
-                        item for item in interface.get_buildings_list()[key]["tiles"]
-                    )
-                    resources.append(
-                        item for item in interface.get_buildings_list()[key]["tiles"]
-                    )
-                    score += 25
-
-                # Rate based on frequency of dice roll
-                score += (
-                    sum(
-                        [
-                            tile.frequency
-                            for tile in interface.get_buildings_list()[key]["tiles"]
-                        ]
-                    )
-                    * 2
-                )
-
-                # Rate settlement higher if there are more tiles nearby
-                num_tiles = len(
-                    [item for item in interface.get_buildings_list()[key]["tiles"]]
-                )
-                score += num_tiles * 2
-
-                # Rate higher if there is one of each tile nearby
-                nearby_resources = [
-                    item for item in interface.get_buildings_list()[key]["tiles"]
-                ]
-                for resource in nearby_resources:
-                    resources_has_access_to.append(resource.resource)
+                    ]
+                    for resource in nearby_resources:
+                        resources_has_access_to.append(resource.resource)
 
         score += len(resources)
 
@@ -169,27 +170,26 @@ class ai_minimax(ai_player):
 
         else:
             for key, item in interface.get_buildings_list().items():
-                if (
-                    interface.get_buildings_list()[key]["player"] == self
-                    and interface.get_buildings_list()[key]["building"] == "settlement"
-                ):
-                    list.append(key)
+                if interface.get_buildings_list()[key]["player"] is not None:
+                    if (
+                        interface.get_buildings_list()[key]["player"].number == self.number
+                        and interface.get_buildings_list()[key]["building"] == "settlement"
+                    ):
+                        list.append(key)
+            if len(list) == 0:
+                sys.exit("No settlements to upgrade")
 
         return list
 
     def get_potential_road_locations(self, interface):
         road_endings = []
-        print(self)
         for road in interface.get_roads_list():
             if interface.get_roads_list()[road]["player"] is not None:
                 if interface.get_roads_list()[road]["player"].number == self.number:
-                    print("Road: ", road)
                     if road[0] not in road_endings:
                         road_endings.append(road[0])
                     if road[1] not in road_endings:
                         road_endings.append(road[1])
-
-        print("Road endings: ", road_endings)
 
         list_ = []
 
@@ -198,8 +198,6 @@ class ai_minimax(ai_player):
                 if road_ending in road:
                     if not interface.get_roads_list()[road]["player"]:
                         list_.append(road)
-
-        print("List: ", list_)
 
         return list_
 
@@ -220,8 +218,6 @@ class ai_minimax(ai_player):
             player_copy = copy.deepcopy(self)
             interface_copy.place_road(player_copy, location)
             score_map[location] = self.evaluate_board(interface_copy)
-
-        print("Score Map:" + str(score_map))
 
         return max(score_map, key=score_map.get)
 
@@ -280,8 +276,8 @@ class ai_minimax(ai_player):
 
     def robber_discard(self, interface):
         # TODO - Implement this properly
-
-        while len(self.resources) > 7:
+        required_length = len(self.resources) // 2
+        while len(self.resources) > required_length:
             interface.return_player_card(
                 self, self.resources[random.randint(0, len(self.resources) - 1)]
             )
@@ -371,7 +367,7 @@ class ai_minimax(ai_player):
             elif move[0] == "build settlement":
                 interface_clone.place_settlement(self_clone, move[1])
             elif move[0] == "build city":
-                interface_clone.build_city(self_clone, move[1])
+                interface_clone.place_city(self_clone, move[1])
             elif move[0] == "trade with bank":
                 interface_clone.trade_with_bank(self_clone, move[1], move[2])
             elif move[0] == "end turn":
@@ -382,9 +378,10 @@ class ai_minimax(ai_player):
                 "move": move,
             }
 
-        print("\nMove score map: ")
+        #print("\nMove score map: ")
         for move in move_score_map:
-            print(move, move_score_map[move])
+            #print(move, move_score_map[move])
+            pass
         for move in move_score_map:
             if move == "place settlement":
                 time.sleep(10)
@@ -402,7 +399,7 @@ class ai_minimax(ai_player):
         elif best_move[0] == "build settlement":
             interface.place_settlement(self, best_move[1])
         elif best_move[0] == "build city":
-            interface.build_city(self, best_move[1])
+            interface.place_city(self, best_move[1])
         elif best_move[0] == "play development card":
             if best_move[1] == "year of plenty":
                 interface.play_development_card(

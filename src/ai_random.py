@@ -217,7 +217,8 @@ class ai_random(ai_player):
         interface.steal_from_player(player_to_steal_from, self)
 
     def robber_discard(self, interface):
-        while len(self.resources) > 7:
+        required_length = len(self.resources) // 2
+        while len(self.resources) > required_length:
             rand_int = random.randint(0, len(self.resources) - 1)
             interface.return_player_card(self, self.resources[rand_int])
 

@@ -106,12 +106,15 @@ class boardInterface:
         count = 0
         if structure == "road":
             for road in self.get_roads_list():
-                if self.get_roads_list()[road]["player"] == player_:
-                    count += 1
+                if self.get_roads_list()[road]["player"] is not None:
+                    if self.get_roads_list()[road]["player"].number == player_.number:
+                        count += 1
             return count
         for building in self.get_buildings_list():
-            if self.get_buildings_list()[building] == structure:
-                count += 1
+            if self.get_buildings_list()[building]["player"] is not None:
+                if self.get_buildings_list()[building]["player"].number == player_.number:
+                    if self.get_buildings_list()[building] == structure:
+                        count += 1
         return count
 
     # Moving Cards ----
@@ -231,8 +234,8 @@ class boardInterface:
         if (
             hand["wheat"] >= 2
             and hand["rock"] >= 3
-            and 0 < self.count_structure(player_, "settlement")
-            and self.count_structure(player_, "city") < 4
+            and 0 < buildings_count["settlements"]
+            and buildings_count["settlements"] < 4
         ):
             moves.append("build city")
 
@@ -295,7 +298,7 @@ class boardInterface:
             return False
         if not self.minimax_mode:
             print(f"{player_.name} is placing a city")
-        if self.get_buildings_list()[location]["player"] is not player_:
+        if self.get_buildings_list()[location]["player"].number != player_.number:
             raise self.moveNotValid("Cannot upgrade a settlement that is not yours")
         if self.get_buildings_list()[location]["building"] != "settlement":
             raise self.moveNotValid(

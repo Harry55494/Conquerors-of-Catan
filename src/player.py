@@ -53,7 +53,7 @@ class player:
             list_to_print = self.development_cards
         list_to_print.sort()
         print(
-            f"You ({self.coloured_name}) have {len(list_to_print)} {type_} card(s) in your hand.",
+            f"{'You'} ({self.coloured_name}) have {len(list_to_print)} {type_} card(s) in your hand.",
             end="",
         )
         if len(list_to_print) > 0:

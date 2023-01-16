@@ -743,9 +743,9 @@ class board:
         :return: None
         """
 
-        display_mode = False
+        display_mode = True
         if display_mode:
-            terminal_height = os.get_terminal_size().lines + 10
+            terminal_height = os.get_terminal_size().lines + 15
             print(f"\033[{terminal_height}A\033[2K", end="")
         else:
             os.system("cls" if os.name == "nt" else "clear")
