@@ -5,13 +5,13 @@ from src.ai_random import *
 if __name__ == "__main__":
 
     # Define the players and the board. Turns happen in the order specified here
-    players = [ai_random(3, "blue"), ai_random(2, "red"), ai_minimax(1, "yellow")]
+    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
 
     random.shuffle(players)
     for i, player in enumerate(players):
         player.number = i + 1
 
-    players = sorted(players, key=lambda x: x.number)
+    players = sorted(players, key=lambda x: x.name)
     interface = boardInterface(players)
     os.system("clear" if os.name == "posix" else "cls")
 

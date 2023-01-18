@@ -1,3 +1,4 @@
+import math
 import random
 import sys
 
@@ -11,6 +12,7 @@ import copy
 class ai_minimax(ai_player):
     def __init__(self, number, colour):
         super().__init__(number=number, colour=colour, strategy="minimax")
+        self.rootScores = []
 
     def evaluate_board(self, interface):
         """
@@ -83,15 +85,18 @@ class ai_minimax(ai_player):
                     # Rate based on number of resources available
                     if interface.get_buildings_list()[key]["building"] == "settlement":
                         resources.append(
-                            item for item in interface.get_buildings_list()[key]["tiles"]
+                            item
+                            for item in interface.get_buildings_list()[key]["tiles"]
                         )
                         score += 10
                     elif interface.get_buildings_list()[key]["building"] == "city":
                         resources.append(
-                            item for item in interface.get_buildings_list()[key]["tiles"]
+                            item
+                            for item in interface.get_buildings_list()[key]["tiles"]
                         )
                         resources.append(
-                            item for item in interface.get_buildings_list()[key]["tiles"]
+                            item
+                            for item in interface.get_buildings_list()[key]["tiles"]
                         )
                         score += 15
 
@@ -144,63 +149,6 @@ class ai_minimax(ai_player):
 
         return score
 
-    def get_potential_building_locations(
-        self, interface, building="settlement", initial_placement=False
-    ):
-        """
-        Returns a list of potential locations for a building to be placed
-        :param interface:
-        :param building:
-        :return:
-        """
-        list = []
-        if building == "settlement":
-            if initial_placement:
-                for key, item in interface.get_buildings_list().items():
-                    if not interface.get_buildings_list()[key]["building"]:
-                        if not interface.check_for_nearby_settlements(key):
-                            list.append(key)
-            else:
-                for road in interface.get_roads_list():
-                    if interface.get_roads_list()[road]["player"] == self:
-                        if not interface.check_for_nearby_settlements(road[0]):
-                            list.append(road[0])
-                        if not interface.check_for_nearby_settlements(road[1]):
-                            list.append(road[1])
-
-        else:
-            for key, item in interface.get_buildings_list().items():
-                if interface.get_buildings_list()[key]["player"] is not None:
-                    if (
-                        interface.get_buildings_list()[key]["player"].number == self.number
-                        and interface.get_buildings_list()[key]["building"] == "settlement"
-                    ):
-                        list.append(key)
-            if len(list) == 0:
-                sys.exit("No settlements to upgrade")
-
-        return list
-
-    def get_potential_road_locations(self, interface):
-        road_endings = []
-        for road in interface.get_roads_list():
-            if interface.get_roads_list()[road]["player"] is not None:
-                if interface.get_roads_list()[road]["player"].number == self.number:
-                    if road[0] not in road_endings:
-                        road_endings.append(road[0])
-                    if road[1] not in road_endings:
-                        road_endings.append(road[1])
-
-        list_ = []
-
-        for road in interface.get_roads_list():
-            for road_ending in road_endings:
-                if road_ending in road:
-                    if not interface.get_roads_list()[road]["player"]:
-                        list_.append(road)
-
-        return list_
-
     def choose_road_location(self, interface):
         """
         Chooses the location of a road to be built
@@ -210,9 +158,7 @@ class ai_minimax(ai_player):
 
         score_map = {}
 
-        self.get_potential_road_locations(interface)
-
-        for location in self.get_potential_road_locations(interface):
+        for location in interface.get_potential_road_locations(self):
             interface_copy = copy.deepcopy(interface)
             interface_copy.set_minimax(True)
             player_copy = copy.deepcopy(self)
@@ -223,8 +169,8 @@ class ai_minimax(ai_player):
 
     def initial_placement(self, interface):
 
-        potential_locations = self.get_potential_building_locations(
-            interface, initial_placement=True
+        potential_locations = interface.get_potential_building_locations(
+            self, initial_placement=True
         )
 
         location_score_map = {}
@@ -284,30 +230,32 @@ class ai_minimax(ai_player):
 
         pass
 
-    def minimax(self, interface, depth, max_depth):
-        pass
+    # Minimax functions --------------------------------------------------------
 
-    # noinspection DuplicatedCode
-    def turn_actions(self, interface):
-
+    def get_move_combinations(self, interface):
+        """
+        Returns a list of all possible combinations of moves for the player
+        :param interface: The current state of the game
+        :return: A list of all possible combinations of moves for the player
+        """
         potential_moves = interface.return_possible_moves(self)
         if not potential_moves:
             return
-        print(potential_moves)
+        #print(potential_moves)
 
         # Append all combinations of moves to a list
         full_move_list = []
         for move in potential_moves:
             if move == "build settlement":
-                for location in self.get_potential_building_locations(interface):
+                for location in interface.get_potential_building_locations(self):
                     full_move_list.append(["build settlement", location])
             elif move == "build city":
-                for location in self.get_potential_building_locations(
-                    interface, "city"
+                for location in interface.get_potential_building_locations(
+                    self, "city"
                 ):
                     full_move_list.append(["build city", location])
             elif move == "build road":
-                for location in self.get_potential_road_locations(interface):
+                for location in interface.get_potential_road_locations(self):
                     full_move_list.append(["build road", location])
             elif move == "trade with bank":
                 resources_can_trade = list(
@@ -343,52 +291,146 @@ class ai_minimax(ai_player):
                     ]
                 )
         full_move_list.append(["end turn"])
+        return full_move_list
 
-        move_score_map = {}
+    def estimate_opponents_moves(self, interface, player_to_estimate):
+        """
+        Estimates the moves of an opponent player, based on visible information.
+        Most moves are actually not possible, but this function is used to guess
+        :param interface:
+        :param player_to_estimate:
+        :return:
+        """
 
-        for move in full_move_list:
+        potential_moves = []
+
+        opp_hand_length = len(player_to_estimate.resources)
+        opp_dev_card_length = len(player_to_estimate.development_cards)
+
+        if opp_hand_length >= 3:
+            potential_moves.append(["buy development card"])
+        if opp_dev_card_length > 0:
+            move = "play development card"
+            for card in ["soldier", "road building", "year of plenty", "monopoly"]:
+                if card == "soldier":
+                    potential_moves.append([move, card])
+                elif card == "road building":
+                    potential_moves.append([move, card])
+                elif card == "year of plenty":
+                    for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
+                        for resource2 in ["clay", "rock", "sheep", "wheat", "wood"]:
+                            potential_moves.append([move, card, resource, resource2])
+                elif card == "monopoly":
+                    for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
+                        potential_moves.append([move, card, resource])
+        if opp_hand_length >= 2:
+            for position in interface.get_potential_road_locations(player_to_estimate):
+                potential_moves.append(["build road", position])
+        if opp_hand_length >= 4:
+            for position in interface.get_potential_building_locations(
+                player_to_estimate
+            ):
+                potential_moves.append(["build settlement", position])
+            for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
+                for resource2 in ["clay", "rock", "sheep", "wheat", "wood"]:
+                    if resource != resource2:
+                        potential_moves.append(["trade with bank", resource, resource2])
+        if opp_hand_length >= 5:
+            for position in interface.get_potential_building_locations(
+                player_to_estimate, "city"
+            ):
+                potential_moves.append(["build city", position])
+
+        return potential_moves
+
+    def minimax(
+        self, depth: int, player_turn, interface, alpha: float, beta: float, max_depth: int
+    ):
+        """
+        Minimax algorithm for AI player
+        Code adapted from my previous coursework
+        :param depth: The current depth of the tree
+        :param player_turn: The current turn of the game
+        :param interface: The current state of the game
+        :param alpha: The current alpha value
+        :param beta: The current beta value
+        :param max_depth: The maximum depth of the tree
+        :return: The best move
+        """
+        if player_turn.number == self.number:
+            potential_moves = player_turn.get_move_combinations(interface)
+            if not potential_moves:
+                return self.evaluate_board(interface)
+        else:
+            time.sleep(5)
+            potential_moves = self.estimate_opponents_moves(interface, player_turn)
+            if not potential_moves:
+                return self.evaluate_board(interface)
+
+        scores_map = {}
+        for move in potential_moves:
             interface_clone = copy.deepcopy(interface)
             interface_clone.set_minimax(True)
-            self_clone = copy.deepcopy(self)
+            player_clone = copy.deepcopy(player_turn)
 
             if move[0] == "buy development card":
-                interface_clone.buy_development_card(self_clone)
+                interface_clone.buy_development_card(player_clone)
             elif move[0] == "play development card":
                 if move[1] == "year of plenty":
                     interface_clone.play_development_card(
-                        self_clone, move[1], move[2], move[3]
+                        player_clone, move[1], move[2], move[3]
                     )
                 elif move[1] == "monopoly":
-                    interface_clone.play_development_card(self_clone, move[1], move[2])
+                    interface_clone.play_development_card(player_clone, move[1], move[2])
                 else:
-                    interface_clone.play_development_card(self_clone, move[1])
+                    interface_clone.play_development_card(player_clone, move[1])
             elif move[0] == "build road":
-                interface_clone.place_road(self_clone, move[1])
+                interface_clone.place_road(player_clone, move[1])
             elif move[0] == "build settlement":
-                interface_clone.place_settlement(self_clone, move[1])
+                interface_clone.place_settlement(player_clone, move[1])
             elif move[0] == "build city":
-                interface_clone.place_city(self_clone, move[1])
+                interface_clone.place_city(player_clone, move[1])
             elif move[0] == "trade with bank":
-                interface_clone.trade_with_bank(self_clone, move[1], move[2])
+                interface_clone.trade_with_bank(player_clone, move[1], move[2])
             elif move[0] == "end turn":
                 pass
-
-            move_score_map[str(move)] = {
-                "score": self_clone.evaluate_board(interface_clone),
+            if depth == max_depth:
+                current_score = self.evaluate_board(interface_clone)
+            else:
+                for player in interface_clone.get_players_list():
+                    if player.number != player_clone.number:
+                        next_player = player
+                current_score = self.minimax(
+                    depth + 1,
+                    next_player,
+                    interface_clone,
+                    alpha,
+                    beta,
+                    max_depth,
+                )
+            if depth == 0:
+                self.rootScores.append({"move": move, "score": current_score})
+            scores_map[str(move)] = {
+                "score": current_score,
                 "move": move,
             }
+        if player_turn.number == self.number:
+            return max(scores_map, key=lambda x: scores_map[x]["score"])
+        else:
+            return min(scores_map, key=lambda x: scores_map[x]["score"])
 
-        #print("\nMove score map: ")
-        for move in move_score_map:
-            #print(move, move_score_map[move])
-            pass
-        for move in move_score_map:
-            if move == "place settlement":
-                time.sleep(10)
-        best_move = max(move_score_map, key=lambda x: move_score_map[x]["score"])
-        print("\nBest move: " + str(best_move))
+    # noinspection DuplicatedCode
+    def turn_actions(self, interface):
 
-        best_move = move_score_map[best_move]["move"]
+        self.rootScores = []
+        print("Beginning minimax")
+        self.minimax(0, self, interface, -math.inf, math.inf, 0)
+        if not self.rootScores:
+            return
+        best_move_from_minimax = max(self.rootScores, key=lambda x: x["score"])
+        print("Best move: ", best_move_from_minimax)
+
+        best_move = best_move_from_minimax["move"]
 
         if best_move[0] == "build road":
             interface.place_road(self, best_move[1])
@@ -412,4 +454,5 @@ class ai_minimax(ai_player):
         elif best_move[0] == "end turn":
             pass
         else:
+            print("Error: " + str(best_move))
             sys.exit()
