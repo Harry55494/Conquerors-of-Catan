@@ -4,6 +4,9 @@ from src.ai_random import ai_random
 
 if __name__ == "__main__":
 
+    for file in os.listdir("logs/players/"):
+        os.remove(f"logs/players/{file}")
+
     # Define the players and the board. Turns happen in the order specified here
     players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
 
@@ -29,6 +32,7 @@ if __name__ == "__main__":
     while not player_has_won:
         for player_ in players:
 
+            interface.turn = turn
             interface.print_board()
             print("\n")
             print("- Turn " + str(turn) + " -")
@@ -77,5 +81,10 @@ if __name__ == "__main__":
         turn += 1
 
         if turn > 200:
-            print("Game has gone on too long. Ending game")
+            print("Game has gone on too long. Ending game early")
+            winner = max(players, key=lambda x: x.calculateVictoryPoints(interface))
+            print(f"{winner} has won!")
             break
+
+    for player in players:
+        player.dump_moves()

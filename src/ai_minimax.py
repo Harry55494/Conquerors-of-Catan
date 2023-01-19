@@ -3,6 +3,8 @@ import random
 import sys
 from CONFIG import CONFIG
 
+import logging
+
 from ai_player import *
 
 import time
@@ -127,6 +129,14 @@ class ai_minimax(ai_player):
 
         score += len(resources)
 
+        # Check for longest road
+        if interface.get_longest_road()[0] is not None:
+            if interface.get_longest_road()[0].number == self.number:
+                score += 50
+        if interface.get_largest_army()[0] is not None:
+            if interface.get_largest_army()[0].number == self.number:
+                score += 50
+
         # Rate higher if there is one of each tile nearby
         score += len(list(set(resources_has_access_to)))
 
@@ -240,7 +250,7 @@ class ai_minimax(ai_player):
         potential_moves = interface.return_possible_moves(self)
         if not potential_moves:
             return
-        #print(potential_moves)
+        # print(potential_moves)
 
         # Append all combinations of moves to a list
         full_move_list = []
@@ -272,7 +282,11 @@ class ai_minimax(ai_player):
                             full_move_list.append([move, resource, resource_to_get])
             elif move == "play development card":
                 for card in self.development_cards:
-                    if card == "soldier":
+                    if (
+                        card == "soldier"
+                        and self.development_cards.count("soldier")
+                        > self.played_robber_cards
+                    ):
                         full_move_list.append([move, card])
                     elif card == "road building":
                         full_move_list.append([move, card])
@@ -343,7 +357,13 @@ class ai_minimax(ai_player):
         return potential_moves
 
     def minimax(
-        self, depth: int, player_turn, interface, alpha: float, beta: float, max_depth: int
+        self,
+        depth: int,
+        player_turn,
+        interface,
+        alpha: float,
+        beta: float,
+        max_depth: int,
     ):
         """
         Minimax algorithm for AI player
@@ -366,8 +386,21 @@ class ai_minimax(ai_player):
             if not potential_moves:
                 return self.evaluate_board(interface)
 
+        turn = 1 if player_turn.number != self.number else 2
+
+        self.log_action(
+            f"Depth: {depth}, Turn: {turn}, Alpha: {alpha}, Beta: {beta}, Max Depth: {max_depth}"
+        )
+        self.log_action(f"Potential moves: {potential_moves}")
+
+        if turn == 2:
+            temp = -math.inf
+        else:
+            temp = math.inf
+
         scores_map = {}
         for move in potential_moves:
+            self.log_action(f"Checking move: {move}")
             interface_clone = copy.deepcopy(interface)
             interface_clone.set_minimax(True)
             player_clone = copy.deepcopy(player_turn)
@@ -380,7 +413,9 @@ class ai_minimax(ai_player):
                         player_clone, move[1], move[2], move[3]
                     )
                 elif move[1] == "monopoly":
-                    interface_clone.play_development_card(player_clone, move[1], move[2])
+                    interface_clone.play_development_card(
+                        player_clone, move[1], move[2]
+                    )
                 else:
                     interface_clone.play_development_card(player_clone, move[1])
             elif move[0] == "build road":
@@ -407,27 +442,59 @@ class ai_minimax(ai_player):
                     beta,
                     max_depth,
                 )
-            if depth == 0:
-                self.rootScores.append({"move": move, "score": current_score})
+
+            if turn == 2:
+                if depth == 0:
+                    self.rootScores.append({"move": move, "score": current_score})
+                temp = max(temp, current_score)
+                alpha = max(alpha, temp)
+
+            else:
+                temp = min(temp, current_score)
+                beta = min(beta, temp)
+
             scores_map[str(move)] = {
                 "score": current_score,
                 "move": move,
             }
-        if player_turn.number == self.number:
-            return max(scores_map, key=lambda x: scores_map[x]["score"])
+            if beta <= alpha:
+                self.log_action(f"Pruning at depth: {depth}")
+                break
+        self.log_action(scores_map)
+        if turn == 1:
+            min_ = min(scores_map, key=lambda x: scores_map[x]["score"])
+            return scores_map[min_]["score"]
         else:
-            return min(scores_map, key=lambda x: scores_map[x]["score"])
+            max_ = max(scores_map, key=lambda x: scores_map[x]["score"])
+            return scores_map[max_]["score"]
 
     # noinspection DuplicatedCode
     def turn_actions(self, interface):
 
         self.rootScores = []
         print("Beginning minimax")
-        self.minimax(0, self, interface, -math.inf, math.inf, CONFIG["minimax_max_depth"])
+        self.log_action("Beginning minimax search on turn " + str(interface.turn))
+        self.minimax(
+            0, self, interface, -math.inf, math.inf, CONFIG["minimax_max_depth"]
+        )
         if not self.rootScores:
+            self.log_action("No moves found")
             return
+        for move in self.rootScores:
+            self.log_action(
+                "Move: " + str(move["move"]) + " Score: " + str(move["score"])
+            )
         best_move_from_minimax = max(self.rootScores, key=lambda x: x["score"])
         print("Best move: ", best_move_from_minimax)
+        self.log_action(
+            "Best move: "
+            + str(best_move_from_minimax["move"])
+            + " with score "
+            + str(best_move_from_minimax["score"])
+        )
+        self.entire_game_moves.append(
+            f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - {best_move_from_minimax}"
+        )
 
         best_move = best_move_from_minimax["move"]
 

@@ -429,7 +429,6 @@ class boardInterface:
             if not self.minimax_mode:
                 print("Not enough resources to trade")
 
-
     def play_development_card(self, player_, card_to_play, *args):
         """
         Allows the player to play a development card
@@ -437,9 +436,12 @@ class boardInterface:
         :param card_to_play: The card to be played
         :return:
         """
+        self.log_action(f"{player_.name} is playing a {card_to_play}")
         card = card_to_play
         if card == "soldier":
-            player_.robber(self)
+            if player_.development_cards.count("soldier") > player_.played_robber_cards:
+                player_.robber(self)
+                player_.played_robber_cards += 1
         elif card == "monopoly":
             res_type = args[0]
             for other_player in self.get_players_list():

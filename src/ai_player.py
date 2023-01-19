@@ -1,5 +1,7 @@
 import sys
 
+import logging
+
 from src.player import player
 
 
@@ -30,6 +32,32 @@ class ai_player(player):
 
         super().__init__(number=number, colour=colour)
         self.strategy = strategy
+
+        self.file_path = f"player_{self.number}-{self.strategy}.log"
+
+        with open(f"logs/players/{self.file_path}", "w") as f:
+            pass
+
+        self.logger = logging.getLogger(f"{self.file_path}")
+        self.logger.setLevel(logging.DEBUG)
+        file_format = logging.Formatter("[%(asctime)s] %(message)s")
+        fh = logging.FileHandler(f"logs/players/{self.file_path}")
+        fh.setFormatter(file_format)
+        self.logger.addHandler(fh)
+        self.logger.debug(f"{self.strategy} Initialised - Player " + str(number))
+
+        self.entire_game_moves = []
+
+    def log_action(self, action):
+        if "Beginning minimax search on turn" in action:
+            self.logger.debug("\n")
+        self.logger.debug(f"{action}")
+
+    def dump_moves(self):
+        self.log_action("\n\n")
+        self.log_action("Entire game moves:")
+        for move in self.entire_game_moves:
+            self.log_action(move)
 
     def __str__(self):
         return f"{self.coloured_name}  (AI - {self.strategy.capitalize()})"
