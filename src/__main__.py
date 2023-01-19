@@ -1,6 +1,6 @@
-from board_interface import *
+from src.board_interface import *
 from src.ai_minimax import ai_minimax
-from src.ai_random import *
+from src.ai_random import ai_random
 
 if __name__ == "__main__":
 

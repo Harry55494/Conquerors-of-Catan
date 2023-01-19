@@ -1,8 +1,9 @@
 import math
 import random
 import sys
+from CONFIG import CONFIG
 
-from ai_player import ai_player
+from ai_player import *
 
 import time
 
@@ -65,7 +66,7 @@ class ai_minimax(ai_player):
 
         # Number of roads -----------------------------------------------------
 
-        score += interface.count_structure(self, "road") * 2
+        score += interface.count_structure(self, "road") * 3.5
 
         # Number of resources player has access to -----------------------------
         # This is relative to the number of resources a player would get on a turn if every dice roll was rolled.
@@ -88,7 +89,7 @@ class ai_minimax(ai_player):
                             item
                             for item in interface.get_buildings_list()[key]["tiles"]
                         )
-                        score += 10
+                        score += 15
                     elif interface.get_buildings_list()[key]["building"] == "city":
                         resources.append(
                             item
@@ -98,7 +99,7 @@ class ai_minimax(ai_player):
                             item
                             for item in interface.get_buildings_list()[key]["tiles"]
                         )
-                        score += 15
+                        score += 25
 
                     # Rate based on frequency of dice roll
                     score += (
@@ -131,10 +132,10 @@ class ai_minimax(ai_player):
 
         # Number of development cards ------------------------------------------
 
-        score += len(self.development_cards) * 2
-        if len(self.development_cards) >= 5:
-            score -= max(0, len(self.development_cards) - 5) * 3
-        score += self.played_robber_cards * 3
+        score += len(self.development_cards) if len(self.development_cards) < 5 else 5
+        if len(self.development_cards) >= 7:
+            score -= max(0, len(self.development_cards) - 7) * 3
+        score += self.played_robber_cards * 5
 
         # Potential to build something
 
@@ -227,8 +228,6 @@ class ai_minimax(ai_player):
             interface.return_player_card(
                 self, self.resources[random.randint(0, len(self.resources) - 1)]
             )
-
-        pass
 
     # Minimax functions --------------------------------------------------------
 
@@ -424,7 +423,7 @@ class ai_minimax(ai_player):
 
         self.rootScores = []
         print("Beginning minimax")
-        self.minimax(0, self, interface, -math.inf, math.inf, 0)
+        self.minimax(0, self, interface, -math.inf, math.inf, CONFIG["minimax_max_depth"])
         if not self.rootScores:
             return
         best_move_from_minimax = max(self.rootScores, key=lambda x: x["score"])

@@ -1,6 +1,6 @@
 import sys
 
-from player import *
+from src.player import player
 
 
 class ai_player(player):

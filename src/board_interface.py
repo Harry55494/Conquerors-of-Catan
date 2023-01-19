@@ -1,7 +1,7 @@
 import random
 import time
 
-from board import *
+from src.board import *
 
 import logging
 

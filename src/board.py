@@ -1,9 +1,9 @@
 import os
 
 import src.ai_minimax
-from ai_minimax import *
+from src.ai_minimax import *
 import random
-from player import *
+from src.player import *
 from tile import tile
 
 
@@ -754,8 +754,8 @@ class board:
         :return: None
         """
 
-        display_mode = True
-        if display_mode:
+        display_mode = CONFIG["display_mode_focus"]
+        if display_mode == "board":
             terminal_height = os.get_terminal_size().lines + 15
             print(f"\033[{terminal_height}A\033[2K", end="")
         else:
