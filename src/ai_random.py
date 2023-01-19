@@ -231,10 +231,13 @@ class ai_random(ai_player):
         while True:
 
             possible_moves = interface.return_possible_moves(self)
+            possible_moves.append("end turn")
 
             if len(possible_moves) == 0:
                 print(f"{self} has no possible moves")
                 break
+
+            possible_moves = [random.choice(possible_moves)]
 
             if "build city" in possible_moves and not no_place_to_build_city:
                 location = self.choose_placement_location(interface, "city")
@@ -315,5 +318,12 @@ class ai_random(ai_player):
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Bought development card"
                 )
+
+            elif "end turn" in possible_moves:
+                self.log_action("Ended turn")
+                self.entire_game_moves.append(
+                    f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Ended turn"
+                )
+                break
 
             break
