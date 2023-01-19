@@ -8,7 +8,7 @@ if __name__ == "__main__":
         os.remove(f"logs/players/{file}")
 
     # Define the players and the board. Turns happen in the order specified here
-    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
+    players = [ai_random(2, "red"), ai_minimax(1, "yellow"), ai_random(3, "blue")]
 
     random.shuffle(players)
     for i, player in enumerate(players):

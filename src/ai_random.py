@@ -236,22 +236,6 @@ class ai_random(ai_player):
                 print(f"{self} has no possible moves")
                 break
 
-            if "trade with bank" in possible_moves:
-                interface.trade_with_bank(
-                    self,
-                    next(
-                        card
-                        for card in self.resources
-                        if self.resources.count(card) >= 4
-                    ),
-                    random.choice(list(interface.get_resource_deck())),
-                )
-                self.log_action("Trade with bank - 4:1")
-                self.entire_game_moves.append(
-                    f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Trade with bank - 4:1"
-                )
-                continue
-
             if "build city" in possible_moves and not no_place_to_build_city:
                 location = self.choose_placement_location(interface, "city")
                 if location:
@@ -265,7 +249,7 @@ class ai_random(ai_player):
                     no_place_to_build_city = True
                 continue
 
-            if (
+            elif (
                 "build settlement" in possible_moves
                 and not no_place_to_build_settlement
             ):
@@ -281,7 +265,7 @@ class ai_random(ai_player):
                     no_place_to_build_settlement = True
                 continue
 
-            if (
+            elif (
                 "build road" in possible_moves
                 and random.randint(0, 1) == 1
                 and not no_place_to_build_road
@@ -300,14 +284,32 @@ class ai_random(ai_player):
                     no_place_to_build_road = True
                 continue
 
-            if "play development card" in possible_moves and random.randint(0, 1) == 1:
+            elif "trade with bank" in possible_moves:
+                interface.trade_with_bank(
+                    self,
+                    next(
+                        card
+                        for card in self.resources
+                        if self.resources.count(card) >= 4
+                    ),
+                    random.choice(list(interface.get_resource_deck())),
+                )
+                self.log_action("Trade with bank - 4:1")
+                self.entire_game_moves.append(
+                    f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Trade with bank - 4:1"
+                )
+                continue
+
+            elif (
+                "play development card" in possible_moves and random.randint(0, 1) == 1
+            ):
                 self.play_development_card(interface)
                 self.log_action("Played development card")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Played development card"
                 )
 
-            if "buy development card" in possible_moves and random.randint(0, 2) == 1:
+            elif "buy development card" in possible_moves and random.randint(0, 2) == 1:
                 interface.buy_development_card(self)
                 self.log_action("Bought development card")
                 self.entire_game_moves.append(

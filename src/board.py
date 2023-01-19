@@ -49,9 +49,10 @@ class board:
                 for player_ in self.players
             )
             and len(self.players) > 2
+            and CONFIG["minimax_max_depth"] != 0
         ):
             raise self.setupError(
-                "There can only be 2 players if a MiniMax player is playing"
+                "There can only be 2 players if a MiniMax player is playing and the depth is not 0"
             )
 
         self.resource_deck = []
