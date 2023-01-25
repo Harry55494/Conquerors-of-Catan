@@ -6,5 +6,5 @@ CONFIG = {
     # Display Mode -
     # Whether to display the board cleanly but with poor text formatting, or with good text formatting but a flashing screen
     # Options are 'board' or 'text'
-    "display_mode_focus": "text",
+    "display_mode_focus": "board",
 }

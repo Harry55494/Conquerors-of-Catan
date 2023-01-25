@@ -8,7 +8,7 @@ if __name__ == "__main__":
         os.remove(f"logs/players/{file}")
 
     # Define the players and the board. Turns happen in the order specified here
-    players = [ai_random(2, "red"), ai_minimax(1, "yellow"), ai_random(3, "blue")]
+    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
 
     random.shuffle(players)
     for i, player in enumerate(players):
@@ -42,7 +42,7 @@ if __name__ == "__main__":
                 print(player_, "is playing")
 
             if player_.__class__ == player:
-                waiter = input("Press enter to roll the dice")
+                input("Press enter to roll the dice")
                 dice_roll = roll_dice()
                 print(f"You rolled {dice_roll}")
 

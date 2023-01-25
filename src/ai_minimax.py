@@ -393,11 +393,6 @@ class ai_minimax(ai_player):
         )
         self.log_action(f"Potential moves: {potential_moves}")
 
-        if turn == 2:
-            temp = -math.inf
-        else:
-            temp = math.inf
-
         scores_map = {}
         for move in potential_moves:
             self.log_action(f"Checking move: {move}")
@@ -446,20 +441,11 @@ class ai_minimax(ai_player):
             if turn == 2:
                 if depth == 0:
                     self.rootScores.append({"move": move, "score": current_score})
-                temp = max(temp, current_score)
-                alpha = max(alpha, temp)
-
-            else:
-                temp = min(temp, current_score)
-                beta = min(beta, temp)
 
             scores_map[str(move)] = {
                 "score": current_score,
                 "move": move,
             }
-            if beta <= alpha:
-                self.log_action(f"Pruning at depth: {depth}")
-                break
         self.log_action(scores_map)
         if turn == 1:
             min_ = min(scores_map, key=lambda x: scores_map[x]["score"])
@@ -473,7 +459,7 @@ class ai_minimax(ai_player):
 
         self.rootScores = []
         print("Beginning minimax")
-        self.log_action("Beginning minimax search on turn " + str(interface.turn))
+        self.log_action("\n\nBeginning minimax search on turn " + str(interface.turn))
         self.minimax(
             0, self, interface, -math.inf, math.inf, CONFIG["minimax_max_depth"]
         )

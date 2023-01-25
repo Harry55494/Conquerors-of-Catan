@@ -155,9 +155,7 @@ class ai_random(ai_player):
         else:
             print(f"{self} is playing a development card - {card}")
             if card == "soldier":
-                if self.development_cards.count("soldier") > self.played_robber_cards:
-                    self.robber(interface)
-                    self.played_robber_cards += 1
+                interface.play_development_card(self, "soldier")
 
             elif card == "monopoly":
                 res_type = random.choice(["wheat", "sheep", "rock", "brick", "wood"])

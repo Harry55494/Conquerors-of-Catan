@@ -35,7 +35,7 @@ class ai_player(player):
 
         self.file_path = f"player_{self.number}-{self.strategy}.log"
 
-        with open(f"logs/players/{self.file_path}", "w") as f:
+        with open(f"logs/players/{self.file_path}", "w"):
             pass
 
         self.logger = logging.getLogger(f"{self.file_path}")
