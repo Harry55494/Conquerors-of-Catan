@@ -55,6 +55,16 @@ class board:
                 "There can only be 2 players if a MiniMax player is playing and the max_depth is not 0"
             )
 
+        if CONFIG["target_score"] != 10:
+            print(
+                "Warning: Target score is set to "
+                + str(CONFIG["target_score"])
+                + " points"
+            )
+            for i in range(3, 0, -1):
+                print("Continuing in " + str(i) + " seconds")
+                time.sleep(1)
+
         self.resource_deck = []
         self.development_card_deck = []
         self.largest_army = [None, 0]

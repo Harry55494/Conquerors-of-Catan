@@ -48,16 +48,16 @@ class ai_player(player):
 
         self.entire_game_moves = []
 
-    def log_action(self, action):
+    def log(self, action):
         if "Beginning minimax search on turn" in action:
             self.logger.debug("\n")
         self.logger.debug(f"{action}")
 
     def dump_moves(self):
-        self.log_action("\n\n")
-        self.log_action("Entire game moves:")
+        self.log("\n\n")
+        self.log("Entire game moves:")
         for move in self.entire_game_moves:
-            self.log_action(move)
+            self.log(move)
 
     def __str__(self):
         return f"{self.coloured_name}  (AI - {self.strategy.capitalize()})"

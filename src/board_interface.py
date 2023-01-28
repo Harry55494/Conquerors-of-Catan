@@ -292,11 +292,15 @@ class boardInterface:
         hand = player_.count_cards("resources")
         buildings_count = {"settlements": 0, "cities": 0}
         for building in self.get_buildings_list():
-            if self.get_buildings_list()[building]["player"] == player_:
-                if self.get_buildings_list()[building]["building"] == "settlement":
-                    buildings_count["settlements"] += 1
-                elif self.get_buildings_list()[building]["building"] == "city":
-                    buildings_count["cities"] += 1
+            if self.get_buildings_list()[building]["player"] is not None:
+                if (
+                    self.get_buildings_list()[building]["player"].number
+                    == player_.number
+                ):
+                    if self.get_buildings_list()[building]["building"] == "settlement":
+                        buildings_count["settlements"] += 1
+                    elif self.get_buildings_list()[building]["building"] == "city":
+                        buildings_count["cities"] += 1
         moves = []
         # Check if the player can trade with the bank
         for card in hand:
@@ -386,7 +390,8 @@ class boardInterface:
 
     def place_road(self, player_, location, free_from_dev_card=False):
         if self.count_structure(player_, "road") >= 15:
-            print("You cannot build any more roads")
+            if isinstance(player_, ai_player):
+                print("You cannot build any more roads")
             return False
         try:
             self.board.roads[location].update({"player": player_})
@@ -401,6 +406,7 @@ class boardInterface:
                 self.log_action(
                     f'{player_.name} placed a road at {location} {"(free from development card)" if free_from_dev_card else ""}'
                 )
+            self.board.update_special_cards()
             return True
         except KeyError:
             raise self.moveNotValid("A road cannot be placed at this location")

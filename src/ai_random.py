@@ -241,7 +241,7 @@ class ai_random(ai_player):
                 location = self.choose_placement_location(interface, "city")
                 if location:
                     interface.place_city(self, location)
-                    self.log_action("Built city at " + location)
+                    self.log("Built city at " + location)
                     self.entire_game_moves.append(
                         f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Built city at "
                         + location
@@ -257,7 +257,7 @@ class ai_random(ai_player):
                 location = self.choose_placement_location(interface, "settlement")
                 if location:
                     interface.place_settlement(self, location)
-                    self.log_action("Built settlement at " + location)
+                    self.log("Built settlement at " + location)
                     self.entire_game_moves.append(
                         f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Built settlement at "
                         + location
@@ -276,7 +276,7 @@ class ai_random(ai_player):
                     interface.place_road(self, road)
                     no_place_to_build_city = False
                     no_place_to_build_settlement = False
-                    self.log_action("Built road at " + str(road))
+                    self.log("Built road at " + str(road))
                     self.entire_game_moves.append(
                         f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Built road at "
                         + str(road)
@@ -295,7 +295,7 @@ class ai_random(ai_player):
                     ),
                     random.choice(list(interface.get_resource_deck())),
                 )
-                self.log_action("Trade with bank - 4:1")
+                self.log("Trade with bank - 4:1")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Trade with bank - 4:1"
                 )
@@ -305,20 +305,20 @@ class ai_random(ai_player):
                 "play development card" in possible_moves and random.randint(0, 1) == 1
             ):
                 self.play_development_card(interface)
-                self.log_action("Played development card")
+                self.log("Played development card")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Played development card"
                 )
 
             elif "buy development card" in possible_moves and random.randint(0, 2) == 1:
                 interface.buy_development_card(self)
-                self.log_action("Bought development card")
+                self.log("Bought development card")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Bought development card"
                 )
 
             elif "end turn" in possible_moves:
-                self.log_action("Ended turn")
+                self.log("Ended turn")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Ended turn"
                 )

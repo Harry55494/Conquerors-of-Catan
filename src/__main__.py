@@ -69,7 +69,7 @@ if __name__ == "__main__":
             else:
                 time.sleep(3)
 
-            if player_.calculateVictoryPoints(interface) >= 10:
+            if player_.calculateVictoryPoints(interface) >= CONFIG["target_score"]:
                 player_has_won = True
                 os.system("clear")
                 interface.print_board()

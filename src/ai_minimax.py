@@ -15,7 +15,7 @@ import copy
 class ai_minimax(ai_player):
     def __init__(self, number, colour):
         super().__init__(number=number, colour=colour, strategy="minimax")
-        self.rootScores = []
+        self.root_score_map = []
 
     def evaluate_board(self, interface):
         """
@@ -50,16 +50,15 @@ class ai_minimax(ai_player):
         other_players.sort(
             key=lambda x: x.calculateVictoryPoints(interface), reverse=True
         )
-        total_other_players_points = sum(
-            [player.calculateVictoryPoints(interface) for player in other_players]
-        )
 
         score += current_vp * 10
 
-        if current_vp >= 10:
+        target_score = CONFIG["target_score"]
+
+        if current_vp >= target_score:
             return 1000000
-        if current_vp == 9:  # Bonus points for being close to winning
-            score += 50
+        if current_vp == target_score - 1:  # Bonus points for being close to winning
+            score += 1000
 
         if current_vp > other_players[0].calculateVictoryPoints(interface):
             score += 50
@@ -79,6 +78,7 @@ class ai_minimax(ai_player):
 
         resources = []
         resources_has_access_to = []
+        settlements_count = 0
 
         # Rating settlements and cities
         for key, item in interface.get_buildings_list().items():
@@ -91,7 +91,10 @@ class ai_minimax(ai_player):
                             item
                             for item in interface.get_buildings_list()[key]["tiles"]
                         )
-                        score += 25
+                        if settlements_count >= 2:
+                            score += 1000
+                        else:
+                            settlements_count += 1
                     elif interface.get_buildings_list()[key]["building"] == "city":
                         resources.append(
                             item
@@ -101,7 +104,7 @@ class ai_minimax(ai_player):
                             item
                             for item in interface.get_buildings_list()[key]["tiles"]
                         )
-                        score += 40
+                        score += 1500
 
                     # Rate based on frequency of dice roll
                     score += (
@@ -142,10 +145,10 @@ class ai_minimax(ai_player):
 
         # Number of development cards ------------------------------------------
 
-        score += len(self.development_cards) if len(self.development_cards) < 5 else 5
-        if len(self.development_cards) >= 5:
-            score -= max(0, len(self.development_cards) - 5) * 3
-        score += self.played_robber_cards * 5
+        # score += len(self.development_cards) if len(self.development_cards) < 5 else 5
+        if len(self.development_cards) >= 2:
+            score -= max(0, len(self.development_cards) - 2) * 10
+        score += self.played_robber_cards * 3
 
         # Potential to build something
 
@@ -156,7 +159,10 @@ class ai_minimax(ai_player):
                 for resource in resource_list:
                     if resource_list[resource] > 0:
                         if resource_list[resource] <= self.resources.count(resource):
-                            score += 2
+                            if CONFIG["minimax_max_depth"] == 0:
+                                score += 2
+                            else:
+                                score += 0
 
         return score
 
@@ -169,12 +175,16 @@ class ai_minimax(ai_player):
 
         score_map = {}
 
+        self.log("Choosing road location")
+
         for location in interface.get_potential_road_locations(self):
             interface_copy = copy.deepcopy(interface)
             interface_copy.set_minimax(True)
             player_copy = copy.deepcopy(self)
             interface_copy.place_road(player_copy, location)
             score_map[location] = self.evaluate_board(interface_copy)
+
+        self.log("Potential Roads Score Map: " + str(score_map))
 
         return max(score_map, key=score_map.get)
 
@@ -309,73 +319,33 @@ class ai_minimax(ai_player):
                                 full_move_list.append([move, card, resource])
                 else:
                     pass
+            elif move == "end turn":
+                pass
             else:
                 full_move_list.append(
                     [
                         move,
                     ]
                 )
-        full_move_list.append(["end turn"])
+        if not full_move_list:
+            full_move_list = [["end turn"]]
         return full_move_list
 
-    def estimate_opponents_moves(self, interface, player_to_estimate):
-        """
-        Estimates the moves of an opponent player
-        :param interface: The current state of the game
-        :param player_to_estimate: The player to estimate the moves of
-        :return:
-        """
+    def minimax(self, interface, max_depth, alpha, beta, maximizingPlayer):
 
-        potential_moves = interface.get_possible_moves(player_to_estimate)
-
-        opp_hand_length = len(player_to_estimate.resources)
-        opp_dev_card_length = len(player_to_estimate.development_cards)
-
-        if opp_hand_length >= 3:
-            potential_moves.append(["buy development card"])
-        if opp_dev_card_length > 0:
-            move = "play development card"
-            for card in ["soldier", "road building", "year of plenty", "monopoly"]:
-                if card == "soldier":
-                    potential_moves.append([move, card])
-                elif card == "road building":
-                    potential_moves.append([move, card])
-                elif card == "year of plenty":
-                    for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
-                        for resource2 in ["clay", "rock", "sheep", "wheat", "wood"]:
-                            potential_moves.append([move, card, resource, resource2])
-                elif card == "monopoly":
-                    for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
-                        potential_moves.append([move, card, resource])
-        if opp_hand_length >= 2:
-            for position in interface.get_potential_road_locations(player_to_estimate):
-                potential_moves.append(["build road", position])
-        if opp_hand_length >= 4:
-            for position in interface.get_potential_building_locations(
-                player_to_estimate
-            ):
-                potential_moves.append(["build settlement", position])
-            for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
-                for resource2 in ["clay", "rock", "sheep", "wheat", "wood"]:
-                    if resource != resource2:
-                        potential_moves.append(["trade with bank", resource, resource2])
-        if opp_hand_length >= 5:
-            for position in interface.get_potential_building_locations(
-                player_to_estimate, "city"
-            ):
-                potential_moves.append(["build city", position])
-
-        return potential_moves
-
-    def better_minimax(self, interface, max_depth, alpha, beta, maximizingPlayer):
-
-        self.log_action(f"Depth: {max_depth}, Maximising: {maximizingPlayer}")
+        self.log(f"Depth: {max_depth}, Maximising: {maximizingPlayer}")
+        if max_depth == CONFIG["minimax_max_depth"]:
+            self.root_score_map = []
 
         if maximizingPlayer:
             # It is the Minimax AI's turn
             max_combo = ["move_here", -math.inf]
             potential_moves = self.get_move_combinations(interface, self)
+            self.log(f"Potential moves: {potential_moves}")
             if not potential_moves:
+                self.root_score_map.append(
+                    [["end turn"], self.evaluate_board(interface)]
+                )
                 max_combo = [["end turn"], self.evaluate_board(interface)]
 
             else:
@@ -411,17 +381,21 @@ class ai_minimax(ai_player):
                     if max_depth == 0:
                         eval_combo = [move, self.evaluate_board(interface_clone)]
                     else:
-                        eval_combo = self.better_minimax(
+                        eval_combo = self.minimax(
                             interface_clone, max_depth - 1, alpha, beta, False
                         )
+                    if max_depth == CONFIG["minimax_max_depth"]:
+                        self.root_score_map.append([move, eval_combo[1]])
                     max_combo = max(max_combo, eval_combo, key=lambda x: x[1])
 
                     alpha = max(alpha, max_combo[1])
                     if beta <= alpha:
-                        self.log_action(f"Pruning at depth {max_depth}")
+                        self.log(f"Pruning at depth {max_depth}")
                         break
 
-            self.log_action(f"Max combo: {max_combo}")
+            self.log(f"Max combo: {max_combo}")
+            if max_depth == CONFIG["minimax_max_depth"]:
+                self.log(f"Score map: {self.root_score_map}")
             return max_combo
 
         if not maximizingPlayer:
@@ -465,14 +439,14 @@ class ai_minimax(ai_player):
                     if max_depth == 0:
                         eval_combo = [move, self.evaluate_board(interface_clone)]
                     else:
-                        eval_combo = self.better_minimax(
+                        eval_combo = self.minimax(
                             interface_clone, max_depth - 1, alpha, beta, True
                         )
                     min_combo = min(min_combo, eval_combo, key=lambda x: x[1])
 
                     beta = min(beta, min_combo[1])
                     if beta <= alpha:
-                        self.log_action(f"Pruning at depth {max_depth}")
+                        self.log(f"Pruning at depth {max_depth}")
                         break
 
                     # TODO - A note on imperfect information
@@ -481,23 +455,22 @@ class ai_minimax(ai_player):
                     # information based on the dice roll. Given that it would be possible to keep track of this, I
                     # believe that it is fair to allow the minimax player to 'see' the opponents hand.
 
-            self.log_action("Min combo: " + str(min_combo))
+            self.log("Min combo: " + str(min_combo))
             return min_combo
 
     # noinspection DuplicatedCode
     def turn_actions(self, interface):
 
         print("Beginning minimax")
-        self.log_action("\n\nBeginning minimax search on turn " + str(interface.turn))
-        best_move_from_minimax = self.better_minimax(
-            interface, CONFIG["minimax_max_depth"], -math.inf, math.inf, True
-        )
+        self.log("\n\nBeginning minimax search on turn " + str(interface.turn))
+        self.minimax(interface, CONFIG["minimax_max_depth"], -math.inf, math.inf, True)
+        best_move_from_minimax = max(self.root_score_map, key=lambda x: x[1])
         best_move_from_minimax = {
             "move": best_move_from_minimax[0],
             "score": best_move_from_minimax[1],
         }
         print("Best move: ", best_move_from_minimax)
-        self.log_action(
+        self.log(
             "Best move: "
             + str(best_move_from_minimax["move"])
             + " with score "
@@ -510,12 +483,14 @@ class ai_minimax(ai_player):
         best_move = best_move_from_minimax["move"]
 
         if best_move[0] == "build road":
-            interface.place_road(self, best_move[1])
+            interface.place_road(self, self.choose_road_location(interface))
         elif best_move[0] == "buy development card":
             interface.buy_development_card(self)
         elif best_move[0] == "trade with bank":
             interface.trade_with_bank(self, best_move[1], best_move[2])
         elif best_move[0] == "build settlement":
+            print("Building settlement")
+            time.sleep(3)
             interface.place_settlement(self, best_move[1])
         elif best_move[0] == "build city":
             interface.place_city(self, best_move[1])
