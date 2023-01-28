@@ -26,6 +26,7 @@ class boardInterface:
         :param players: A list of players
         """
         self.minimax_mode = False
+        self.setup_mode = False
         self.board = board(board_type="default", players=players)
         self.turn_number = 0
 
@@ -70,6 +71,13 @@ class boardInterface:
 
     def get_longest_road(self):
         return self.board.longest_road
+
+    def get_opposing_player(self, player_):
+        if len(self.board.players) != 2:
+            raise Exception("Cannot get opposing player if there are not 2 players")
+        for player in self.board.players:
+            if player != player_:
+                return player
 
     # Helper Functions
 
@@ -343,7 +351,7 @@ class boardInterface:
             print(f"{player_.name} is placing a settlement")
         if self.get_buildings_list()[location]["player"] is not None:
             raise self.moveNotValid("Settlement already placed at location")
-        if not self.minimax_mode:
+        if not self.setup_mode:
             for resource, amount in self.board.building_cost_list.get(
                 "settlement"
             ).items():
@@ -368,10 +376,9 @@ class boardInterface:
             raise self.moveNotValid(
                 "Cannot upgrade a building that is not a settlement"
             )
-        if not self.minimax_mode:
-            for resource, amount in self.board.building_cost_list.get("city").items():
-                for j in range(amount):
-                    self.return_player_card(player_, resource)
+        for resource, amount in self.board.building_cost_list.get("city").items():
+            for j in range(amount):
+                self.return_player_card(player_, resource)
         self.board._buildings[location].update({"player": player_, "building": "city"})
         if not self.minimax_mode:
             self.log_action(f"{player_.name} placed a city at {location}")
@@ -383,10 +390,13 @@ class boardInterface:
             return False
         try:
             self.board.roads[location].update({"player": player_})
-            for resource, amount in self.board.building_cost_list.get("road").items():
-                if not self.minimax_mode and not free_from_dev_card:
-                    for i in range(amount):
-                        self.return_player_card(player_, resource)
+            if not self.setup_mode:
+                for resource, amount in self.board.building_cost_list.get(
+                    "road"
+                ).items():
+                    if not self.minimax_mode and not free_from_dev_card:
+                        for i in range(amount):
+                            self.return_player_card(player_, resource)
             if not self.minimax_mode:
                 self.log_action(
                     f'{player_.name} placed a road at {location} {"(free from development card)" if free_from_dev_card else ""}'
@@ -533,6 +543,7 @@ class boardInterface:
         """
         print("\n -- Board Setup --\n")
         self.log_action("Board Setup")
+        self.setup_mode = True
         order = [player_ for player_ in self.get_players_list()]
         rev_order = order.copy()
         rev_order.reverse()
@@ -542,21 +553,6 @@ class boardInterface:
             player_ = order.pop(0)
             print(f"{player_} is placing settlement number {2 - order.count(player_)}")
 
-            for resource in self.get_building_cost_list()["settlement"]:
-                self.give_player_card(
-                    player_,
-                    "resource",
-                    resource,
-                    self.get_building_cost_list()["settlement"][resource],
-                )
-            for resource in self.get_building_cost_list()["road"]:
-                self.give_player_card(
-                    player_,
-                    "resource",
-                    resource,
-                    self.get_building_cost_list()["road"][resource],
-                )
-
             location = player_.initial_placement(self)
             if len(order) < len(self.board.players):
                 # Players receive resources from their second settlement
@@ -564,4 +560,5 @@ class boardInterface:
                 for tile_ in tiles_from_settlement:
                     if not tile_.contains_robber:
                         self.give_player_card(player_, "resource", tile_.resource)
+        self.setup_mode = False
         self.log_action("Board Setup Complete")
