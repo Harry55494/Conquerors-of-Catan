@@ -92,7 +92,7 @@ class ai_minimax(ai_player):
                             for item in interface.get_buildings_list()[key]["tiles"]
                         )
                         if settlements_count >= 2:
-                            score += 1000
+                            score += 35
                         else:
                             settlements_count += 1
                     elif interface.get_buildings_list()[key]["building"] == "city":
@@ -104,7 +104,7 @@ class ai_minimax(ai_player):
                             item
                             for item in interface.get_buildings_list()[key]["tiles"]
                         )
-                        score += 1500
+                        score += 100
 
                     # Rate based on frequency of dice roll
                     score += (
@@ -394,8 +394,6 @@ class ai_minimax(ai_player):
                         break
 
             self.log(f"Max combo: {max_combo}")
-            if max_depth == CONFIG["minimax_max_depth"]:
-                self.log(f"Score map: {self.root_score_map}")
             return max_combo
 
         if not maximizingPlayer:
@@ -464,6 +462,7 @@ class ai_minimax(ai_player):
         print("Beginning minimax")
         self.log("\n\nBeginning minimax search on turn " + str(interface.turn))
         self.minimax(interface, CONFIG["minimax_max_depth"], -math.inf, math.inf, True)
+        self.log("Root score map: " + str(self.root_score_map))
         best_move_from_minimax = max(self.root_score_map, key=lambda x: x[1])
         best_move_from_minimax = {
             "move": best_move_from_minimax[0],
@@ -483,14 +482,12 @@ class ai_minimax(ai_player):
         best_move = best_move_from_minimax["move"]
 
         if best_move[0] == "build road":
-            interface.place_road(self, self.choose_road_location(interface))
+            interface.place_road(self, best_move[1])
         elif best_move[0] == "buy development card":
             interface.buy_development_card(self)
         elif best_move[0] == "trade with bank":
             interface.trade_with_bank(self, best_move[1], best_move[2])
         elif best_move[0] == "build settlement":
-            print("Building settlement")
-            time.sleep(3)
             interface.place_settlement(self, best_move[1])
         elif best_move[0] == "build city":
             interface.place_city(self, best_move[1])
