@@ -281,6 +281,67 @@ class boardInterface:
 
         return list_
 
+    def update_special_cards(self):
+        """
+        Checks whether players need to be given the largest army or longest road cards
+        :return: None
+        """
+
+        # Check for largest army
+
+        for player_ in self.get_players_list():
+            if (player_.played_robber_cards > self.get_largest_army()[1]) and (
+                player_.played_robber_cards >= 3
+            ):
+                self.board.largest_army = [player_, player_.played_robber_cards]
+                if not self.minimax_mode:
+                    print(
+                        f"{player_} has the largest army with {player_.played_robber_cards} soldiers"
+                    )
+                    self.log_action(
+                        f"{player_} has the largest army with {player_.played_robber_cards} soldiers"
+                    )
+
+        # Check for longest road
+
+        def return_clusters(set):
+            clusters = []
+            for road in set:
+                for cluster in clusters:
+                    for node in cluster:
+                        if road[0] in node or road[1] in node:
+                            cluster.extend([road])
+                            break
+                else:
+                    if road not in [item for sublist in clusters for item in sublist]:
+                        clusters.append([road])
+
+            return clusters
+
+        for player_ in self.get_players_list():
+
+            player_roads = []
+            for road in self.get_roads_list():
+                if self.get_roads_list()[road]["player"] is not None:
+                    if self.get_roads_list()[road]["player"].number == player_.number:
+                        player_roads.append(road)
+
+            clusters = return_clusters(player_roads)
+            if not any(len(cluster) >= 5 for cluster in clusters):
+                continue
+
+            current_longest_road = self.get_longest_road()
+            max_cluster = max(len(cluster) for cluster in clusters)
+            if max_cluster > current_longest_road[1] and max_cluster >= 5:
+                self.board.longest_road = [player_, max_cluster]
+                if not self.minimax_mode:
+                    print(
+                        f"{player_} has a road of length {max_cluster} and has been given the longest road card"
+                    )
+                    self.log_action(
+                        f"{player_} has a road of length {max_cluster} and has been given the longest road card"
+                    )
+
     # Moves -------------------------------------------------------------------------------------------------------------
 
     def return_possible_moves(self, player_: player) -> list[str]:
@@ -406,7 +467,7 @@ class boardInterface:
                 self.log_action(
                     f'{player_.name} placed a road at {location} {"(free from development card)" if free_from_dev_card else ""}'
                 )
-            self.board.update_special_cards()
+            self.update_special_cards()
             return True
         except KeyError:
             raise self.moveNotValid("A road cannot be placed at this location")

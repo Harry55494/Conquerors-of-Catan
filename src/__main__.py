@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
             player_.turn_actions(interface)
 
-            interface.board.update_special_cards()
+            interface.update_special_cards()
 
             print(f"{player_} has finished their go")
 
