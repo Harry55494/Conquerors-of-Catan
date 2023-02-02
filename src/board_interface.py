@@ -8,7 +8,7 @@ import logging
 from src import player
 
 
-class boardInterface:
+class board_interface:
     board: board
 
     class moveNotValid(Exception):
@@ -20,7 +20,7 @@ class boardInterface:
 
     def __init__(self, players: list[player]):
         """
-        Initialises a boardInterface object.
+        Initialises a board_interface object.
         Object is used to interact with the board object in a standardised way e.g. takes cards from a player
         Acts similarly to a board master
         :param players: A list of players
@@ -33,7 +33,7 @@ class boardInterface:
         with open("logs/board_actions.log", "w") as f:
             pass
 
-        self.logger = logging.getLogger("boardInterface")
+        self.logger = logging.getLogger("board_interface")
         self.logger.setLevel(logging.DEBUG)
         file_format = logging.Formatter("[%(asctime)s] %(message)s")
         fh = logging.FileHandler("logs/board_actions.log")

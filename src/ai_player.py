@@ -1,3 +1,4 @@
+import os
 import sys
 
 import logging
@@ -35,6 +36,8 @@ class ai_player(player):
 
         self.file_path = f"player_{self.number}-{self.strategy}.log"
 
+        if os.path.exists(f"logs/players/{self.file_path}"):
+            os.remove(f"logs/players/{self.file_path}")
         with open(f"logs/players/{self.file_path}", "w"):
             pass
 

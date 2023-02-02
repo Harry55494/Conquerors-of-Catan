@@ -18,8 +18,6 @@ def roll_dice():
 
 # noinspection DuplicatedCode
 class board:
-    class setupError(Exception):
-        pass
 
     # Board Setup ---------------------------------------------------------------
 
@@ -32,38 +30,7 @@ class board:
 
         self.players = players
 
-        # Player Checking
-        if len(self.players) < 2:
-            raise self.setupError("There must be at least 2 players")
-        player_nums = [player_.number for player_ in self.players]
-        player_colours = [player_.colour for player_ in self.players]
-        if len(player_nums) != len(set(player_nums)):
-            raise self.setupError("Player numbers must be unique")
-        if len(player_colours) != len(set(player_colours)):
-            raise self.setupError("Player colours must be unique")
-        if len(self.players) > 5:
-            raise self.setupError("There can be a maximum of 5 players")
-        if (
-            any(
-                isinstance(player_, src.ai_minimax.ai_minimax)
-                for player_ in self.players
-            )
-            and len(self.players) > 2
-            and CONFIG["minimax_max_depth"] != 0
-        ):
-            raise self.setupError(
-                "There can only be 2 players if a MiniMax player is playing and the max_depth is not 0"
-            )
-
-        if CONFIG["target_score"] != 10:
-            print(
-                "Warning: Target score is set to "
-                + str(CONFIG["target_score"])
-                + " points"
-            )
-            for i in range(3, 0, -1):
-                print("Continuing in " + str(i) + " seconds")
-                time.sleep(1)
+        # Board Setup
 
         self.resource_deck = []
         self.development_card_deck = []

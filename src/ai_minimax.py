@@ -5,7 +5,7 @@ from CONFIG import CONFIG
 
 import logging
 
-from ai_player import *
+from src.ai_player import *
 
 import time
 
@@ -20,7 +20,7 @@ class ai_minimax(ai_player):
     def evaluate_board(self, interface):
         """
         Heuristic function to evaluate the board state
-        :param interface: boardInterface
+        :param interface: board_interface
         :return: The evaluation of the board as an integer
         """
 

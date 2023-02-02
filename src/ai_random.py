@@ -1,7 +1,7 @@
 import random
 import time
 
-from ai_player import ai_player
+from src.ai_player import ai_player
 
 
 class ai_random(ai_player):
@@ -230,12 +230,21 @@ class ai_random(ai_player):
 
             possible_moves = interface.return_possible_moves(self)
             possible_moves.append("end turn")
+            self.log(
+                "Round "
+                + str(interface.turn)
+                + " Possible moves: "
+                + str(possible_moves)
+            )
 
             if len(possible_moves) == 0:
                 print(f"{self} has no possible moves")
                 break
 
             possible_moves = [random.choice(possible_moves)]
+            self.log(
+                "Round " + str(interface.turn) + " Chosen move: " + str(possible_moves)
+            )
 
             if "build city" in possible_moves and not no_place_to_build_city:
                 location = self.choose_placement_location(interface, "city")

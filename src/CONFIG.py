@@ -9,5 +9,6 @@ CONFIG = {
     "display_mode_focus": "text",
     # Target Score -
     # Modify the target score for shorter or longer games
+    # Minimum is 3
     "target_score": 10,
 }
