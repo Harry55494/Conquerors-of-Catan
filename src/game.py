@@ -52,6 +52,8 @@ class game:
 
     def __init__(self, players: list[player]):
 
+        os.system("clear" if os.name == "posix" else "cls")
+
         random.shuffle(players)
         for i, player in enumerate(players):
             player.number = i + 1
@@ -67,11 +69,11 @@ class game:
         )
         self.results = {player.name: 0 for player in self.players}
 
+    def initial_placement(self):
+
         os.system("clear" if os.name == "posix" else "cls")
 
         self.setup_checking()
-
-    def initial_placement(self):
 
         self.interface.initial_placement()
 
@@ -143,6 +145,7 @@ class game:
                     self.players, key=lambda x: x.calculateVictoryPoints(self.interface)
                 )
                 print(f"{winner} has won!")
+                break
 
         for player in self.players:
             player.dump_moves()

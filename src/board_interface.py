@@ -167,7 +167,8 @@ class board_interface:
                         )
                     )
                 except ValueError:
-                    print("Not enough cards in the bank")
+                    if not self.minimax_mode:
+                        print("Not enough cards in the bank")
             if not self.minimax_mode:
                 self.log_action(
                     f"{player_.name} was given {amount} {card} from the bank"
@@ -184,7 +185,8 @@ class board_interface:
                         f"{player_.name} now has {len(player_.development_cards)} development cards"
                     )
             except IndexError:
-                print("Not enough cards in the bank")
+                if not self.minimax_mode:
+                    print("Not enough cards in the bank")
                 return False
         else:
             print(f"Invalid card type - cannot give player {card}")
