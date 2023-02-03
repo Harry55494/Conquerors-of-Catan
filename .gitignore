@@ -4,3 +4,4 @@
 *.key
 *.log
 pydeps.png
+/src/graphs/

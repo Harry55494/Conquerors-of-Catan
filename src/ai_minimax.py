@@ -45,7 +45,9 @@ class ai_minimax(ai_player):
         current_vp = self.calculateVictoryPoints(interface)
 
         other_players = [
-            player for player in interface.get_players_list() if player != self
+            player
+            for player in interface.get_players_list()
+            if player != self  # need to change this?
         ]
         other_players.sort(
             key=lambda x: x.calculateVictoryPoints(interface), reverse=True
