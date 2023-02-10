@@ -77,6 +77,22 @@ class board_interface:
             if player != player_:
                 return player
 
+    def get_next_player(self, current_player):
+        if current_player.number == self.board.players[-1].number:
+            # print("Returning first player")
+            return self.board.players[0]
+        else:
+            # find player with matching number
+            current_player_number = current_player.number
+            for player in self.board.players:
+                if player.number == current_player_number + 1:
+                    return player
+            # return self.board.players[self.board.players.index(current_player) + 1]
+        print(self.get_players_list())
+        for player in self.get_players_list():
+            print(player.number)
+        raise Exception("Could not find next player")
+
     # Helper Functions
 
     def print_board(self, print_letters=False) -> None:

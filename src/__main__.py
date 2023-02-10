@@ -8,7 +8,7 @@ if __name__ == "__main__":
     players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
     match_queue = []
     results_list = {}
-    number_of_matches = 10
+    number_of_matches = 1
 
     # Create Match
     for i in range(number_of_matches):
@@ -17,13 +17,10 @@ if __name__ == "__main__":
         match_queue.append(match)
         print("Match " + str(i + 1) + " created")
 
-    time.sleep(1)
-
     # Run Matches
     for match in match_queue:
         match_number = str(match_queue.index(match) + 1)
         print("Starting Match " + match_number + " of " + str(number_of_matches))
-        time.sleep(1)
         match.initial_placement()
         match.play()
         results = match.results

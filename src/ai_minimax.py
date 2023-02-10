@@ -1,5 +1,6 @@
 import math
 import random
+from datetime import datetime, timedelta
 import sys
 from CONFIG import CONFIG
 
@@ -12,10 +13,15 @@ import time
 import copy
 
 
+class EscapeMiniMaxException(Exception):
+    pass
+
+
 class ai_minimax(ai_player):
     def __init__(self, number, colour):
         super().__init__(number=number, colour=colour, strategy="minimax")
         self.root_score_map = []
+        self.start_time = 0
 
     def evaluate_board(self, interface):
         """
@@ -322,6 +328,14 @@ class ai_minimax(ai_player):
 
     def minimax(self, interface, max_depth, alpha, beta, maximizingPlayer):
 
+        if (
+            self.start_time + timedelta(seconds=CONFIG["minimax_max_time"])
+            < datetime.now()
+        ):
+            # Recursively return if limit is reached
+            self.log("Time limit reached")
+            raise EscapeMiniMaxException
+
         self.log(f"Depth: {max_depth}, Maximising: {maximizingPlayer}")
         if max_depth == CONFIG["minimax_max_depth"]:
             self.root_score_map = []
@@ -450,7 +464,16 @@ class ai_minimax(ai_player):
 
         print("Beginning minimax")
         self.log("\n\nBeginning minimax search on turn " + str(interface.turn))
-        self.minimax(interface, CONFIG["minimax_max_depth"], -math.inf, math.inf, True)
+        self.start_time = datetime.now()
+        self.log("Start time: " + str(self.start_time))
+        try:
+            self.minimax(
+                interface, CONFIG["minimax_max_depth"], -math.inf, math.inf, True
+            )
+        except EscapeMiniMaxException as e:
+            self.log("EscapeMiniMaxException: " + str(e))
+            if not self.root_score_map:
+                return None
         self.log("Root score map: " + str(self.root_score_map))
         best_move_from_minimax = max(self.root_score_map, key=lambda x: x[1])
         best_move_from_minimax = {

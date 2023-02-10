@@ -1,3 +1,5 @@
+import copy
+
 from src.board_interface import *
 from src.ai_random import *
 
@@ -59,7 +61,7 @@ class game:
         for i, player in enumerate(players):
             player.number = i + 1
 
-        players = sorted(players, key=lambda x: x.name)
+        players = sorted(players, key=lambda x: x.number)
 
         self.players = players
         self.interface = board_interface(self.players)
@@ -77,6 +79,15 @@ class game:
         self.setup_checking()
 
         self.interface.initial_placement()
+
+        current_player = self.interface.get_players_list()[0]
+        for i in range(10):
+            print(current_player.name)
+            current_player = copy.deepcopy(
+                self.interface.get_next_player(current_player)
+            )
+
+        # time.sleep(10)
 
         for player in self.players:
             player.calculateVictoryPoints(self.interface)
