@@ -18,8 +18,23 @@ class EscapeMiniMaxException(Exception):
 
 
 class ai_minimax(ai_player):
-    def __init__(self, number, colour):
+    def __init__(
+        self,
+        number,
+        colour,
+        time_limit=CONFIG["minimax_time_limit"],
+        max_depth=CONFIG["minimax_max_depth"],
+    ):
         super().__init__(number=number, colour=colour, strategy="minimax")
+        self.log(
+            "Minimax player created with time limit of "
+            + str(time_limit)
+            + " seconds and max depth of "
+            + str(max_depth)
+            + " levels"
+        )
+        self.time_limit = time_limit
+        self.max_depth = max_depth
         self.root_score_map = []
         self.start_time = 0
 
@@ -328,16 +343,13 @@ class ai_minimax(ai_player):
 
     def minimax(self, interface, max_depth, alpha, beta, maximizingPlayer):
 
-        if (
-            self.start_time + timedelta(seconds=CONFIG["minimax_max_time"])
-            < datetime.now()
-        ):
+        if self.start_time + timedelta(seconds=self.time_limit) < datetime.now():
             # Recursively return if limit is reached
             self.log("Time limit reached")
             raise EscapeMiniMaxException
 
         self.log(f"Depth: {max_depth}, Maximising: {maximizingPlayer}")
-        if max_depth == CONFIG["minimax_max_depth"]:
+        if max_depth == self.max_depth:
             self.root_score_map = []
 
         if maximizingPlayer:
@@ -387,7 +399,7 @@ class ai_minimax(ai_player):
                         eval_combo = self.minimax(
                             interface_clone, max_depth - 1, alpha, beta, False
                         )
-                    if max_depth == CONFIG["minimax_max_depth"]:
+                    if max_depth == self.max_depth:
                         self.root_score_map.append([move, eval_combo[1]])
                     max_combo = max(max_combo, eval_combo, key=lambda x: x[1])
 
@@ -467,9 +479,7 @@ class ai_minimax(ai_player):
         self.start_time = datetime.now()
         self.log("Start time: " + str(self.start_time))
         try:
-            self.minimax(
-                interface, CONFIG["minimax_max_depth"], -math.inf, math.inf, True
-            )
+            self.minimax(interface, self.max_depth, -math.inf, math.inf, True)
         except EscapeMiniMaxException as e:
             self.log("EscapeMiniMaxException: " + str(e))
             if not self.root_score_map:

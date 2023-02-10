@@ -773,7 +773,10 @@ class board:
                 terminal_width
             )
         )
-        for player_ in self.players:
+        players_in_order = sorted(
+            self.players, key=lambda x: x.victory_points, reverse=True
+        )
+        for player_ in players_in_order:
             text = f"{player_}".ljust(25)
             LR = "LR" if player_ == self.longest_road[0] else "  "
             LA = "LA" if player_ == self.largest_army[0] else "  "

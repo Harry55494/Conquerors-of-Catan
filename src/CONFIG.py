@@ -14,5 +14,5 @@ CONFIG = {
     # MiniMax Max Time -
     # Maximum time in seconds that the MiniMax algorithm will take to find the best move
     # If it takes longer than this, it will return the best move it has found so far
-    "minimax_max_time": 120,
+    "minimax_time_limit": 120,
 }
