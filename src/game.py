@@ -1,5 +1,4 @@
 from src.board_interface import *
-from src.ai_minimax import *
 from src.ai_random import *
 
 
@@ -51,8 +50,10 @@ class game:
                 time.sleep(1)
 
     def __init__(self, players: list[player]):
-
-        os.system("clear" if os.name == "posix" else "cls")
+        """
+        Initialises a 'match' of the game, which is just a game with stored results.
+        :param players:
+        """
 
         random.shuffle(players)
         for i, player in enumerate(players):

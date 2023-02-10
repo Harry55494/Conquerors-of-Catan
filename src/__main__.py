@@ -23,6 +23,7 @@ if __name__ == "__main__":
     for match in match_queue:
         match_number = str(match_queue.index(match) + 1)
         print("Starting Match " + match_number + " of " + str(number_of_matches))
+        time.sleep(1)
         match.initial_placement()
         match.play()
         results = match.results

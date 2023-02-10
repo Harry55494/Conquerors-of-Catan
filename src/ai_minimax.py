@@ -20,23 +20,10 @@ class ai_minimax(ai_player):
     def evaluate_board(self, interface):
         """
         Heuristic function to evaluate the board state
+        See README for more details of how the heuristic is calculated
         :param interface: board_interface
         :return: The evaluation of the board as an integer
         """
-
-        # NOTES
-        # Main Score points should be based on the following:
-        # 1. Victory Points - This contains the number of cities and settlements, so no need to calculate this as well
-        # 2. Number of roads
-        # 3. Number of resource player has access to
-        # 4. Number of development cards
-        # 5. Position of settlements and cities, based on scarcity of resources
-
-        # Resources of other opponents
-        # Resource Scarcity
-
-        # No need to calculate the number of settlements and cities, as this is already calculated in the victory points
-        # No need to calculate how many resource cards a player has in their hand, as this would suggest players to horde cards instead of spending
 
         score = 0
 

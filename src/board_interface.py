@@ -5,8 +5,6 @@ from src.board import *
 
 import logging
 
-from src import player
-
 
 class board_interface:
     board: board

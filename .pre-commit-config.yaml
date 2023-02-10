@@ -5,6 +5,8 @@ repos:
         -   id: check-yaml
         -   id: end-of-file-fixer
         -   id: trailing-whitespace
+        -   id: check-docstring-first
+        -   id: check-ast
   -   repo: https://github.com/psf/black
       rev: 22.10.0
       hooks:

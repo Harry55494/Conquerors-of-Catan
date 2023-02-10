@@ -3,7 +3,7 @@ import os
 import src.ai_minimax
 from src.ai_minimax import *
 import random
-from src.player import *
+import termcolor
 from tile import tile
 
 
