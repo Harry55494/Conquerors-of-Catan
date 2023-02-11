@@ -1,10 +1,7 @@
 import math
 import random
 from datetime import datetime, timedelta
-import sys
 from CONFIG import CONFIG
-
-import logging
 
 from src.ai_player import *
 
@@ -15,6 +12,38 @@ import copy
 
 class MiniMaxTimeoutException(Exception):
     pass
+
+
+def perform_minimax_move(player_clone, interface_clone, move):
+    """
+    Contains the logic for performing a move within a minimax search
+    Performs a move within a minimax search, for a specific player
+    :param player_clone:
+    :param interface_clone:
+    :return:
+    """
+    if move[0] == "buy development card":
+        interface_clone.buy_development_card(player_clone)
+    elif move[0] == "play development card":
+        if move[1] == "year of plenty":
+            interface_clone.play_development_card(
+                player_clone, move[1], move[2], move[3]
+            )
+        elif move[1] == "monopoly":
+            interface_clone.play_development_card(player_clone, move[1], move[2])
+        else:
+            interface_clone.play_development_card(player_clone, move[1])
+    elif move[0] == "build road":
+        interface_clone.place_road(player_clone, move[1])
+    elif move[0] == "build settlement":
+        interface_clone.place_settlement(player_clone, move[1])
+    elif move[0] == "build city":
+        interface_clone.place_city(player_clone, move[1])
+    elif move[0] == "trade with bank":
+        interface_clone.trade_with_bank(player_clone, move[1], move[2])
+    elif move[0] == "end turn":
+        pass
+    return interface_clone
 
 
 class ai_minimax(ai_player):
@@ -36,7 +65,7 @@ class ai_minimax(ai_player):
         self.time_limit = time_limit
         self.max_depth = max_depth
         self.root_score_map = []
-        self.start_time = 0
+        self.start_time = None
 
     def evaluate_board(self, interface):
         """
@@ -346,37 +375,6 @@ class ai_minimax(ai_player):
 
         return full_move_list
 
-    def perform_minimax_move(self, player_clone, interface_clone, move):
-        """
-        Contains the logic for performing a move within a minimax search
-        Performs a move within a minimax search, for a specific player
-        :param player_clone:
-        :param interface_clone:
-        :return:
-        """
-        if move[0] == "buy development card":
-            interface_clone.buy_development_card(player_clone)
-        elif move[0] == "play development card":
-            if move[1] == "year of plenty":
-                interface_clone.play_development_card(
-                    player_clone, move[1], move[2], move[3]
-                )
-            elif move[1] == "monopoly":
-                interface_clone.play_development_card(player_clone, move[1], move[2])
-            else:
-                interface_clone.play_development_card(player_clone, move[1])
-        elif move[0] == "build road":
-            interface_clone.place_road(player_clone, move[1])
-        elif move[0] == "build settlement":
-            interface_clone.place_settlement(player_clone, move[1])
-        elif move[0] == "build city":
-            interface_clone.place_city(player_clone, move[1])
-        elif move[0] == "trade with bank":
-            interface_clone.trade_with_bank(player_clone, move[1], move[2])
-        elif move[0] == "end turn":
-            pass
-        return interface_clone
-
     def minimax(self, interface, max_depth, alpha, beta, current_player):
 
         if (
@@ -413,7 +411,7 @@ class ai_minimax(ai_player):
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(self)
 
-                    interface_clone = self.perform_minimax_move(
+                    interface_clone = perform_minimax_move(
                         player_clone, interface_clone, move
                     )
 
@@ -453,7 +451,7 @@ class ai_minimax(ai_player):
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(opposing_player)
 
-                    interface_clone = self.perform_minimax_move(
+                    interface_clone = perform_minimax_move(
                         player_clone, interface_clone, move
                     )
 
