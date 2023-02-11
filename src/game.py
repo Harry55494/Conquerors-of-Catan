@@ -20,17 +20,6 @@ class game:
             raise self.setupError("Player colours must be unique")
         if len(self.players) > 5:
             raise self.setupError("There can be a maximum of 5 players")
-        if (
-            any(
-                isinstance(player_, src.ai_minimax.ai_minimax)
-                for player_ in self.players
-            )
-            and len(self.players) > 2
-            and CONFIG["minimax_max_depth"] != 0
-        ):
-            raise self.setupError(
-                "There can only be 2 players if a MiniMax player is playing and the max_depth is not 0"
-            )
 
         # Game Checking
 

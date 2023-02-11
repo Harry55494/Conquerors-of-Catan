@@ -13,7 +13,7 @@ import time
 import copy
 
 
-class EscapeMiniMaxException(Exception):
+class MiniMaxTimeoutException(Exception):
     pass
 
 
@@ -339,23 +339,67 @@ class ai_minimax(ai_player):
                 )
         if not full_move_list:
             full_move_list = [["end turn"]]
+
+        # List is sorted so that 'build' comes before 'trade' in the list of possible moves, so that in the event of a
+        # MiniMaxTimeOutException, the player will build before trading
+        full_move_list.sort(key=lambda x: x[0])
+
         return full_move_list
 
-    def minimax(self, interface, max_depth, alpha, beta, maximizingPlayer):
+    def perform_minimax_move(self, player_clone, interface_clone, move):
+        """
+        Contains the logic for performing a move within a minimax search
+        Performs a move within a minimax search, for a specific player
+        :param player_clone:
+        :param interface_clone:
+        :return:
+        """
+        if move[0] == "buy development card":
+            interface_clone.buy_development_card(player_clone)
+        elif move[0] == "play development card":
+            if move[1] == "year of plenty":
+                interface_clone.play_development_card(
+                    player_clone, move[1], move[2], move[3]
+                )
+            elif move[1] == "monopoly":
+                interface_clone.play_development_card(player_clone, move[1], move[2])
+            else:
+                interface_clone.play_development_card(player_clone, move[1])
+        elif move[0] == "build road":
+            interface_clone.place_road(player_clone, move[1])
+        elif move[0] == "build settlement":
+            interface_clone.place_settlement(player_clone, move[1])
+        elif move[0] == "build city":
+            interface_clone.place_city(player_clone, move[1])
+        elif move[0] == "trade with bank":
+            interface_clone.trade_with_bank(player_clone, move[1], move[2])
+        elif move[0] == "end turn":
+            pass
+        return interface_clone
+
+    def minimax(self, interface, max_depth, alpha, beta, current_player):
+
+        if (
+            max_depth == CONFIG["minimax_max_depth"]
+            and self.number != current_player.number
+        ):
+            raise Exception("Cannot start minimax on opponent's turn")
 
         if self.start_time + timedelta(seconds=self.time_limit) < datetime.now():
             # Recursively return if limit is reached
             self.log("Time limit reached")
-            raise EscapeMiniMaxException
+            raise MiniMaxTimeoutException
 
-        self.log(f"Depth: {max_depth}, Maximising: {maximizingPlayer}")
+        self.log(f"Depth: {max_depth}, Maximising: {current_player.name}")
         if max_depth == self.max_depth:
             self.root_score_map = []
 
-        if maximizingPlayer:
+        if current_player.number == self.number:
             # It is the Minimax AI's turn
             max_combo = ["move_here", -math.inf]
-            potential_moves = self.get_move_combinations(interface, self)
+            potential_moves = self.get_move_combinations(
+                interface, current_player
+            )  # This line was changed from self to current_player
             self.log(f"Potential moves: {potential_moves}")
             if not potential_moves:
                 self.root_score_map.append(
@@ -369,35 +413,19 @@ class ai_minimax(ai_player):
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(self)
 
-                    if move[0] == "buy development card":
-                        interface_clone.buy_development_card(player_clone)
-                    elif move[0] == "play development card":
-                        if move[1] == "year of plenty":
-                            interface_clone.play_development_card(
-                                player_clone, move[1], move[2], move[3]
-                            )
-                        elif move[1] == "monopoly":
-                            interface_clone.play_development_card(
-                                player_clone, move[1], move[2]
-                            )
-                        else:
-                            interface_clone.play_development_card(player_clone, move[1])
-                    elif move[0] == "build road":
-                        interface_clone.place_road(player_clone, move[1])
-                    elif move[0] == "build settlement":
-                        interface_clone.place_settlement(player_clone, move[1])
-                    elif move[0] == "build city":
-                        interface_clone.place_city(player_clone, move[1])
-                    elif move[0] == "trade with bank":
-                        interface_clone.trade_with_bank(player_clone, move[1], move[2])
-                    elif move[0] == "end turn":
-                        pass
+                    interface_clone = self.perform_minimax_move(
+                        player_clone, interface_clone, move
+                    )
 
                     if max_depth == 0:
                         eval_combo = [move, self.evaluate_board(interface_clone)]
                     else:
                         eval_combo = self.minimax(
-                            interface_clone, max_depth - 1, alpha, beta, False
+                            interface_clone,
+                            max_depth - 1,
+                            alpha,
+                            beta,
+                            interface.get_next_player(current_player),
                         )
                     if max_depth == self.max_depth:
                         self.root_score_map.append([move, eval_combo[1]])
@@ -411,10 +439,10 @@ class ai_minimax(ai_player):
             self.log(f"Max combo: {max_combo}")
             return max_combo
 
-        if not maximizingPlayer:
+        else:
             # It is the opponent's turn
             min_combo = ["move_here", math.inf]
-            opposing_player = interface.get_opposing_player(self)
+            opposing_player = interface.get_next_player(current_player)
             potential_moves = self.get_move_combinations(interface, opposing_player)
             if not potential_moves:
                 min_combo = [["end turn"], self.evaluate_board(interface)]
@@ -425,35 +453,15 @@ class ai_minimax(ai_player):
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(opposing_player)
 
-                    if move[0] == "buy development card":
-                        interface_clone.buy_development_card(player_clone)
-                    elif move[0] == "play development card":
-                        if move[1] == "year of plenty":
-                            interface_clone.play_development_card(
-                                player_clone, move[1], move[2], move[3]
-                            )
-                        elif move[1] == "monopoly":
-                            interface_clone.play_development_card(
-                                player_clone, move[1], move[2]
-                            )
-                        else:
-                            interface_clone.play_development_card(player_clone, move[1])
-                    elif move[0] == "build road":
-                        interface_clone.place_road(player_clone, move[1])
-                    elif move[0] == "build settlement":
-                        interface_clone.place_settlement(player_clone, move[1])
-                    elif move[0] == "build city":
-                        interface_clone.place_city(player_clone, move[1])
-                    elif move[0] == "trade with bank":
-                        interface_clone.trade_with_bank(player_clone, move[1], move[2])
-                    elif move[0] == "end turn":
-                        pass
+                    interface_clone = self.perform_minimax_move(
+                        player_clone, interface_clone, move
+                    )
 
                     if max_depth == 0:
                         eval_combo = [move, self.evaluate_board(interface_clone)]
                     else:
                         eval_combo = self.minimax(
-                            interface_clone, max_depth - 1, alpha, beta, True
+                            interface_clone, max_depth - 1, alpha, beta, opposing_player
                         )
                     min_combo = min(min_combo, eval_combo, key=lambda x: x[1])
 
@@ -475,13 +483,15 @@ class ai_minimax(ai_player):
     def turn_actions(self, interface):
 
         print("Beginning minimax")
-        self.log("\n\nBeginning minimax search on turn " + str(interface.turn))
+        self.log("\n\n\n\nBeginning minimax search on turn " + str(interface.turn))
         self.start_time = datetime.now()
         self.log("Start time: " + str(self.start_time))
         try:
-            self.minimax(interface, self.max_depth, -math.inf, math.inf, True)
-        except EscapeMiniMaxException as e:
-            self.log("EscapeMiniMaxException: " + str(e))
+            self.minimax(interface, self.max_depth, -math.inf, math.inf, self)
+        except MiniMaxTimeoutException as e:
+            self.log("MiniMaxTimeoutException: " + str(e))
+            print("MiniMaxTimeoutException: " + str(e))
+            time.sleep(1)
             if not self.root_score_map:
                 return None
         self.log("Root score map: " + str(self.root_score_map))

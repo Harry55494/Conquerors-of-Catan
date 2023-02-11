@@ -786,7 +786,7 @@ class board:
                 else "  "
             )
             print(
-                f"          {text}   |  VP: {player_.victory_points}   |   Cards: {len(player_.resources)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
+                f"          {text}   |  VP: {player_.victory_points}   |   Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
                     terminal_width
                 )
             )
