@@ -417,7 +417,7 @@ class player:
             for move in moves:
                 print(f"- {move.title()}")
             action = input().lower()
-            if action in ["view building list", "building list", "_buildings"]:
+            if action in ["view building list", "building list", "view", "list"]:
                 for building, resources in interface.get_building_cost_list.items():
                     print(f"{building}: {resources}")
             elif action in [

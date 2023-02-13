@@ -15,4 +15,8 @@ CONFIG = {
     # Maximum time in seconds that the MiniMax algorithm will take to find the best move
     # If it takes longer than this, it will return the best move it has found so far
     "minimax_time_limit": 60,
+    # Table Top Mode -
+    # If enabled, waits for a keypress after each AI turn, to acknowledge the move
+    # Used only when playing with a physical board, not just with a human
+    "table_top_mode": True,
 }

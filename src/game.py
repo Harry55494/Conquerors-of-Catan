@@ -22,6 +22,9 @@ class game:
             raise self.setupError("There can be a maximum of 5 players")
 
         # Game Checking
+        if CONFIG["table_top_mode"]:
+            print("Table top mode is enabled")
+            print("An acknowledgement will be required to continue each turn")
 
         if CONFIG["target_score"] != 10:
             if CONFIG["target_score"] < 3:
@@ -97,14 +100,28 @@ class game:
                 if not self.all_players_ai:
                     print(player_, "is playing")
 
-                if player_.__class__ == src.player.player:
-                    input("Press enter to roll the dice")
-                    dice_roll = roll_dice()
-                    print(f"You rolled {dice_roll}")
+                # Dice Roll
+                if CONFIG["table_top_mode"]:
+                    while True:
+                        dice_roll = input("Enter dice roll: ")
+                        try:
+                            dice_roll = int(dice_roll)
+                            if dice_roll < 2 or dice_roll > 12:
+                                raise ValueError
+                            break
+                        except ValueError:
+                            print("Invalid dice roll")
 
                 else:
-                    dice_roll = roll_dice()
-                    print(f"{player_} rolled {dice_roll}")
+
+                    if player_.__class__ == src.player.player:
+                        input("Press enter to roll the dice")
+                        dice_roll = roll_dice()
+                        print(f"You rolled {dice_roll}")
+
+                    else:
+                        dice_roll = roll_dice()
+                        print(f"{player_} rolled {dice_roll}")
 
                 self.interface.log_action(f"{player_.name} rolled {dice_roll}")
 
@@ -120,10 +137,15 @@ class game:
 
                 print(f"{player_} has finished their go")
 
-                if self.all_players_ai:
-                    time.sleep(0.1)
+                # End of turn waiting
+                if not CONFIG["table_top_mode"]:
+                    if self.all_players_ai:
+                        time.sleep(0.1)
+                    else:
+                        time.sleep(3)
                 else:
-                    time.sleep(3)
+                    if isinstance(player_, ai_player):
+                        input("\nPress enter to acknowledge and continue")
 
                 if (
                     player_.calculateVictoryPoints(self.interface)
@@ -137,6 +159,10 @@ class game:
                     print(player_, "has won!")
                     player_.calculateVictoryPoints(self.interface, True)
                     break
+
+            if CONFIG["table_top_mode"]:
+                print("End of turn " + str(self.turn))
+                time.sleep(1)
 
             self.turn += 1
 
