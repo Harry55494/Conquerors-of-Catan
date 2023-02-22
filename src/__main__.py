@@ -5,13 +5,19 @@ from datetime import datetime
 
 if __name__ == "__main__":
 
+    print("Starting Game...")
+
+    if not os.path.exists("logs"):
+        os.mkdir("logs")
+        os.mkdir("logs/players")
+
     for file in os.listdir("logs/players"):
         os.remove(os.path.join("logs/players", file))
 
-    players = [player(2, "red"), ai_minimax(1, "yellow")]
+    players = [ai_random(2, "red"), ai_minimax(1, "yellow"), ai_minimax(3, "blue")]
     match_queue = []
     results_list = {}
-    number_of_matches = 1
+    number_of_matches = 10
 
     # Create Match
     for i in range(number_of_matches):

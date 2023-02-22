@@ -6,3 +6,8 @@
 pydeps.png
 /src/graphs/
 /docs/report/Report Example.pdf
+/build
+/dist
+/dev/build/
+/dev/dist/
+*.spec

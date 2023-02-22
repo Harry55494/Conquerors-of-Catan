@@ -4,7 +4,7 @@ import src.ai_minimax
 from src.ai_minimax import *
 import random
 import termcolor
-from tile import tile
+from src.tile import tile
 
 
 def roll_dice():
