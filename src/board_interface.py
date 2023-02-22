@@ -1,6 +1,3 @@
-import random
-import time
-
 from src.board import *
 
 import logging

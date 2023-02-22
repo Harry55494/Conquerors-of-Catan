@@ -1,5 +1,3 @@
-import os
-
 import src.ai_minimax
 from src.ai_minimax import *
 from src.ai_random import *

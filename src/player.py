@@ -1,4 +1,5 @@
 import termcolor
+from src.CONFIG import CONFIG
 
 
 class player:

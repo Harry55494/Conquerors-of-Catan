@@ -1,7 +1,6 @@
 import math
 import random
 from datetime import datetime, timedelta
-from src.CONFIG import CONFIG
 
 from src.ai_player import *
 

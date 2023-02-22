@@ -1,3 +1,5 @@
+import signal
+
 from src.game import *
 import matplotlib.pyplot as plt
 from tabulate import tabulate
@@ -5,7 +7,13 @@ from datetime import datetime
 
 if __name__ == "__main__":
 
-    print("Starting Game...")
+    def keyboard_interrupt_handler(signal, frame):
+        print("\nKeyboardInterrupt (ID: {}) has been caught. Exiting...".format(signal))
+        exit(signal)
+
+    signal.signal(signal.SIGINT, keyboard_interrupt_handler)
+
+    print("Setting up Game...")
 
     # Import Arguments
 
@@ -14,6 +22,9 @@ if __name__ == "__main__":
 
     if "--vp-target" in sys.argv:
         CONFIG["target_score"] = int(sys.argv[sys.argv.index("--vp-target") + 1])
+
+    if "--table-top-mode" in sys.argv:
+        CONFIG["table_top_mode"] = True
 
     # Setup Logging
 
@@ -26,7 +37,7 @@ if __name__ == "__main__":
 
     # Setup Game
 
-    players = [ai_random(2, "red"), ai_random(1, "yellow")]
+    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
     match_queue = []
     results_list = {}
 
@@ -156,6 +167,10 @@ if __name__ == "__main__":
             handles, labels = ax.get_legend_handles_labels()
             handles, labels = zip(*sorted(zip(handles, labels), key=lambda t: t[1]))
             ax.legend(handles, labels)
+
+        fig.suptitle(
+            "Results of " + str(CONFIG["number_of_matches"]) + " Matches at " + time
+        )
 
         plt.savefig(f"graphs/{time}_figure.png")
 
