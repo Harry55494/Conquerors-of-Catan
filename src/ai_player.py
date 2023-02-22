@@ -3,7 +3,7 @@ import sys
 
 import logging
 
-from src.player import player
+from src.player import *
 
 
 class ai_player(player):

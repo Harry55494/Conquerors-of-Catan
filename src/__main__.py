@@ -7,6 +7,16 @@ if __name__ == "__main__":
 
     print("Starting Game...")
 
+    # Import Arguments
+
+    if "--matches" in sys.argv:
+        CONFIG["number_of_matches"] = int(sys.argv[sys.argv.index("--matches") + 1])
+
+    if "--vp-target" in sys.argv:
+        CONFIG["target_score"] = int(sys.argv[sys.argv.index("--vp-target") + 1])
+
+    # Setup Logging
+
     if not os.path.exists("logs"):
         os.mkdir("logs")
         os.mkdir("logs/players")
@@ -14,13 +24,14 @@ if __name__ == "__main__":
     for file in os.listdir("logs/players"):
         os.remove(os.path.join("logs/players", file))
 
-    players = [ai_random(2, "red"), ai_minimax(1, "yellow"), ai_minimax(3, "blue")]
+    # Setup Game
+
+    players = [ai_random(2, "red"), ai_random(1, "yellow")]
     match_queue = []
     results_list = {}
-    number_of_matches = 10
 
     # Create Match
-    for i in range(number_of_matches):
+    for i in range(CONFIG["number_of_matches"]):
         players = copy.deepcopy(players)
         match = game(players)
         match_queue.append(match)
@@ -29,7 +40,9 @@ if __name__ == "__main__":
     # Run Matches
     for match in match_queue:
         match_number = str(match_queue.index(match) + 1)
-        print("Starting Match " + match_number + " of " + str(number_of_matches))
+        print(
+            "Starting Match " + match_number + " of " + str(CONFIG["number_of_matches"])
+        )
         match.initial_placement()
         match.play()
         results = match.results
@@ -55,8 +68,8 @@ if __name__ == "__main__":
             + (player.strategy if isinstance(player, ai_player) else "")
             + ")"
         )
-        data.append(str(total_wins / number_of_matches * 100) + "%")
-        data.append(total_points / number_of_matches)
+        data.append(str(total_wins / CONFIG["number_of_matches"] * 100) + "%")
+        data.append(total_points / CONFIG["number_of_matches"])
         player_data.append(data)
 
     player_data.sort(key=lambda x: x[1], reverse=True)
@@ -70,7 +83,7 @@ if __name__ == "__main__":
         )
     )
 
-    if number_of_matches > 1:
+    if CONFIG["number_of_matches"] > 1:
 
         # Plot Results
 
@@ -85,7 +98,7 @@ if __name__ == "__main__":
 
         # Victory Points Per Match
         ax1.plot(
-            [0, number_of_matches],
+            [0, CONFIG["number_of_matches"]],
             [CONFIG["target_score"], CONFIG["target_score"]],
             label="Win Threshold",
             linestyle="--",
@@ -136,7 +149,9 @@ if __name__ == "__main__":
         # Shared axis management:
         for ax in [ax1, ax2]:
             ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
-            ax.xaxis.set_major_locator(plt.MaxNLocator(min(number_of_matches, 10)))
+            ax.xaxis.set_major_locator(
+                plt.MaxNLocator(min(CONFIG["number_of_matches"], 10))
+            )
             # order legend by player number
             handles, labels = ax.get_legend_handles_labels()
             handles, labels = zip(*sorted(zip(handles, labels), key=lambda t: t[1]))

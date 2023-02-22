@@ -1,7 +1,4 @@
-import copy
-
 from src.board_interface import *
-from src.ai_random import *
 
 
 class game:

@@ -19,4 +19,7 @@ CONFIG = {
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not just with a human
     "table_top_mode": False,
+    # Number of Matches -
+    # Number of matches to play in a row before exiting
+    "number_of_matches": 10,
 }
