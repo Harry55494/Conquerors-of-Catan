@@ -67,6 +67,11 @@ class board_interface:
     def get_longest_road(self):
         return self.board.longest_road
 
+    def get_robber_location(self):
+        for tile in self.board.tiles:
+            if tile.contains_robber:
+                return tile.letter
+
     def get_opposing_player(self, player_):
         if len(self.board.players) != 2:
             raise Exception("Cannot get opposing player if there are not 2 players")

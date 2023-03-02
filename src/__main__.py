@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     # Setup Game
 
-    players = [player(2, "red"), ai_minimax(1, "yellow")]
+    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
     match_queue = []
     results_list = {}
 

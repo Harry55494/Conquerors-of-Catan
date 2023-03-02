@@ -202,6 +202,22 @@ class ai_minimax(ai_player):
                             else:
                                 score += 0
 
+        """
+        # Score based on robber location
+        # If the robber is on a tile that the player has access to, then the player should be penalised
+        # If the robber is on a tile that the player does not have access to, then the player should be rewarded
+        # The higher the number of resources on the tile, the more the player should be rewarded
+        # The lower the number of resources on the tile, the more the player should be penalised
+
+        robber_tile = interface.get_robber_location()
+        for building in interface.get_buildings_list().values():
+            if building["player"] is not None:
+                for tile in building["tiles"]:
+                    if robber_tile == tile:
+                        score += -25 if building["player"].number == self.number else 25
+                    else:
+                        score += tile.frequency if building["player"].number == self.number else -tile.frequency"""
+
         return score
 
     def choose_road_location(self, interface):
@@ -260,12 +276,24 @@ class ai_minimax(ai_player):
 
     def robber(self, interface):
         """
-        Decide which player to rob.
-        Currently DOES NOT use Minimax or heuristic
+        Decide which player to rob and where to move the robber
         :param interface:
         :return:
         """
-        # TODO - Implement this properly
+
+        potential_locations = [
+            tile for tile in interface.get_tiles_list() if tile.resource != "desert"
+        ]
+        location_score_map = {}
+        for location in potential_locations:
+            interface_clone = copy.deepcopy(interface)
+            interface_clone.set_minimax(True)
+            interface_clone.move_robber(location)
+
+            location_score_map[location] = self.evaluate_board(interface_clone)
+        location = max(location_score_map, key=location_score_map.get)
+        interface.move_robber(location)
+
         potential_players = []
         for player in interface.get_players_list():
             if player.number != self.number:
@@ -275,16 +303,24 @@ class ai_minimax(ai_player):
         if len(potential_players) == 0:
             return None
         if len(potential_players) == 1:
-            return potential_players[0]
+            interface.steal_from_player(self, potential_players[0])
         else:
-            return max(potential_players, key=lambda x: len(x.resources))
+            interface.steal_from_player(
+                self, max(potential_players, key=lambda x: len(x.resources))
+            )
 
     def robber_discard(self, interface):
-        # TODO - Implement this properly
         required_length = len(self.resources) // 2
         while len(self.resources) > required_length:
+            could_discard = list(set(self.resources))
+            scores = {}
+            for card in could_discard:
+                clone = copy.deepcopy(self)
+                clone.resources.remove(card)
+                scores[card] = clone.evaluate_board(interface)
+
             interface.return_player_card(
-                self, self.resources[random.randint(0, len(self.resources) - 1)]
+                self, self.resources[self.resources.index(min(scores, key=scores.get))]
             )
 
     # Minimax functions --------------------------------------------------------
