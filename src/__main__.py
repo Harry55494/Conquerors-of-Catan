@@ -1,14 +1,15 @@
 import signal
 
 from src.game import *
-import matplotlib.pyplot as plt
 from tabulate import tabulate
 from datetime import datetime
 
 if __name__ == "__main__":
 
     def keyboard_interrupt_handler(signal, frame):
-        print("\nKeyboardInterrupt (ID: {}) has been caught. Exiting...".format(signal))
+        print(
+            "\n\nKeyboardInterrupt (ID: {}) has been caught. Exiting...".format(signal)
+        )
         exit(signal)
 
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
@@ -18,10 +19,22 @@ if __name__ == "__main__":
     # Import Arguments
 
     if "--matches" in sys.argv:
-        CONFIG["number_of_matches"] = int(sys.argv[sys.argv.index("--matches") + 1])
+        try:
+            CONFIG["number_of_matches"] = int(sys.argv[sys.argv.index("--matches") + 1])
+            if CONFIG["number_of_matches"] < 1:
+                raise ValueError
+        except ValueError:
+            print("Invalid number of matches")
+            sys.exit(1)
 
     if "--vp-target" in sys.argv:
-        CONFIG["target_score"] = int(sys.argv[sys.argv.index("--vp-target") + 1])
+        try:
+            CONFIG["target_score"] = int(sys.argv[sys.argv.index("--vp-target") + 1])
+            if CONFIG["target_score"] < 2:
+                raise ValueError
+        except ValueError:
+            print("Invalid target score")
+            sys.exit(1)
 
     if "--table-top-mode" in sys.argv:
         CONFIG["table_top_mode"] = True
@@ -37,7 +50,7 @@ if __name__ == "__main__":
 
     # Setup Game
 
-    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
+    players = [player(2, "red"), ai_minimax(1, "yellow")]
     match_queue = []
     results_list = {}
 
@@ -97,6 +110,8 @@ if __name__ == "__main__":
     if CONFIG["number_of_matches"] > 1:
 
         # Plot Results
+
+        import matplotlib.pyplot as plt
 
         time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 

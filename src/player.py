@@ -2,6 +2,10 @@ import termcolor
 from src.CONFIG import CONFIG
 
 
+class endOfTurnException(Exception):
+    pass
+
+
 class player:
     """
     Player class
@@ -308,7 +312,7 @@ class player:
             decision = input("Please enter a valid option\n")
         if decision == "cancel":
             return False
-        required_resources = interface.get_building_cost_list.get(decision)
+        required_resources = interface.get_building_cost_list()[decision]
         print(required_resources)
         has_resources = True
         for resource, amount in required_resources.items():
@@ -406,37 +410,35 @@ class player:
         :param interface:
         :return: None
         """
-        end_turn = False
-        while not end_turn:
-            interface.print_board()
-            self.printHand("resources")
-            self.printHand("development")
-            print(f"{self}, what would you like to do?")
-            moves = interface.return_possible_moves(self)
-            moves.append("view building list")
-            moves.append("end turn")
-            for move in moves:
-                print(f"- {move.title()}")
-            action = input().lower()
-            if action in ["view building list", "building list", "view", "list"]:
-                for building, resources in interface.get_building_cost_list.items():
-                    print(f"{building}: {resources}")
-            elif action in [
-                "build",
-                "buy development card",
-                "buy",
-            ] or action.__contains__("build"):
-                self.build(interface)
-            elif action in ["trade with bank", "trade"]:
-                self.trade_with_bank(interface)
-            elif action in [
-                "play development card",
-                "development card",
-                "play dev card",
-                "dev card",
-            ]:
-                self.play_development_card(interface)
-            elif action in ["end turn", "end"]:
-                end_turn = True
-            else:
-                print("Invalid action")
+        interface.print_board()
+        self.printHand("resources")
+        self.printHand("development")
+        print(f"{self}, what would you like to do?")
+        moves = interface.return_possible_moves(self)
+        moves.append("view building list")
+        moves.append("end turn")
+        for move in moves:
+            print(f"- {move.title()}")
+        action = input().lower()
+        if action in ["view building list", "building list", "view", "list"]:
+            for building, resources in interface.get_building_cost_list.items():
+                print(f"{building}: {resources}")
+        elif action in [
+            "build",
+            "buy development card",
+            "buy",
+        ] or action.__contains__("build"):
+            self.build(interface)
+        elif action in ["trade with bank", "trade"]:
+            self.trade_with_bank(interface)
+        elif action in [
+            "play development card",
+            "development card",
+            "play dev card",
+            "dev card",
+        ]:
+            self.play_development_card(interface)
+        elif action in ["end turn", "end"]:
+            raise endOfTurnException
+        else:
+            print("Invalid action")

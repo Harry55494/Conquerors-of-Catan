@@ -1,4 +1,5 @@
 from src.board_interface import *
+from src.player import endOfTurnException
 
 
 class game:
@@ -128,11 +129,24 @@ class game:
                     f"{player_.name}'s resources are now {player_.resources}"
                 )
 
-                player_.turn_actions(self.interface)
+                num_moves_made = 0
 
-                self.interface.update_special_cards()
+                try:
+                    limit = (
+                        CONFIG["max_moves_per_turn_ai"]
+                        if isinstance(player_, ai_player)
+                        else CONFIG["max_moves_per_turn_human"]
+                    )
+                    if not limit:
+                        limit = 100
+                    for i in range(limit):
+                        player_.turn_actions(self.interface)
+                        self.interface.update_special_cards()
+                        num_moves_made += 1
+                except endOfTurnException:
+                    pass
 
-                print(f"{player_} has finished their go")
+                print(f"{player_} has finished their go, making {num_moves_made} moves")
 
                 # End of turn waiting
                 if not CONFIG["table_top_mode"]:

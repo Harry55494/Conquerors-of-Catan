@@ -530,7 +530,7 @@ class ai_minimax(ai_player):
             else:
                 interface.play_development_card(self, best_move[1])
         elif best_move[0] == "end turn":
-            pass
+            raise endOfTurnException
         else:
             print("Error: " + str(best_move))
             sys.exit()

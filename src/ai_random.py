@@ -1,7 +1,7 @@
 import random
 import time
 
-from src.ai_player import ai_player
+from src.ai_player import *
 
 
 class ai_random(ai_player):
@@ -241,12 +241,12 @@ class ai_random(ai_player):
                 print(f"{self} has no possible moves")
                 break
 
-            possible_moves = [random.choice(possible_moves)]
+            chosen_move = [random.choice(possible_moves)]
             self.log(
-                "Round " + str(interface.turn) + " Chosen move: " + str(possible_moves)
+                "Round " + str(interface.turn) + " Chosen move: " + str(chosen_move)
             )
 
-            if "build city" in possible_moves and not no_place_to_build_city:
+            if "build city" in chosen_move and not no_place_to_build_city:
                 location = self.choose_placement_location(interface, "city")
                 if location:
                     interface.place_city(self, location)
@@ -259,10 +259,7 @@ class ai_random(ai_player):
                     no_place_to_build_city = True
                 continue
 
-            elif (
-                "build settlement" in possible_moves
-                and not no_place_to_build_settlement
-            ):
+            elif "build settlement" in chosen_move and not no_place_to_build_settlement:
                 location = self.choose_placement_location(interface, "settlement")
                 if location:
                     interface.place_settlement(self, location)
@@ -276,7 +273,7 @@ class ai_random(ai_player):
                 continue
 
             elif (
-                "build road" in possible_moves
+                "build road" in chosen_move
                 and random.randint(0, 1) == 1
                 and not no_place_to_build_road
             ):
@@ -294,7 +291,7 @@ class ai_random(ai_player):
                     no_place_to_build_road = True
                 continue
 
-            elif "trade with bank" in possible_moves:
+            elif "trade with bank" in chosen_move:
                 interface.trade_with_bank(
                     self,
                     next(
@@ -310,27 +307,25 @@ class ai_random(ai_player):
                 )
                 continue
 
-            elif (
-                "play development card" in possible_moves and random.randint(0, 1) == 1
-            ):
+            elif "play development card" in chosen_move and random.randint(0, 1) == 1:
                 self.play_development_card(interface)
                 self.log("Played development card")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Played development card"
                 )
 
-            elif "buy development card" in possible_moves and random.randint(0, 2) == 1:
+            elif "buy development card" in chosen_move and random.randint(0, 2) == 1:
                 interface.buy_development_card(self)
                 self.log("Bought development card")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Bought development card"
                 )
 
-            elif "end turn" in possible_moves:
+            elif "end turn" in chosen_move:
                 self.log("Ended turn")
                 self.entire_game_moves.append(
                     f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - Ended turn"
                 )
-                break
+                raise endOfTurnException
 
             break

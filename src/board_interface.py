@@ -84,7 +84,6 @@ class board_interface:
             for player in self.board.players:
                 if player.number == current_player_number + 1:
                     return player
-            # return self.board.players[self.board.players.index(current_player) + 1]
         print(self.get_players_list())
         for player in self.get_players_list():
             print(player.number)

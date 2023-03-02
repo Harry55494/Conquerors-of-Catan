@@ -791,7 +791,3 @@ class board:
             )
             # print("\n")
         # print('\n')
-
-    @property
-    def buildings(self):
-        return self._buildings
