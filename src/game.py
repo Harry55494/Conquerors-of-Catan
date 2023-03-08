@@ -132,6 +132,7 @@ class game:
                 num_moves_made = 0
 
                 try:
+                    # Need to ban buying and playing cards on the same turn
                     limit = (
                         CONFIG["max_moves_per_turn_ai"]
                         if isinstance(player_, ai_player)

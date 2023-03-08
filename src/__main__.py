@@ -16,28 +16,173 @@ if __name__ == "__main__":
 
     print("Setting up Game...")
 
+    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
+
     # Import Arguments
 
-    if "--matches" in sys.argv:
-        try:
-            CONFIG["number_of_matches"] = int(sys.argv[sys.argv.index("--matches") + 1])
-            if CONFIG["number_of_matches"] < 1:
-                raise ValueError
-        except ValueError:
-            print("Invalid number of matches")
-            sys.exit(1)
+    if "--no-menu" in sys.argv:
+        print("Skipping Menu")
 
-    if "--vp-target" in sys.argv:
-        try:
-            CONFIG["target_score"] = int(sys.argv[sys.argv.index("--vp-target") + 1])
-            if CONFIG["target_score"] < 2:
-                raise ValueError
-        except ValueError:
-            print("Invalid target score")
-            sys.exit(1)
+    else:
 
-    if "--table-top-mode" in sys.argv:
-        CONFIG["table_top_mode"] = True
+        first = True
+
+        while True:
+            os.system("clear" if os.name == "posix" else "cls")
+            if first:
+                for letter in "\nWelcome to Conquerors of Catan!\n":
+                    print(letter, end="")
+                    sys.stdout.flush()
+                    time.sleep(0.1)
+                time.sleep(0.1)
+                first = False
+            else:
+                print("\nWelcome to Conquerors of Catan!")
+
+            print("\nPlease select an option:")
+            print("1. Play Game")
+            print("2. Configure Players")
+            print("3. Configure Game Options")
+            print("4. Exit")
+            try:
+                choice = int(input(""))
+                if choice == 1:
+                    for letter in "Starting game in ":
+                        print(letter, end="")
+                        sys.stdout.flush()
+                        time.sleep(0.1)
+                    for i in range(3, 0, -1):
+                        print(str(i) + " ", end="")
+                        time.sleep(1)
+                    break
+                elif choice == 2:
+
+                    while True:
+
+                        try:
+
+                            os.system("clear" if os.name == "posix" else "cls")
+                            print(
+                                "\nPlease enter a player number to remove them, or type new to add a new player:\n"
+                            )
+                            sorted_ = sorted(players, key=lambda x: x.number)
+                            for player in sorted_:
+                                print(player)
+                            print(len(players) + 1, "- Return")
+
+                            answer = input("")
+                            if answer == "new":
+                                potential_ais = ["random", "minimax", "mcts"]
+                                print("Please select an AI to add:")
+                                for i, ai in enumerate(potential_ais):
+                                    print(str(i + 1) + ". " + ai)
+                                ai_choice = int(input(""))
+                                if ai_choice == 1:
+                                    ai = ai_random
+                                elif ai_choice == 2:
+                                    ai = ai_minimax
+                                elif ai_choice == 3:
+                                    ai = ai_mcts
+                                else:
+                                    raise ValueError
+                                available_colours = ["red", "yellow", "blue", "green"]
+                                for colour in [player.colour for player in players]:
+                                    available_colours.remove(colour)
+                                players.append(
+                                    ai(
+                                        len(players) + 1,
+                                        random.choice(available_colours),
+                                    )
+                                )
+
+                            elif answer == str(len(players) + 1):
+                                break
+                            else:
+                                if len(players) == 2:
+                                    print("You cannot remove any more players")
+                                    time.sleep(2)
+                                    continue
+                                answer = int(answer)
+                                for i, player in enumerate(players):
+                                    if player.number == answer:
+                                        players.pop(i)
+
+                                    for j, player_ in enumerate(players):
+                                        player.number = i + 1
+                                else:
+                                    raise ValueError
+
+                        except ValueError:
+                            print("Invalid choice!")
+                            time.sleep(1)
+                            continue
+
+                elif choice == 3:
+
+                    while True:
+                        try:
+                            os.system("clear" if os.name == "posix" else "cls")
+                            print(
+                                "\nSelect a number to modify the current setup, or return to go back:\n"
+                            )
+                            print(
+                                "1. Number of Matches: "
+                                + str(CONFIG["number_of_matches"])
+                            )
+                            print(
+                                "2. Victory Point Target: "
+                                + str(CONFIG["target_score"])
+                            )
+                            print("3. Table Top Mode: " + str(CONFIG["table_top_mode"]))
+                            print("4. Return")
+                            answer = int(input(""))
+                            if answer == 1:
+                                print(
+                                    "Please enter the number of matches you would like to play:"
+                                )
+                                new_val = int(input(""))
+                                if 0 < new_val < 100:
+                                    CONFIG["number_of_matches"] = new_val
+                                else:
+                                    raise ValueError
+                            elif answer == 2:
+                                print("Please enter the target score for a match:")
+                                new_val = int(input(""))
+                                if 3 < new_val < 100:
+                                    CONFIG["target_score"] = new_val
+                                else:
+                                    raise ValueError
+                            elif answer == 3:
+                                print(
+                                    "Please enter whether you would like to play in Table Top Mode (y/n):"
+                                )
+                                answer = input("")
+                                if answer == "y":
+                                    CONFIG["table_top_mode"] = True
+                                elif answer == "n":
+                                    CONFIG["table_top_mode"] = False
+                                else:
+                                    raise ValueError
+                            elif answer == 4:
+                                break
+
+                        except ValueError:
+                            print("Invalid choice!")
+                            time.sleep(1)
+                            continue
+
+                elif choice == 4:
+                    for letter in "Farewell!":
+                        print(letter, end="", flush=True)
+                        time.sleep(0.1)
+                    sys.exit(0)
+                else:
+                    raise ValueError
+
+            except ValueError:
+                print("Invalid choice!")
+                time.sleep(1)
+                continue
 
     # Setup Logging
 
@@ -50,7 +195,6 @@ if __name__ == "__main__":
 
     # Setup Game
 
-    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
     match_queue = []
     results_list = {}
 

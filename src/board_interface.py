@@ -356,7 +356,7 @@ class board_interface:
                         f"{player_} has a road of length {max_cluster} and has been given the longest road card"
                     )
                     self.log_action(
-                        f"{player_} has a road of length {max_cluster} and has been given the longest road card"
+                        f"{player_.name} has a road of length {max_cluster} and has been given the longest road card"
                     )
 
     # Moves -------------------------------------------------------------------------------------------------------------

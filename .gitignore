@@ -11,3 +11,4 @@ pydeps.png
 /dev/build/
 /dev/dist/
 *.spec
+docs/open_day
