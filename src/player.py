@@ -369,6 +369,25 @@ class player:
         else:
             print("You do not have enough of a resource to trade with the bank")
 
+    def respond_to_trade(self, original_player, receiving, giving):
+        """
+        Allows the player to respond to a trade offer
+        :param original_player: The player who made the offer
+        :param receiving: The resource the player is receiving
+        :param giving: The resource the player is giving
+        :return:
+        """
+        print(
+            f"{original_player} would like to trade you {receiving} for {giving}. Would you like to accept this trade? (y/n)"
+        )
+        accepted = input()
+        while accepted not in ["y", "n"]:
+            accepted = input("Please enter y or n\n")
+        if accepted == "y":
+            return True
+        else:
+            return False
+
     def play_development_card(self, interface):
         """
         Allows the player to play a development card

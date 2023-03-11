@@ -72,6 +72,7 @@ class ai_minimax(ai_player):
         See README for more details of how the heuristic is calculated
         :param interface: board_interface
         :return: The evaluation of the board as an integer
+
         """
 
         score = 0
@@ -118,53 +119,39 @@ class ai_minimax(ai_player):
         resources_has_access_to = []
         settlements_count = 0
 
+        # GET VARIABLES TO SAVE TIME
+
+        buildings_list = interface.get_buildings_list()
+
         # Rating settlements and cities
-        for key, item in interface.get_buildings_list().items():
-            if interface.get_buildings_list()[key]["player"] is not None:
-                if interface.get_buildings_list()[key]["player"].number == self.number:
+        for key, item in buildings_list.items():
+            if buildings_list[key]["player"] is not None:
+                if buildings_list[key]["player"].number == self.number:
 
                     # Rate based on number of resources available
-                    if interface.get_buildings_list()[key]["building"] == "settlement":
-                        resources.append(
-                            item
-                            for item in interface.get_buildings_list()[key]["tiles"]
-                        )
+                    if buildings_list[key]["building"] == "settlement":
+                        resources.append(item for item in buildings_list[key]["tiles"])
                         if settlements_count >= 2:
                             score += 35
                         else:
                             settlements_count += 1
-                    elif interface.get_buildings_list()[key]["building"] == "city":
-                        resources.append(
-                            item
-                            for item in interface.get_buildings_list()[key]["tiles"]
-                        )
-                        resources.append(
-                            item
-                            for item in interface.get_buildings_list()[key]["tiles"]
-                        )
+                    elif buildings_list[key]["building"] == "city":
+                        resources.append(item for item in buildings_list[key]["tiles"])
+                        resources.append(item for item in buildings_list[key]["tiles"])
                         score += 100
 
                     # Rate based on frequency of dice roll
                     score += (
-                        sum(
-                            [
-                                tile.frequency
-                                for tile in interface.get_buildings_list()[key]["tiles"]
-                            ]
-                        )
+                        sum([tile.frequency for tile in buildings_list[key]["tiles"]])
                         * 2
                     )
 
                     # Rate settlement higher if there are more tiles nearby
-                    num_tiles = len(
-                        [item for item in interface.get_buildings_list()[key]["tiles"]]
-                    )
+                    num_tiles = len([item for item in buildings_list[key]["tiles"]])
                     score += num_tiles * 2
 
                     # Rate higher if there is one of each tile nearby
-                    nearby_resources = [
-                        item for item in interface.get_buildings_list()[key]["tiles"]
-                    ]
+                    nearby_resources = [item for item in buildings_list[key]["tiles"]]
                     for resource in nearby_resources:
                         resources_has_access_to.append(resource.resource)
 
@@ -190,10 +177,9 @@ class ai_minimax(ai_player):
 
         # Potential to build something
 
-        buildings_cost_list = interface.get_building_cost_list()
-        for building in buildings_cost_list:
+        for building in buildings_list:
             if building != "development_card":
-                resource_list = buildings_cost_list[building]
+                resource_list = buildings_list[building]
                 for resource in resource_list:
                     if resource_list[resource] > 0:
                         if resource_list[resource] <= self.resources.count(resource):

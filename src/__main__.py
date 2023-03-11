@@ -63,17 +63,22 @@ if __name__ == "__main__":
 
                             os.system("clear" if os.name == "posix" else "cls")
                             print(
-                                "\nPlease enter a player number to remove them, or type new to add a new player:\n"
+                                "\nPlease enter a player number to remove them, or choose another option:\n"
                             )
                             sorted_ = sorted(players, key=lambda x: x.number)
                             for player in sorted_:
                                 print(player)
-                            print(len(players) + 1, "- Return")
+                            print(len(players) + 1, "- Add New Player")
+                            print(len(players) + 2, "- Return")
 
                             answer = input("")
-                            if answer == "new":
+                            if answer == str(len(players) + 1):
+                                if len(players) == 5:
+                                    print("You cannot add any more players")
+                                    time.sleep(2)
+                                    continue
                                 potential_ais = ["random", "minimax", "mcts"]
-                                print("Please select an AI to add:")
+                                print("Please choose the number of an AI to add:")
                                 for i, ai in enumerate(potential_ais):
                                     print(str(i + 1) + ". " + ai)
                                 ai_choice = int(input(""))
@@ -95,7 +100,7 @@ if __name__ == "__main__":
                                     )
                                 )
 
-                            elif answer == str(len(players) + 1):
+                            elif answer == str(len(players) + 2):
                                 break
                             else:
                                 if len(players) == 2:
@@ -103,12 +108,22 @@ if __name__ == "__main__":
                                     time.sleep(2)
                                     continue
                                 answer = int(answer)
-                                for i, player in enumerate(players):
-                                    if player.number == answer:
-                                        players.pop(i)
+                                if answer > len(players):
+                                    raise ValueError
+                                confirm = input(
+                                    "Are you sure you want to remove player "
+                                    + str(answer)
+                                    + "? (y/n) "
+                                )
+                                if confirm == "y":
+                                    for i, player in enumerate(players):
+                                        if player.number == answer:
+                                            players.pop(i)
 
-                                    for j, player_ in enumerate(players):
-                                        player.number = i + 1
+                                        for j, player_ in enumerate(players):
+                                            player.number = i + 1
+                                elif confirm == "n":
+                                    continue
                                 else:
                                     raise ValueError
 
@@ -134,7 +149,10 @@ if __name__ == "__main__":
                                 + str(CONFIG["target_score"])
                             )
                             print("3. Table Top Mode: " + str(CONFIG["table_top_mode"]))
-                            print("4. Return")
+                            print(
+                                "4. Display Mode: " + str(CONFIG["display_mode_focus"])
+                            )
+                            print("5. Return")
                             answer = int(input(""))
                             if answer == 1:
                                 print(
@@ -164,6 +182,22 @@ if __name__ == "__main__":
                                 else:
                                     raise ValueError
                             elif answer == 4:
+                                print(
+                                    "Please enter which display variant you want, 'text' or 'board'\n"
+                                    "Text prioritises readability, board makes the board updates smoother."
+                                    "\nPick text if you are playing with at least one human player"
+                                )
+                                print("1. Text")
+                                print("2. Board")
+                                answer = int(input(""))
+                                if answer == 1:
+                                    CONFIG["display_mode_focus"] = "text"
+                                elif answer == 2:
+                                    CONFIG["display_mode_focus"] = "board"
+                                else:
+                                    raise ValueError
+
+                            elif answer == 5:
                                 break
 
                         except ValueError:
@@ -172,7 +206,7 @@ if __name__ == "__main__":
                             continue
 
                 elif choice == 4:
-                    for letter in "Farewell!":
+                    for letter in "\nFarewell Settler!\n":
                         print(letter, end="", flush=True)
                         time.sleep(0.1)
                     sys.exit(0)

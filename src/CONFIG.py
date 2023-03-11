@@ -23,8 +23,7 @@ CONFIG = {
     # Number of matches to play in a row before exiting
     "number_of_matches": 1,
     # Maximum Moves per Turn -
-    # Maximum number of moves that can be made in a single turn, applies to all players including humans
-    # AI players will never make more than 5 moves in a turn anyway
+    # Set the maximum number of moves that can be made in a single turn, per player type
     "max_moves_per_turn_human": None,
     "max_moves_per_turn_ai": 5,
 }

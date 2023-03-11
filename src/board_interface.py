@@ -523,6 +523,49 @@ class board_interface:
             if not self.minimax_mode:
                 print("Not enough resources to trade")
 
+    def trade_with_player(
+        self, original_player, player_to_trade_with, resource_to_give, resource_to_get
+    ):
+        """
+        Allows a player to trade with another player
+        Trades are always 1:1
+        :param original_player:
+        :param player_to_trade_with:
+        :param resource_to_give:
+        :param resource_to_get:
+        :return:
+        """
+        if not self.minimax_mode:
+            print(
+                f"{original_player.name} is offering to trade with {player_to_trade_with.name} - {resource_to_give} for {resource_to_get}"
+            )
+        if (
+            original_player.count_cards("resources")[resource_to_give] >= 1
+            and player_to_trade_with.count_cards("resources")[resource_to_get] >= 1
+        ):
+            result = player_to_trade_with.respond_to_trade(
+                original_player, resource_to_give, resource_to_get
+            )
+            if result:
+                self.return_player_card(original_player, resource_to_give)
+                self.return_player_card(player_to_trade_with, resource_to_get)
+                self.give_player_card(original_player, "resource", resource_to_get)
+                self.give_player_card(
+                    player_to_trade_with, "resource", resource_to_give
+                )
+                if not self.minimax_mode:
+                    self.log_action(
+                        f"{original_player.name} traded {resource_to_give} for {resource_to_get} with {player_to_trade_with.name}"
+                    )
+            else:
+                if not self.minimax_mode:
+                    self.log_action(
+                        f"{player_to_trade_with.name} refused to trade with {original_player.name}"
+                    )
+        else:
+            if not self.minimax_mode:
+                print("Not enough resources to trade")
+
     def play_development_card(self, player_, card_to_play, *args):
         """
         Allows the player to play a development card

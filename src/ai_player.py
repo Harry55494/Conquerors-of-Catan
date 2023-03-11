@@ -82,6 +82,9 @@ class ai_player(player):
     def robber_discard(self, interface):
         raise self.notImplementedError("robber_discard")
 
+    def respond_to_trade(self, original_player, receiving, giving):
+        raise self.notImplementedError("respond_to_trade")
+
     def play_development_card(self, interface):
         raise self.notImplementedError("play_development_card")
 
