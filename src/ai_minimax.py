@@ -17,9 +17,10 @@ def perform_minimax_move(player_clone, interface_clone, move):
     """
     Contains the logic for performing a move within a minimax search
     Performs a move within a minimax search, for a specific player
-    :param player_clone:
-    :param interface_clone:
-    :return:
+    :param move: The move to be performed
+    :param player_clone: The player object to perform the move from
+    :param interface_clone: The interface object to perform the move on
+    :return: The interface object after the move has been performed
     """
     if move[0] == "buy development card":
         interface_clone.buy_development_card(player_clone)
@@ -77,17 +78,26 @@ class ai_minimax(ai_player):
 
         score = 0
 
+        # GET VARIABLES TO SAVE TIME
+
+        buildings_list = interface.get_buildings_list()
+
         # Victory Points ------------------------------------------------------
 
-        current_vp = self.calculateVictoryPoints(interface)
+        current_vp = self.calculateVictoryPoints(
+            interface, buildings_list=buildings_list
+        )
 
         other_players = [
             player
             for player in interface.get_players_list()
-            if player != self  # need to change this?
+            if player.number != self.number
         ]
         other_players.sort(
-            key=lambda x: x.calculateVictoryPoints(interface), reverse=True
+            key=lambda x: x.calculateVictoryPoints(
+                interface, buildings_list=buildings_list
+            ),
+            reverse=True,
         )
 
         score += current_vp * 10
@@ -99,9 +109,13 @@ class ai_minimax(ai_player):
         if current_vp == target_score - 1:  # Bonus points for being close to winning
             score += 1000
 
-        if current_vp > other_players[0].calculateVictoryPoints(interface):
+        if current_vp > other_players[0].calculateVictoryPoints(
+            interface, buildings_list=buildings_list
+        ):
             score += 50
-        elif current_vp == other_players[0].calculateVictoryPoints(interface):
+        elif current_vp == other_players[0].calculateVictoryPoints(
+            interface, buildings_list=buildings_list
+        ):
             score += 25
 
         # Number of roads -----------------------------------------------------
@@ -118,10 +132,6 @@ class ai_minimax(ai_player):
         resources = []
         resources_has_access_to = []
         settlements_count = 0
-
-        # GET VARIABLES TO SAVE TIME
-
-        buildings_list = interface.get_buildings_list()
 
         # Rating settlements and cities
         for key, item in buildings_list.items():
@@ -177,9 +187,10 @@ class ai_minimax(ai_player):
 
         # Potential to build something
 
-        for building in buildings_list:
+        buildings_cost_list = interface.get_building_cost_list()
+        for building in buildings_cost_list:
             if building != "development_card":
-                resource_list = buildings_list[building]
+                resource_list = buildings_cost_list[building]
                 for resource in resource_list:
                     if resource_list[resource] > 0:
                         if resource_list[resource] <= self.resources.count(resource):

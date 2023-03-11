@@ -70,9 +70,12 @@ class player:
         self.resources.sort()
         self.development_cards.sort()
 
-    def calculateVictoryPoints(self, interface, output=False) -> int:
+    def calculateVictoryPoints(
+        self, interface, output=False, buildings_list=None
+    ) -> int:
         """
         Calculates the player's victory points, from both their settlements/cities and their development cards
+        :param buildings_list:
         :param output: Whether to print the victory points
         :param interface: The interface, so that _buildings can be checked
         :return: The player's victory points
@@ -85,19 +88,17 @@ class player:
             "longest_road": 0,
             "largest_army": 0,
         }
-        for building in interface.get_buildings_list():
-            if interface.get_buildings_list()[building] is not None:
-                if interface.get_buildings_list()[building].get("player") == self:
-                    if (
-                        interface.get_buildings_list()[building].get("building")
-                        == "settlement"
-                    ):
+
+        if buildings_list is None:
+            buildings_list = interface.get_buildings_list()
+
+        for building in buildings_list:
+            if buildings_list[building] is not None:
+                if buildings_list[building].get("player") == self:
+                    if buildings_list[building].get("building") == "settlement":
                         self.victory_points += 1
                         sources["settlements"] += 1
-                    elif (
-                        interface.get_buildings_list()[building].get("building")
-                        == "city"
-                    ):
+                    elif buildings_list[building].get("building") == "city":
                         self.victory_points += 2
                         sources["cities"] += 1
         for card in self.development_cards:
