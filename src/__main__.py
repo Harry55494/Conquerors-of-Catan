@@ -141,16 +141,20 @@ if __name__ == "__main__":
                                 "\nSelect a number to modify the current setup, or return to go back:\n"
                             )
                             print(
-                                "1. Number of Matches: "
-                                + str(CONFIG["number_of_matches"])
+                                "1. Number of Matches: ".ljust(25)
+                                + str(CONFIG["number_of_matches"]).rjust(5)
                             )
                             print(
-                                "2. Victory Point Target: "
-                                + str(CONFIG["target_score"])
+                                "2. Victory Point Target: ".ljust(25)
+                                + str(CONFIG["target_score"]).rjust(5)
                             )
-                            print("3. Table Top Mode: " + str(CONFIG["table_top_mode"]))
                             print(
-                                "4. Display Mode: " + str(CONFIG["display_mode_focus"])
+                                "3. Table Top Mode: ".ljust(25)
+                                + str(CONFIG["table_top_mode"]).rjust(5)
+                            )
+                            print(
+                                "4. Display Mode: ".ljust(25)
+                                + str(CONFIG["display_mode_focus"]).rjust(5)
                             )
                             print("5. Return")
                             answer = int(input(""))

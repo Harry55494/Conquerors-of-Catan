@@ -158,7 +158,7 @@ class ai_random(ai_player):
                 interface.play_development_card(self, "soldier")
 
             elif card == "monopoly":
-                res_type = random.choice(["wheat", "sheep", "rock", "brick", "wood"])
+                res_type = random.choice(["wheat", "sheep", "rock", "clay", "wood"])
                 for other_player in interface.get_players_list():
                     if other_player != self:
                         while res_type in other_player.resources:
@@ -166,9 +166,7 @@ class ai_random(ai_player):
                             interface.give_player_card(self, "resource", res_type)
             elif card == "year of plenty":
                 for i in range(2):
-                    res_type = random.choice(
-                        ["wheat", "sheep", "rock", "brick", "wood"]
-                    )
+                    res_type = random.choice(["wheat", "sheep", "rock", "clay", "wood"])
                     interface.give_player_card(self, "resource", res_type)
             elif card == "road building":
                 for i in range(2):

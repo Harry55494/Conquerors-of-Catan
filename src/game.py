@@ -91,6 +91,8 @@ class game:
 
                 self.interface.turn = self.turn
                 self.interface.print_board()
+                print("QUITTING")
+                sys.exit(0)
                 print("\n")
                 print("- Turn " + str(self.turn) + " -")
                 self.interface.turn_number = self.turn

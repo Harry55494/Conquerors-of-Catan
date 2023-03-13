@@ -11,7 +11,7 @@ Currently, these include:
 - MiniMax Search AI - See [here](https://en.wikipedia.org/wiki/Minimax) for more information
 - Monte Carlo Tree Search AI - See [here](https://wikipedia.org/wiki/Monte_Carlo_tree_search) for more information
 
-The game can be played with or without a Human Player. To specify the players, edit the `players` list at the top of `__main__.py`.   
+The game can be played with or without a Human Player. To specify the players, edit the `players` list at the top of `__main__.py`.
 
 Game play happens in turns. On each turn, the player rolls the dice, and then performs one or move of the following actions:
 - Trading with the bank
@@ -35,15 +35,15 @@ In order to run the game, you first need to install the dependencies. This can b
 
 After the dependencies are installed, you can run the program by running the following command:
 
-```cd ./src && python3 __main__.py``` or ```python3 src```  
-   
+```cd ./src && python3 __main__.py``` or ```python3 src```
+
 (You may need to change `python3` to `python` depending on your system)
 
 ## Game Information and Workings
 
 ### Board State Representation
 
-The board uses letters and grid references to identify the different tiles and vertices on the board. The tiles are lettered in alphabetic order from top to bottom, left to right. The vertices are labeled with each letter that they are adjacent to, and then a number indicating their position. For example, the top most tile is 'a' and has vertices 'a1' and 'a2' for the two vertices in the ocean. Continuing clockwise, it then has 'a,c', 'a,c,e', 'a,b,e' and 'a,b'.  
+The board uses letters and grid references to identify the different tiles and vertices on the board. The tiles are lettered in alphabetic order from top to bottom, left to right. The vertices are labeled with each letter that they are adjacent to, and then a number indicating their position. For example, the top most tile is 'a' and has vertices 'a1' and 'a2' for the two vertices in the ocean. Continuing clockwise, it then has 'a,c', 'a,c,e', 'a,b,e' and 'a,b'.
 
 The board data is stored as a series of lists, arrays and dictionaries. These are:
 - `tiles` - A list of class `tile` objects, representing the tiles on the board
@@ -60,7 +60,7 @@ The board also has a number of other variables that are used to keep track of th
 
 ### MiniMax Search Heuristic
 
-The MiniMax Search Heuristic uses the following values and weights to evaluate the board. These are:  
+The MiniMax Search Heuristic uses the following values and weights to evaluate the board. These are:
 
 | Metric                         | Description                                                                                        |
 |--------------------------------|----------------------------------------------------------------------------------------------------|
@@ -73,6 +73,11 @@ The MiniMax Search Heuristic uses the following values and weights to evaluate t
 If the player has won, the metric returns 1000000.
 
 The metric prioritizes getting victory points and expanding over hoarding cards. It is a fairly general heuristic, and is not specific to any particular strategy.
+
+## Known Differences to the main game
+
+- 1
+
 
 ## Contact
 
