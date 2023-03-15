@@ -35,7 +35,7 @@ class ai_random(ai_player):
             ):
                 accepted = True
                 building = list(interface.get_buildings_list().keys())[rand_int]
-                interface.place_settlement(self, building)
+                interface.place_settlement(self, building, True)
                 potential_roads = []
                 for road in interface.get_roads_list():
                     if building in road:
@@ -52,8 +52,6 @@ class ai_random(ai_player):
                     ):
                         accepted_road = True
                         interface.place_road(self, potential_roads[rand_int])
-
-        print(f"{self} has placed their initial settlement at {building}")
 
         return building
 

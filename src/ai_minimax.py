@@ -132,6 +132,8 @@ class ai_minimax(ai_player):
         resources = []
         resources_has_access_to = []
         settlements_count = 0
+        cities_count = 0
+        roll_map = {}
 
         # Rating settlements and cities
         for key, item in buildings_list.items():
@@ -139,15 +141,19 @@ class ai_minimax(ai_player):
                 if buildings_list[key]["player"].number == self.number:
 
                     # Rate based on number of resources available
-                    if buildings_list[key]["building"] == "settlement":
+
+                    building_type = buildings_list[key]["building"]
+
+                    if building_type == "settlement":
                         resources.append(item for item in buildings_list[key]["tiles"])
                         if settlements_count >= 2:
                             score += 35
                         else:
                             settlements_count += 1
-                    elif buildings_list[key]["building"] == "city":
+                    elif building_type == "city":
                         resources.append(item for item in buildings_list[key]["tiles"])
                         resources.append(item for item in buildings_list[key]["tiles"])
+                        cities_count += 1
                         score += 100
 
                     # Rate based on frequency of dice roll
@@ -155,6 +161,16 @@ class ai_minimax(ai_player):
                         sum([tile.frequency for tile in buildings_list[key]["tiles"]])
                         * 2
                     )
+                    for tile in buildings_list[key]["tiles"]:
+                        multiplier = 1 if building_type == "settlement" else 2
+                        if tile.resource not in roll_map:
+                            roll_map[tile.resource] = multiplier * max(
+                                1, tile.frequency
+                            )
+                        else:
+                            roll_map[tile.resource] = multiplier * max(
+                                roll_map[tile.resource], tile.frequency
+                            )
 
                     # Rate settlement higher if there are more tiles nearby
                     num_tiles = len([item for item in buildings_list[key]["tiles"]])
@@ -166,6 +182,33 @@ class ai_minimax(ai_player):
                         resources_has_access_to.append(resource.resource)
 
         score += len(resources)
+
+        # check for ports
+        for port in interface.get_ports_list():
+            if interface.get_ports_list()[port] is not None:
+                if interface.get_ports_list()[port]["player"] is not None:
+                    if interface.get_ports_list()[port]["player"].number == self.number:
+                        # Now add points
+
+                        if interface.get_ports_list()[port]["symbol"] == "3:1":
+                            if cities_count >= 1:
+                                score += (
+                                    4
+                                    * roll_map[
+                                        interface.get_ports_list()[port]["resource"]
+                                    ]
+                                )
+                        else:
+                            if (
+                                interface.get_ports_list()[port]["resource"]
+                                in resources_has_access_to
+                            ):
+                                score += (
+                                    3
+                                    * roll_map[
+                                        interface.get_ports_list()[port]["resource"]
+                                    ]
+                                )
 
         # Check for longest road
         if interface.get_longest_road()[0] is not None:
@@ -254,7 +297,7 @@ class ai_minimax(ai_player):
             location_score_map[location] = self.evaluate_board(interface_clone)
 
         best_location = max(location_score_map, key=location_score_map.get)
-        interface.place_settlement(self, best_location)
+        interface.place_settlement(self, best_location, True)
 
         road_score_map = {}
 

@@ -32,6 +32,11 @@ class player:
     def __str__(self):
         return self.coloured_name
 
+    def __eq__(self, other):
+        if not isinstance(other, player):
+            return False
+        return self.number == other.number
+
     def count_cards(self, card_type) -> dict:
         card_count = {}
         if card_type in ["resource", "resources"]:
@@ -63,10 +68,10 @@ class player:
         )
         if len(list_to_print) > 0:
             print(" They are:")
-        card_count = self.count_cards(type_)
-        for card in card_count:
-            print(f"{card_count[card]} x {card} ", end=" ")
-        print("")
+            card_count = self.count_cards(type_)
+            for card in card_count:
+                print(f"{card_count[card]} x {card} ", end=" ")
+            print("")
         self.resources.sort()
         self.development_cards.sort()
 
@@ -212,7 +217,7 @@ class player:
 
     def initial_placement(self, interface):
         building = self.choose_placement_location(interface, "settlement")
-        interface.place_settlement(self, building)
+        interface.place_settlement(self, building, True)
         interface.place_road(self, self.choose_road_location(interface, building, True))
         return building
 

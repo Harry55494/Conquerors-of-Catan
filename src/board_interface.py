@@ -151,6 +151,9 @@ class board_interface:
     def get_roads_list(self):
         return self.board.roads
 
+    def get_ports_list(self):
+        return self.board._ports
+
     def get_building_cost_list(self):
         return self.board.building_cost_list
 
@@ -468,6 +471,18 @@ class board_interface:
             if hand[card] >= 4:
                 moves.append("trade with bank")
 
+        for port in self.get_ports_list():
+            if self.get_ports_list()[port] is not None:
+                if self.get_ports_list()[port]["player"] is not None:
+                    if self.get_ports_list()[port]["player"].number == player_.number:
+                        type_ = self.get_ports_list()[port]["symbol"]
+                        player_resources = player_.count_cards("resources")
+                        highest_resource = max(player_resources.values())
+                        if ("2" in type_ and highest_resource >= 2) or (
+                            "3" in type_ and highest_resource >= 3
+                        ):
+                            moves.append("trade with port")
+
         # Check if player can build a city
         if (
             hand["wheat"] >= 2
@@ -507,12 +522,12 @@ class board_interface:
 
         return moves
 
-    def place_settlement(self, player_, location):
+    def place_settlement(self, player_, location, setup=False):
         if self.count_structure(player_, "settlement") >= 5:
             print("You cannot build any more settlements")
             return False
 
-        if not self.minimax_mode:
+        if not self.minimax_mode and not setup:
             print(f"{player_.name} is placing a settlement")
         if self.get_buildings_list()[location]["player"] is not None:
             raise self.moveNotValid("Settlement already placed at location")
@@ -527,6 +542,16 @@ class board_interface:
         )
         if not self.minimax_mode:
             self.log_action(f"{player_.name} placed a settlement at {location}")
+
+        # check for ports
+
+        for entry in self.get_ports_list().keys():
+            if self.get_ports_list()[entry] is not None:
+                if location in entry:
+                    self.board._ports[entry].update({"player": player_})
+                    if not self.minimax_mode:
+                        self.log_action(f"{player_.name} has claimed a port at {entry}")
+
         return True
 
     def place_city(self, player_, location):
@@ -605,6 +630,15 @@ class board_interface:
         else:
             if not self.minimax_mode:
                 print("Not enough resources to trade")
+
+    def trade_with_port(self, player_, give, get):
+        """
+        Allows a player to trade with a port
+        :param player_: The player trading
+        :param give: The resource to be given
+        :param get: The resource to be received
+        :return:
+        """
 
     def trade_with_player(
         self, original_player, player_to_trade_with, resource_to_give, resource_to_get
@@ -764,6 +798,7 @@ class board_interface:
             print(f"{player_} is placing settlement number {2 - order.count(player_)}")
 
             location = player_.initial_placement(self)
+            print(f"{player_} has placed their settlement at {location}")
             if len(order) < len(self.board.players):
                 # Players receive resources from their second settlement
                 tiles_from_settlement = self.get_buildings_list()[location]["tiles"]

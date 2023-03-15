@@ -72,7 +72,6 @@ class game:
 
         current_player = self.interface.get_players_list()[0]
         for i in range(10):
-            print(current_player.name)
             current_player = copy.deepcopy(
                 self.interface.get_next_player(current_player)
             )
@@ -91,8 +90,8 @@ class game:
 
                 self.interface.turn = self.turn
                 self.interface.print_board()
-                print("QUITTING")
-                sys.exit(0)
+                # print("QUITTING")
+                # sys.exit(0)
                 print("\n")
                 print("- Turn " + str(self.turn) + " -")
                 self.interface.turn_number = self.turn

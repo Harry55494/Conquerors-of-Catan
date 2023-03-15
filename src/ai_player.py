@@ -85,6 +85,9 @@ class ai_player(player):
     def respond_to_trade(self, original_player, receiving, giving):
         raise self.notImplementedError("respond_to_trade")
 
+    def trade_with_port(self, interface):
+        raise self.notImplementedError("trade_with_port")
+
     def play_development_card(self, interface):
         raise self.notImplementedError("play_development_card")
 

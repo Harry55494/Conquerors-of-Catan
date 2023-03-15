@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     print("Setting up Game...")
 
-    players = [ai_random(2, "red"), ai_minimax(1, "yellow")]
+    players = [player(2, "red"), ai_minimax(1, "yellow")]
 
     # Import Arguments
 
