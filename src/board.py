@@ -849,7 +849,7 @@ class board:
             self.players, key=lambda x: x.victory_points, reverse=True
         )
         for player_ in players_in_order:
-            text = f"{player_}".ljust(25)
+            text = f"{player_}".ljust(35)
             LR = "LR" if player_ == self.longest_road[0] else "  "
             LA = "LA" if player_ == self.largest_army[0] else "  "
             Soldiers = (
@@ -858,7 +858,7 @@ class board:
                 else "  "
             )
             print(
-                f"          {text}   |  VP: {player_.victory_points}   |   Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
+                f"          {text}|  VP: {player_.victory_points}   |   Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
                     terminal_width
                 )
             )

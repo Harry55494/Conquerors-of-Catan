@@ -303,6 +303,9 @@ class ai_random(ai_player):
                 )
                 continue
 
+            elif "trade with port" in chosen_move:
+                raise NotImplementedError("Trading with port not implemented yet")
+
             elif "play development card" in chosen_move and random.randint(0, 1) == 1:
                 self.play_development_card(interface)
                 self.log("Played development card")

@@ -16,7 +16,17 @@ if __name__ == "__main__":
 
     print("Setting up Game...")
 
-    players = [player(2, "red"), ai_minimax(1, "yellow")]
+    if not os.path.exists("logs"):
+        print("Setting up logging...")
+        os.mkdir("logs")
+    if not os.path.exists("logs/players"):
+        os.mkdir("logs/players")
+
+    print("Clearing logs...")
+    for file in os.listdir("logs/players"):
+        os.remove(os.path.join("logs/players", file))
+
+    players = [ai_minimax(2, "red"), ai_minimax(1, "yellow")]
 
     # Import Arguments
 
@@ -223,13 +233,6 @@ if __name__ == "__main__":
                 continue
 
     # Setup Logging
-
-    if not os.path.exists("logs"):
-        os.mkdir("logs")
-        os.mkdir("logs/players")
-
-    for file in os.listdir("logs/players"):
-        os.remove(os.path.join("logs/players", file))
 
     # Setup Game
 

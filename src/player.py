@@ -30,7 +30,7 @@ class player:
 
     # override print function
     def __str__(self):
-        return self.coloured_name
+        return f"{self.coloured_name}  (Human)"
 
     def __eq__(self, other):
         if not isinstance(other, player):
