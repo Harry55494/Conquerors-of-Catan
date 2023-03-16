@@ -71,6 +71,7 @@ class ai_minimax(ai_player):
         self.time_limit = time_limit
         self.max_depth = max_depth
         self.root_score_map = []
+        self.temp_score_variation_map = [0, {}]
         self.start_time = None
 
     def evaluate_board(self, interface):
@@ -82,7 +83,14 @@ class ai_minimax(ai_player):
 
         """
 
+        score_variation_map = {}
         score = 0
+
+        def update_score(amount, reason):
+            nonlocal score
+            nonlocal score_variation_map
+            score += amount
+            score_variation_map[reason] = amount
 
         # GET VARIABLES TO SAVE TIME
 
@@ -106,27 +114,27 @@ class ai_minimax(ai_player):
             reverse=True,
         )
 
-        score += current_vp * 10
+        update_score(current_vp * 10, "victory points")
 
         target_score = CONFIG["target_score"]
 
         if current_vp >= target_score:
             return 1000000
         if current_vp == target_score - 1:  # Bonus points for being close to winning
-            score += 1000
+            update_score(1000, "close to winning")
 
         if current_vp > other_players[0].calculateVictoryPoints(
             interface, buildings_list=buildings_list
         ):
-            score += 50
+            update_score(50, "leading")
         elif current_vp == other_players[0].calculateVictoryPoints(
             interface, buildings_list=buildings_list
         ):
-            score += 25
+            update_score(25, "tied for first")
 
         # Number of _roads -----------------------------------------------------
 
-        score += interface.count_structure(self, "road") * 3.5
+        update_score(-interface.count_structure(self, "road") * 1.5, "roads")
 
         # Number of resources player has access to -----------------------------
         # This is relative to the number of resources a player would get on a turn if every dice roll was rolled.
@@ -153,19 +161,27 @@ class ai_minimax(ai_player):
                     if building_type == "settlement":
                         resources.append(item for item in buildings_list[key]["tiles"])
                         if settlements_count >= 2:
-                            score += 35
+                            update_score(500, "settlement at " + str(key))
                         else:
                             settlements_count += 1
                     elif building_type == "city":
                         resources.append(item for item in buildings_list[key]["tiles"])
                         resources.append(item for item in buildings_list[key]["tiles"])
                         cities_count += 1
-                        score += 100
+                        update_score(1000, "city at " + str(key))
 
                     # Rate based on frequency of dice roll
-                    score += (
-                        sum([tile.frequency for tile in buildings_list[key]["tiles"]])
-                        * 2
+                    update_score(
+                        (
+                            sum(
+                                [
+                                    tile.frequency
+                                    for tile in buildings_list[key]["tiles"]
+                                ]
+                            )
+                            * 2
+                        ),
+                        "tiles and frequency of dice roll at " + str(key),
                     )
                     for tile in buildings_list[key]["tiles"]:
                         multiplier = 1 if building_type == "settlement" else 2
@@ -180,14 +196,16 @@ class ai_minimax(ai_player):
 
                     # Rate settlement higher if there are more tiles nearby
                     num_tiles = len([item for item in buildings_list[key]["tiles"]])
-                    score += num_tiles * 2
+                    update_score(
+                        num_tiles * 2, "number of tiles nearby to building" + str(key)
+                    )
 
                     # Rate higher if there is one of each tile nearby
                     nearby_resources = [item for item in buildings_list[key]["tiles"]]
                     for resource in nearby_resources:
                         resources_has_access_to.append(resource.resource)
 
-        score += len(resources)
+        update_score(len(resources), "total amount of resources")
 
         # check for ports
         for port in interface.get_ports_list():
@@ -198,55 +216,76 @@ class ai_minimax(ai_player):
 
                         if interface.get_ports_list()[port]["symbol"] == "3:1":
                             if cities_count >= 1:
-                                score += (
-                                    4
-                                    * roll_map[
-                                        interface.get_ports_list()[port]["resource"]
-                                    ]
+                                update_score(
+                                    (
+                                        4
+                                        * roll_map[
+                                            interface.get_ports_list()[port]["resource"]
+                                        ]
+                                    ),
+                                    "3:1 port and building on "
+                                    + str(
+                                        roll_map[
+                                            interface.get_ports_list()[port]["resource"]
+                                        ]
+                                    ),
                                 )
                         else:
                             if (
                                 interface.get_ports_list()[port]["resource"]
                                 in resources_has_access_to
                             ):
-                                score += (
-                                    3
-                                    * roll_map[
-                                        interface.get_ports_list()[port]["resource"]
-                                    ]
+                                update_score(
+                                    (
+                                        3
+                                        * roll_map[
+                                            interface.get_ports_list()[port]["resource"]
+                                        ]
+                                    ),
+                                    "2:1 port and building on "
+                                    + str(
+                                        roll_map[
+                                            interface.get_ports_list()[port]["resource"]
+                                        ]
+                                    ),
                                 )
 
         # Check for longest road
         if interface.get_longest_road()[0] is not None:
             if interface.get_longest_road()[0].number == self.number:
-                score += 50
+                update_score(5, "longest road")
         if interface.get_largest_army()[0] is not None:
             if interface.get_largest_army()[0].number == self.number:
-                score += 50
+                update_score(5, "largest army")
 
         # Rate higher if there is one of each tile nearby
-        score += len(list(set(resources_has_access_to)))
+        update_score(
+            len(list(set(resources_has_access_to))) * 3,
+            "amount of each resource nearby",
+        )
 
         # Number of development cards ------------------------------------------
 
         # score += len(self.development_cards) if len(self.development_cards) < 5 else 5
         if len(self.development_cards) >= 2:
-            score -= max(0, len(self.development_cards) - 2) * 10
-        score += self.played_robber_cards * 3
+            update_score(
+                -max(0, len(self.development_cards) - 2) * 10,
+                "amount of development cards",
+            )
+        update_score(self.played_robber_cards * 3, "played robber cards")
 
-        # Potential to build something
-
+        # Potential to build something (only applies at max depth 0)
         buildings_cost_list = interface.get_building_cost_list()
         for building in buildings_cost_list:
-            if building != "development_card":
+            if building != "development card" and building != "road":
                 resource_list = buildings_cost_list[building]
                 for resource in resource_list:
                     if resource_list[resource] > 0:
                         if resource_list[resource] <= self.resources.count(resource):
                             if CONFIG["minimax_max_depth"] == 0:
-                                score += 2
-                            else:
-                                score += 0
+                                update_score(
+                                    10, "has all " + resource + " to build " + building
+                                )
 
         """
         # Score based on robber location
@@ -263,6 +302,9 @@ class ai_minimax(ai_player):
                         score += -25 if building["player"].number == self.number else 25
                     else:
                         score += tile.frequency if building["player"].number == self.number else -tile.frequency"""
+
+        if score > self.temp_score_variation_map[0]:
+            self.temp_score_variation_map = [score, score_variation_map]
 
         return score
 
@@ -465,8 +507,6 @@ class ai_minimax(ai_player):
                                 full_move_list.append([move, card, resource])
                 else:
                     pass
-            elif move == "end turn":
-                pass
             else:
                 full_move_list.append(
                     [
@@ -498,6 +538,8 @@ class ai_minimax(ai_player):
         self.log(f"Depth: {max_depth}, Maximising: {current_player.name}")
         if max_depth == self.max_depth:
             self.root_score_map = []
+            self.log("Resetting root_score_map")
+            self.temp_score_variation_map = [0, {}]
 
         if current_player.number == self.number:
             # It is the Minimax AI's turn
@@ -505,7 +547,7 @@ class ai_minimax(ai_player):
             potential_moves = self.get_move_combinations(
                 interface, current_player
             )  # This line was changed from self to current_player
-            self.log(f"Potential moves: {potential_moves}")
+            # self.log(f"Potential moves: {potential_moves}")
             if not potential_moves:
                 self.root_score_map.append(
                     [["end turn"], self.evaluate_board(interface)]
@@ -588,7 +630,8 @@ class ai_minimax(ai_player):
     def turn_actions(self, interface):
 
         print("Beginning minimax")
-        self.log("\n\n\n\nBeginning minimax search on turn " + str(interface.turn))
+        self.log("\n\n$!\n\nBeginning minimax search on turn " + str(interface.turn))
+        self.log("Full moves list: " + str(self.get_move_combinations(interface, self)))
         self.start_time = datetime.now()
         self.log("Start time: " + str(self.start_time))
         try:
@@ -612,6 +655,7 @@ class ai_minimax(ai_player):
             + " with score "
             + str(best_move_from_minimax["score"])
         )
+        self.log("Reasoning: " + str(self.temp_score_variation_map))
         self.entire_game_moves.append(
             f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - {best_move_from_minimax}"
         )

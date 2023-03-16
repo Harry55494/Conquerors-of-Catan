@@ -521,6 +521,8 @@ class board_interface:
         ) > player_.development_cards.count("victory point"):
             moves.append("play development card")
 
+        moves.append("end turn")
+
         return moves
 
     def place_settlement(self, player_, location, setup=False):
@@ -578,7 +580,8 @@ class board_interface:
     def place_road(self, player_, location, free_from_dev_card=False):
         if self.count_structure(player_, "road") >= 15:
             if isinstance(player_, ai_player):
-                print("You cannot build any more _roads")
+                if not self.minimax_mode:
+                    print("You cannot build any more roads")
             return False
         try:
             self.board._roads[location].update({"player": player_})
@@ -723,7 +726,8 @@ class board_interface:
         :param card_to_play: The card to be played
         :return:
         """
-        self.log_action(f"{player_.name} is playing a {card_to_play}")
+        if not self.minimax_mode:
+            self.log_action(f"{player_.name} is playing a {card_to_play}")
         card = card_to_play
         if card == "soldier":
             if player_.development_cards.count("soldier") > player_.played_robber_cards:

@@ -18,10 +18,14 @@ CONFIG = {
     # Table Top Mode -
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not just with a human
+    "log_minimax_score_calculation": False,
+    # Log MiniMax Score Calculation -
+    # If enabled, logs the score calculation for each move in the MiniMax algorithm
+    # This is useful for debugging, but will fill up the log file very quickly
     "table_top_mode": False,
     # Number of Matches -
     # Number of matches to play in a row before exiting
-    "number_of_matches": 1,
+    "number_of_matches": 5,
     # Maximum Moves per Turn -
     # Set the maximum number of moves that can be made in a single turn, per player type
     "max_moves_per_turn_human": None,

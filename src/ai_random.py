@@ -225,7 +225,6 @@ class ai_random(ai_player):
         while True:
 
             possible_moves = interface.return_possible_moves(self)
-            possible_moves.append("end turn")
             self.log(
                 "Round "
                 + str(interface.turn)
