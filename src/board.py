@@ -388,7 +388,7 @@ class board:
         }
 
         # Roads map contains the start and end reference, which player owns the road and the symbol that needs to be printed to form the hexagons correctly
-        self.roads = {
+        self._roads = {
             # Hex a
             tuple(["a1", "a2"]): {"player": None, "symbol": r"-"},
             tuple(["a2", "a,c"]): {"player": None, "symbol": r"\ "},
@@ -761,14 +761,14 @@ class board:
             else:
                 b_tp[building] = " "
 
-        for road in self.roads:
-            if self.roads[road].get("player") is not None:
+        for road in self._roads:
+            if self._roads[road].get("player") is not None:
                 r_tp[road] = termcolor.colored(
-                    self.roads[road].get("symbol"),
-                    self.roads[road].get("player").colour,
+                    self._roads[road].get("symbol"),
+                    self._roads[road].get("player").colour,
                 )
             else:
-                r_tp[road] = self.roads[road].get("symbol")
+                r_tp[road] = self._roads[road].get("symbol")
 
         for port in self._ports:
             if self._ports[port] is not None:

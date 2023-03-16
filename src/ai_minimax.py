@@ -41,8 +41,14 @@ def perform_minimax_move(player_clone, interface_clone, move):
         interface_clone.place_city(player_clone, move[1])
     elif move[0] == "trade with bank":
         interface_clone.trade_with_bank(player_clone, move[1], move[2])
+    elif move[0] == "trade with port":
+        interface_clone.trade_with_port(player_clone, move[1], move[2])
     elif move[0] == "end turn":
         pass
+    else:
+        raise NotImplementedError(
+            "perform_minimax_move does not know how to perform " + str(move)
+        )
     return interface_clone
 
 
@@ -118,7 +124,7 @@ class ai_minimax(ai_player):
         ):
             score += 25
 
-        # Number of roads -----------------------------------------------------
+        # Number of _roads -----------------------------------------------------
 
         score += interface.count_structure(self, "road") * 3.5
 
@@ -404,6 +410,32 @@ class ai_minimax(ai_player):
                     for resource_to_get in ["clay", "rock", "sheep", "wheat", "wood"]:
                         if resource_to_get != resource:
                             full_move_list.append([move, resource, resource_to_get])
+            elif move == "trade with port":
+                port_resources = []
+                for port in interface.get_ports_list():
+                    if interface.get_ports_list()[port] is not None:
+                        if interface.get_ports_list()[port]["player"] is not None:
+                            if (
+                                interface.get_ports_list()[port]["player"].number
+                                == self.number
+                            ):
+                                resource = interface.get_ports_list()[port]["resource"]
+                                if resource == "any":
+                                    # choose random resource from player's resources which has more than 3
+                                    for card in self.resources:
+                                        if self.resources.count(card) >= 3:
+                                            port_resources.append(card)
+                                else:
+                                    for card in self.resources:
+                                        if (
+                                            card == resource
+                                            and self.resources.count(card) >= 2
+                                        ):
+                                            port_resources.append(card)
+                for resource in port_resources:
+                    for resource_to_get in ["clay", "rock", "sheep", "wheat", "wood"]:
+                        if resource_to_get != resource:
+                            full_move_list.append([move, resource, resource_to_get])
             elif move == "play development card":
                 if self.number == player_.number:
                     # Development cards are private information
@@ -592,6 +624,8 @@ class ai_minimax(ai_player):
             interface.buy_development_card(self)
         elif best_move[0] == "trade with bank":
             interface.trade_with_bank(self, best_move[1], best_move[2])
+        elif best_move[0] == "trade with port":
+            interface.trade_with_port(self, best_move[1], best_move[2])
         elif best_move[0] == "build settlement":
             interface.place_settlement(self, best_move[1])
         elif best_move[0] == "build city":

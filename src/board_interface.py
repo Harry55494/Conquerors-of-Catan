@@ -149,7 +149,7 @@ class board_interface:
         return self.board._buildings
 
     def get_roads_list(self):
-        return self.board.roads
+        return self.board._roads
 
     def get_ports_list(self):
         return self.board._ports
@@ -197,8 +197,8 @@ class board_interface:
 
     def has_potential_road(self, player_) -> int:
         road_endings = []
-        for road in self.board.roads:
-            if self.board.roads[road]["player"] == player_:
+        for road in self.board._roads:
+            if self.board._roads[road]["player"] == player_:
                 road_endings.append(road[0])
                 road_endings.append(road[1])
         return len(road_endings) > 0
@@ -248,7 +248,7 @@ class board_interface:
         :return: True if there are settlements or cities within 1 hex of the given coordinates, False otherwise.
         """
         position_to_check = [position]
-        for road, details in self.board.roads.items():
+        for road, details in self.board._roads.items():
             if position in road:
                 position_to_check.append(road[0])
                 position_to_check.append(road[1])
@@ -477,8 +477,9 @@ class board_interface:
                     if self.get_ports_list()[port]["player"].number == player_.number:
                         type_ = self.get_ports_list()[port]["symbol"]
                         player_resources = player_.count_cards("resources")
+                        port_resource = self.get_ports_list()[port]["resource"]
                         highest_resource = max(player_resources.values())
-                        if ("2" in type_ and highest_resource >= 2) or (
+                        if ("2" in type_ and player_resources[port_resource] >= 2) or (
                             "3" in type_ and highest_resource >= 3
                         ):
                             moves.append("trade with port")
@@ -577,10 +578,10 @@ class board_interface:
     def place_road(self, player_, location, free_from_dev_card=False):
         if self.count_structure(player_, "road") >= 15:
             if isinstance(player_, ai_player):
-                print("You cannot build any more roads")
+                print("You cannot build any more _roads")
             return False
         try:
-            self.board.roads[location].update({"player": player_})
+            self.board._roads[location].update({"player": player_})
             if not self.setup_mode:
                 for resource, amount in self.board.building_cost_list.get(
                     "road"
@@ -639,6 +640,38 @@ class board_interface:
         :param get: The resource to be received
         :return:
         """
+        if not self.minimax_mode:
+            self.log_action(
+                f"{player_.name} is attempting to use a port to trade {give} for {get}"
+            )
+
+        for port in self.get_ports_list():
+            if self.get_ports_list()[port] is not None:
+                if self.get_ports_list()[port]["player"] is not None:
+                    if self.get_ports_list()[port]["player"].number == player_.number:
+                        port_resource = self.get_ports_list()[port]["resource"]
+                        if port_resource == give:
+                            if player_.resources.count(give) >= 2:
+                                self.return_player_card(player_, give)
+                                self.return_player_card(player_, give)
+                                self.give_player_card(player_, "resource", get)
+                                if not self.minimax_mode:
+                                    self.log_action(
+                                        f"{player_.name} has used a port to trade 2x {give} for 1x {get}"
+                                    )
+                                return
+                        elif port_resource == "any":
+                            if player_.resources.count(give) >= 3:
+                                self.return_player_card(player_, give)
+                                self.return_player_card(player_, give)
+                                self.return_player_card(player_, give)
+                                self.give_player_card(player_, "resource", get)
+                                if not self.minimax_mode:
+                                    self.log_action(
+                                        f"{player_.name} has used a port to trade 3x {give} for 1x {get}"
+                                    )
+                                return
+        self.log_action(f"{player_.name} does not have enough resources to trade")
 
     def trade_with_player(
         self, original_player, player_to_trade_with, resource_to_give, resource_to_get
@@ -752,8 +785,6 @@ class board_interface:
                                     )
                                     == player_
                                 ):
-                                    # print(f'Roll of {roll} has been made and {self._buildings[building].get("player")} has a
-                                    # {self._buildings[building].get("building")} on {roll}, so receives 1x {building_tile.tile_type}')
                                     if building_tile.resource in cards_to_give:
                                         cards_to_give[building_tile.resource] += 1
                                     else:
@@ -766,8 +797,6 @@ class board_interface:
                                     )
                                     == player_
                                 ):
-                                    # print(f'Roll of {roll} has been made and {self._buildings[building].get("player")} has a
-                                    # {self._buildings[building].get("building")} on {roll}, so receives 2x {building_tile.tile_type}')
                                     if building_tile.resource in cards_to_give:
                                         cards_to_give[building_tile.resource] += 2
                                     else:
@@ -781,7 +810,7 @@ class board_interface:
 
     def initial_placement(self):
         """
-        Sets up the board for the game, by allowing players to place their initial settlements and roads, and then giving them the required cards
+        Sets up the board for the game, by allowing players to place their initial settlements and _roads, and then giving them the required cards
         Random placement is not true random - it will only place a settlement on a corner of a tile that will produce two or three resources, to help to avoid softlocks
         :return: None
         """

@@ -26,7 +26,7 @@ if __name__ == "__main__":
     for file in os.listdir("logs/players"):
         os.remove(os.path.join("logs/players", file))
 
-    players = [ai_minimax(2, "red"), ai_minimax(1, "yellow")]
+    players = [ai_random(1, "red"), ai_minimax(2, "yellow")]
 
     # Import Arguments
 
@@ -100,7 +100,14 @@ if __name__ == "__main__":
                                     ai = ai_mcts
                                 else:
                                     raise ValueError
-                                available_colours = ["red", "yellow", "blue", "green"]
+                                available_colours = [
+                                    "red",
+                                    "yellow",
+                                    "blue",
+                                    "green",
+                                    "magenta",
+                                    "cyan",
+                                ]
                                 for colour in [player.colour for player in players]:
                                     available_colours.remove(colour)
                                 players.append(

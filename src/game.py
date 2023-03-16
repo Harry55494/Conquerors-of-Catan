@@ -85,8 +85,13 @@ class game:
 
         while not self.player_has_won:
 
+            self.interface.log_action(f"\n\nTurn {self.turn} started")
+
             # Game Loop
             for player_ in self.players:
+
+                player_.resources.sort()
+                player_.development_cards.sort()
 
                 self.interface.turn = self.turn
                 self.interface.print_board()
@@ -149,6 +154,9 @@ class game:
                     pass
 
                 print(f"{player_} has finished their go, making {num_moves_made} moves")
+                self.interface.log_action(
+                    f"{player_.name}'s resources are now {player_.resources} at the end of their turn"
+                )
 
                 # End of turn waiting
                 if not CONFIG["table_top_mode"]:

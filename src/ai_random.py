@@ -304,7 +304,35 @@ class ai_random(ai_player):
                 continue
 
             elif "trade with port" in chosen_move:
-                raise NotImplementedError("Trading with port not implemented yet")
+                port_resources = []
+                for port in interface.get_ports_list():
+                    if interface.get_ports_list()[port] is not None:
+                        if interface.get_ports_list()[port]["player"] is not None:
+                            if (
+                                interface.get_ports_list()[port]["player"].number
+                                == self.number
+                            ):
+                                resource = interface.get_ports_list()[port]["resource"]
+                                if resource == "any":
+                                    # choose random resource from player's resources which has more than 3
+                                    for card in self.resources:
+                                        if self.resources.count(card) >= 3:
+                                            port_resources.append(card)
+                                else:
+                                    for card in self.resources:
+                                        if (
+                                            card == resource
+                                            and self.resources.count(card) >= 2
+                                        ):
+                                            port_resources.append(card)
+                if len(port_resources) == 0:
+                    self.log("No resources to trade with port - how did this happen?")
+                else:
+                    interface.trade_with_port(
+                        self,
+                        random.choice(port_resources),
+                        random.choice(list(interface.get_resource_deck())),
+                    )
 
             elif "play development card" in chosen_move and random.randint(0, 1) == 1:
                 self.play_development_card(interface)
