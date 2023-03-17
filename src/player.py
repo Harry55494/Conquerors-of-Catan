@@ -26,6 +26,8 @@ class player:
         self.resources = []
         self.development_cards = []
         self.played_robber_cards = 0
+        self.has_built_this_turn = False
+        self.has_played_dev_card_this_turn = False
         print(self.coloured_name, "has joined the game")
 
     # override print function

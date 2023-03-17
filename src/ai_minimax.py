@@ -1,6 +1,7 @@
 import math
 import random
 from datetime import datetime, timedelta
+from src.longest_road import *
 
 from src.ai_player import *
 
@@ -237,7 +238,7 @@ class ai_minimax(ai_player):
                             ):
                                 update_score(
                                     (
-                                        3
+                                        0
                                         * roll_map[
                                             interface.get_ports_list()[port]["resource"]
                                         ]
@@ -249,6 +250,20 @@ class ai_minimax(ai_player):
                                         ]
                                     ),
                                 )
+
+        # Check for how long the longest road is
+
+        player_roads = []
+        for road in interface.get_roads_list():
+            if interface.get_roads_list()[road]["player"] is not None:
+                if interface.get_roads_list()[road]["player"].number == self.number:
+                    player_roads.append(road)
+
+        clusters = return_clusters(player_roads)
+        if clusters:
+            longest_cluster = max(clusters, key=len)
+            max_cluster = len(find_longest_route(longest_cluster)) - 1
+            update_score(max_cluster * 2, "longest continuous road")
 
         # Check for longest road
         if interface.get_longest_road()[0] is not None:

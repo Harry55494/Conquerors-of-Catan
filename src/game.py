@@ -92,6 +92,8 @@ class game:
 
                 player_.resources.sort()
                 player_.development_cards.sort()
+                player_.has_built_this_turn = False
+                player_.has_played_dev_card_this_turn = False
 
                 self.interface.turn = self.turn
                 self.interface.print_board()
