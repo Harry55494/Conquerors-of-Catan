@@ -772,9 +772,7 @@ class board:
 
         for port in self._ports:
             if self._ports[port] is not None:
-                emoji = self._ports[port].get("emoji")
                 if self._ports[port].get("resource") == "any":
-
                     p_tp[port] = self._ports[port].get("symbol")
                 else:
                     p_tp[port] = self._ports[port].get("emoji")

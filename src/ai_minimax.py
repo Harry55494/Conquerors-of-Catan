@@ -238,7 +238,7 @@ class ai_minimax(ai_player):
                             ):
                                 update_score(
                                     (
-                                        0
+                                        1
                                         * roll_map[
                                             interface.get_ports_list()[port]["resource"]
                                         ]
@@ -250,6 +250,17 @@ class ai_minimax(ai_player):
                                         ]
                                     ),
                                 )
+
+        has_longest_road = False
+
+        # Check for longest road
+        if interface.get_longest_road()[0] is not None:
+            if interface.get_longest_road()[0].number == self.number:
+                update_score(25, "longest road")
+                has_longest_road = True
+        if interface.get_largest_army()[0] is not None:
+            if interface.get_largest_army()[0].number == self.number:
+                update_score(25, "largest army")
 
         # Check for how long the longest road is
 
@@ -263,15 +274,10 @@ class ai_minimax(ai_player):
         if clusters:
             longest_cluster = max(clusters, key=len)
             max_cluster = len(find_longest_route(longest_cluster)) - 1
-            update_score(max_cluster * 2, "longest continuous road")
-
-        # Check for longest road
-        if interface.get_longest_road()[0] is not None:
-            if interface.get_longest_road()[0].number == self.number:
-                update_score(5, "longest road")
-        if interface.get_largest_army()[0] is not None:
-            if interface.get_largest_army()[0].number == self.number:
-                update_score(5, "largest army")
+            update_score(
+                max_cluster * (2 if not has_longest_road else 1),
+                "longest continuous road",
+            )
 
         # Rate higher if there is one of each tile nearby
         update_score(
@@ -656,7 +662,8 @@ class ai_minimax(ai_player):
             print("MiniMaxTimeoutException: " + str(e))
             time.sleep(1)
             if not self.root_score_map:
-                return None
+                # Not sure whether I like this?
+                raise endOfTurnException
         self.log("Root score map: " + str(self.root_score_map))
         best_move_from_minimax = max(self.root_score_map, key=lambda x: x[1])
         best_move_from_minimax = {
