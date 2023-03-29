@@ -87,7 +87,7 @@ if __name__ == "__main__":
                                     print("You cannot add any more players")
                                     time.sleep(2)
                                     continue
-                                potential_ais = ["random", "minimax", "mcts"]
+                                potential_ais = ["random", "minimax"]
                                 print("Please choose the number of an AI to add:")
                                 for i, ai in enumerate(potential_ais):
                                     print(str(i + 1) + ". " + ai)
@@ -96,8 +96,6 @@ if __name__ == "__main__":
                                     ai = ai_random
                                 elif ai_choice == 2:
                                     ai = ai_minimax
-                                elif ai_choice == 3:
-                                    ai = ai_mcts
                                 else:
                                     raise ValueError
                                 available_colours = [

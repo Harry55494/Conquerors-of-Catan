@@ -49,6 +49,7 @@ The board data is stored as a series of lists, arrays and dictionaries. These ar
 - `tiles` - A list of class `tile` objects, representing the tiles on the board
 - `buildings` - A dictionary mapping the grid references to a tuple of the player, the building type, and the tiles that touch it
 - `roads` - A dictionary mapping tuples of the start and end of the road to the player that owns it, and the symbol to be drawn on the board
+- `ports` - A dictionary mapping the coastline grid references to either `None` if there is no port, or the type of port and who owns it if there is one
 
 The board also has a number of other variables that are used to keep track of the game state:
 - `players` - A list of the players in the game
@@ -73,10 +74,6 @@ The MiniMax Search Heuristic uses the following values and weights to evaluate t
 If the player has won, the metric returns 1000000.
 
 The metric prioritizes getting victory points and expanding over hoarding cards. It is a fairly general heuristic, and is not specific to any particular strategy.
-
-## Known Differences to the main game
-
-- 1
 
 
 ## Contact
