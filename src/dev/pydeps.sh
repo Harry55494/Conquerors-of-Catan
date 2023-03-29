@@ -11,4 +11,4 @@ then
     exit
 fi
 
-python3 -m pydeps ~/Documents/University/Year\ 3/CE301\ -\ Capstone\ Project/Conquerors-of-Catan/src -T png -o ~/Documents/University/Year\ 3/CE301\ -\ Capstone\ Project/Conquerors-of-Catan/src/dev/dependencies.png --rmprefix src. -x termcolor.termcolor
+python3 -m pydeps ~/Documents/University/Year\ 3/CE301\ -\ Capstone\ Project/Conquerors-of-Catan/src -T png -o ~/Documents/University/Year\ 3/CE301\ -\ Capstone\ Project/Conquerors-of-Catan/src/dev/dependencies.png --rmprefix src. --rankdir TB --cluster -x termcolor.termcolor
