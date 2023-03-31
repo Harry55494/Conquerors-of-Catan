@@ -1,3 +1,10 @@
+"""
+Board Class, containing all the information about the board, and the buildings on it
+One of the longest files, but mostly just due to the nice spacing of the arrays and dictionaries
+
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+"""
+
 import src.ai_minimax
 from src.ai_minimax import *
 from src.ai_random import *
@@ -32,8 +39,13 @@ class board:
 
         self.resource_deck = []
         self.development_card_deck = []
+
+        # These are pairs, to know who the player currently holding it is, and what the amount of either soldiers or roads is
         self.largest_army = [None, 0]
         self.longest_road = [None, 0]
+
+        # Tiles List contains all the tiles on the board, and their letter, number, and resource
+        # Does not specify the position of the tile on the board
         self.tiles = [
             tile(9, "a", "wheat"),
             tile(12, "b", "sheep"),
@@ -56,6 +68,7 @@ class board:
             tile(5, "s", "rock"),
         ]
 
+        # Building Costs List contains the cost of each building, in terms of resources
         self.building_cost_list = {
             "road": {"wood": 1, "clay": 1},
             "settlement": {"wood": 1, "clay": 1, "wheat": 1, "sheep": 1},
@@ -63,8 +76,8 @@ class board:
             "development card": {"rock": 1, "wheat": 1, "sheep": 1},
         }
 
-        # Buildings map contains a grid reference, the building type, and the player who owns it. Also contains the tile type, so that the resources to
-        # give can be calculated
+        # Buildings map contains a grid reference, the building type, and the player who owns it.
+        # Also contains the tile type, so that the resources to give can be calculated easily
         self._buildings = {
             "a1": {
                 "player": None,
@@ -386,7 +399,8 @@ class board:
             },
         }
 
-        # Roads map contains the start and end reference, which player owns the road and the symbol that needs to be printed to form the hexagons correctly
+        # Roads map contains the start and end reference, which player owns the road and
+        # the symbol that needs to be printed to form the hexagons correctly
         self._roads = {
             # Hex a
             tuple(["a1", "a2"]): {"player": None, "symbol": r"-"},
@@ -481,6 +495,8 @@ class board:
             tuple(["s2", "q,s"]): {"player": None, "symbol": r"\ "},
         }
 
+        # Ports, with the key being the two nodes that the port is between
+        # If the port is not None, then the owning player, type and resource are specified
         self._ports = {
             tuple(["a1", "a2"]): None,
             tuple(["a2", "a,c"]): None,
@@ -540,6 +556,8 @@ class board:
         }
 
         # Create the tiles and board
+        # Use the default layout if the random layout is not specified
+        # If the board layout is the default, this is skipped as the tile are already in the default order
         if board_type != "default":
 
             # If the layout is random, form the tiles from the possible options in the correct order
@@ -609,7 +627,10 @@ class board:
                 "s",
             ]
             i = 0
+
+            # Iterate through the letter order and get a random tile for each position
             while len(self.tiles) < 19:
+                # Get random tile
                 tile_type = potential_tiles.pop(
                     random.randint(0, len(potential_tiles) - 1)
                 )
@@ -618,6 +639,7 @@ class board:
                     self.tiles.append(tile(7, (letter_order.pop(0)), tile_type))
                     number_order.pop(number_order.index(7))
                 else:
+                    # Add the tile to the board
                     self.tiles.append(
                         tile(number_order[i], (letter_order.pop(0)), tile_type)
                     )
@@ -625,6 +647,7 @@ class board:
 
         # Add the required cards to their decks
 
+        # Resource Deck
         for i in range(19):
             self.resource_deck.append("wheat")
             self.resource_deck.append("wood")
@@ -632,6 +655,7 @@ class board:
             self.resource_deck.append("clay")
             self.resource_deck.append("rock")
 
+        # Development Card Deck
         for i in range(14):
             self.development_card_deck.append("soldier")
 
@@ -649,11 +673,12 @@ class board:
             self.development_card_deck, len(self.development_card_deck)
         )
 
-    # Helpers
+    # Helper Functions
 
     def calculate_resource_rarity(self):
         """
         Calculates the rarity of each resource on the board. The higher the number, the more rare
+        This function isn't actually used, but it could be used to help the AI make decisions
         :return: A dictionary with the resource as the key and the rarity as the value.
         """
         resource_rarity_scores = {
@@ -665,29 +690,27 @@ class board:
         }
         for tile in self.tiles:
             if tile.resource != "desert":
-                if tile.dice_number in [2, 12]:
-                    resource_rarity_scores[tile.resource] += 5
-                elif tile.dice_number in [3, 11]:
-                    resource_rarity_scores[tile.resource] += 4
-                elif tile.dice_number in [4, 10]:
-                    resource_rarity_scores[tile.resource] += 3
-                elif tile.dice_number in [5, 9]:
-                    resource_rarity_scores[tile.resource] += 2
-                elif tile.dice_number in [6, 8]:
-                    resource_rarity_scores[tile.resource] += 1
+                # Add the frequency of the resource to the score
+                # The higher the frequency, the less rare the resource, therefore the score is subtracted from 6
+                resource_rarity_scores[tile.resource] += 6 - tile.frequency
+
+        # Create the final scores by averaging the scores for each resource
         resource_rarity_scores = {
-            k: v / sum(resource_rarity_scores.values())
-            for k, v in resource_rarity_scores.items()
+            resource: scores / sum(resource_rarity_scores.values())
+            for resource, scores in resource_rarity_scores.items()
         }
+
+        # Normalise the scores
         normalised_scores = {}
         print(resource_rarity_scores)
         for item, score in resource_rarity_scores.items():
+            # Simple formula for normalisation adapted for the scores here
             normalised_score = (score - min(resource_rarity_scores.values())) / (
                 max(resource_rarity_scores.values())
                 - min(resource_rarity_scores.values())
             )
             normalised_scores.update({item: normalised_score})
-        print(normalised_scores)
+        # print(normalised_scores)
         return normalised_scores
 
     # Printing the Board -------------------------------------------------------
@@ -695,9 +718,14 @@ class board:
     def print_board(self, print_letters=False):
         """
         Outputs the board to the console
+        :param print_letters: Whether to print the letters on the board
         :return: None
         """
 
+        # If the board is printed in 'board' mode, the cursor is moved to the top of the screen
+        # This prevents the flashing that happens when repeatedly clearing the screen, but does mean that if the board
+        # and actions are not as long as the previous board, the extra part of the previous actions will still be visible
+        # Otherwise, if the board is in 'text' mode, the screen is cleared
         display_mode = CONFIG["display_mode_focus"]
         if display_mode == "board":
             terminal_height = os.get_terminal_size().lines + 15
@@ -706,7 +734,7 @@ class board:
             os.system("cls" if os.name == "nt" else "clear")
 
         # *_tp = *_to_print
-        # Shorthand to make the code more readable
+        # Shorthand to make the code more readable later on
 
         t_tp = []  # Tiles to print
         l_tp = []  # Letters to print
@@ -714,11 +742,14 @@ class board:
         r_tp = {}  # Roads to print
         p_tp = {}  # Ports to print
 
+        # Convert the tiles to a list of tiles to print, containing the dice number and the symbol
         for tile_ in self.tiles:
             # Dice numbers of 6 and 8 are in red, to keep true to the board, as they are the highest frequency numbers
+            # Numbers less than 10 are padded with a space to keep the board looking nice
             if tile_.dice_number < 10:
                 t_tp.append(
                     [
+                        # Extra Padded space
                         f' {(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else " " if tile_.dice_number == 7 else tile_.dice_number)}',
                         (
                             tile_.symbol + " "
@@ -730,13 +761,15 @@ class board:
             else:
                 t_tp.append(
                     [
+                        # No extra padding
                         f'{(termcolor.colored(tile_.dice_number, "red") if tile_.dice_number in [6, 8] else tile_.dice_number)}',
                         tile_.symbol,
                     ]
                 )
 
+        # Convert the tiles to a list of letters to print, containing the letter of the tile
+        # Prints the letters (if requested by the function), then the robber symbol if the tile contains the robber
         for tile_ in self.tiles:
-            # Prints the letter if requested, then the robber symbol if the tile contains the robber
             l_tp.append(
                 termcolor.colored(tile_.letter, "white")
             ) if print_letters else l_tp.append(
@@ -745,6 +778,7 @@ class board:
                 " "
             )
 
+        # Convert the buildings to a dictionary of buildings to print, containing the building type and the player colour
         for building in self._buildings:
             if self._buildings[building].get("building") is not None:
                 b_tp[building] = termcolor.colored(
@@ -755,11 +789,14 @@ class board:
                     ),
                     self._buildings[building].get("player").colour,
                 )
+            # The following statements are used to print the board correctly at the edges
             elif building in ["d1", "f2", "i1", "k1", "n2", "p1"]:
                 b_tp[building] = "|"
             else:
                 b_tp[building] = " "
 
+        # Convert the roads to a dictionary of roads to print, containing the road type and the player colour
+        # Simply prints the road in a colour if the road is owned by a player, otherwise prints the road symbol in white
         for road in self._roads:
             if self._roads[road].get("player") is not None:
                 r_tp[road] = termcolor.colored(
@@ -769,6 +806,8 @@ class board:
             else:
                 r_tp[road] = self._roads[road].get("symbol")
 
+        # Convert the ports to a dictionary of ports to print, containing the port type and the port symbol
+        # Prints the symbol if the port is a 2:1, otherwise prints 3:1
         for port in self._ports:
             if self._ports[port] is not None:
                 if self._ports[port].get("resource") == "any":
@@ -779,6 +818,8 @@ class board:
             else:
                 p_tp[port] = "   "
 
+        # The following is the code to print the board
+        # It contains a lot of references to the dictionaries and lists created earlier, but this means it is completely adaptable to any board layout
         # I am aware this absolutely horrendous to try and read. It started simply as just the outlines of hexagons, and very quickly required a lot of
         # moving parts. However, it works, and I won't need to edit it later on.
 
@@ -818,23 +859,31 @@ class board:
             f'                                  {p_tp["s1", "s2"]}                                  ',
         ]
 
+        # This centers the text in the terminal
         line_length = 71
         try:
             terminal_width = os.get_terminal_size().columns
         except OSError:
-            print("Unable to get terminal size, using default width of 71")
+            print("Unable to get terminal size, using default width of 240")
             terminal_width = 240
 
+        # The following actually prints the board to the terminal, with the correct spacing
         print("\n")
         print("Conquerors of Catan".center(terminal_width))
+
+        # This prints the top of the board
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
-        # print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
+
+        # This prints the lines of the board from the list above
         for line in lines_to_print:
             print(f"{' ' * int(terminal_width / 2 - 40)}|    {line}    |")
+
+        # This prints the bottom of the board
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
-        # print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
+
+        # This prints the deck, players and their stats
         print("\n")
         print(f"🌾 🌲 🐑 🧱 🪨    ❔        ".center(terminal_width), end="")
         print(
@@ -842,9 +891,12 @@ class board:
                 terminal_width
             )
         )
+        # Sort the players by victory points
         players_in_order = sorted(
             self.players, key=lambda x: x.victory_points, reverse=True
         )
+
+        # Print the players and their stats, including longest road, largest army and soldier cards
         for player_ in players_in_order:
             text = f"{player_}".ljust(35)
             LR = "LR" if player_ == self.longest_road[0] else "  "
@@ -854,6 +906,7 @@ class board:
                 if player_.played_robber_cards > 0
                 else "  "
             )
+            # Spacing here is specific so that if they don't have LR or LA, it still looks good
             print(
                 f"          {text}|  VP: {player_.victory_points}   |   Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
                     terminal_width

@@ -1,3 +1,10 @@
+"""
+Tile Class File for Board
+
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+"""
+
+
 class tile:
     def __init__(self, dice_number, letter, resource):
         """
@@ -11,6 +18,7 @@ class tile:
         self.letter = letter
         self.contains_robber = False
 
+        # Set the symbol for the tile
         if resource == "wheat":
             self.symbol = "🌾"
         elif resource == "wood":
@@ -26,6 +34,7 @@ class tile:
             self.dice_number = 7
             self.contains_robber = True
 
+        # Set the frequency of the tile (the dots on the tile)
         self.frequency = (
             5
             if dice_number == 6 or dice_number == 8
@@ -41,4 +50,5 @@ class tile:
         )
 
     def __str__(self):
+        # Override the string representation of the tile, for printing to the console
         return f"{self.letter}"

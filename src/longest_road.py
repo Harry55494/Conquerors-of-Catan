@@ -1,4 +1,13 @@
+"""
+Methods to find the longest route in a graph.
+ChatGPT wrote some code as listed below
+
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+"""
+
+
 # Using AI to write an AI program is ironic haha
+
 # CHATGPT HAS WRITTEN THIS CODE ------------------------------------------------
 
 
@@ -74,15 +83,21 @@ def find_route_from_node(
 # END OF CHATGPT'S CODE -------------------------------------------------------
 
 
+# Method to find the clusters of roads that are together
 def return_clusters(set):
     clusters = []
+    # Iterates through every road that the player owns
     for road in set:
+        # Checks through all existing clusters
         for cluster in clusters:
+            # For every road in the cluster, check if the current road is connected to it
             for node in cluster:
                 if road[0] in node or road[1] in node:
+                    # If it is, add the current road to the cluster, otherwise do nothing
                     cluster.extend([road])
                     break
         else:
+            # If the road is not connected to any other road create a new cluster
             if road not in [item for sublist in clusters for item in sublist]:
                 clusters.append([road])
 

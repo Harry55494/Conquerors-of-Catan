@@ -1,5 +1,11 @@
+"""
+AI Minimax Player
+Contains the logic for the minimax AI player to play the game
+
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+"""
+
 import math
-import random
 from datetime import datetime, timedelta
 from src.longest_road import *
 
@@ -10,6 +16,8 @@ import time
 import copy
 
 
+# Minimax timeout exception, to be raised if the minimax algorithm takes too long
+# Is caught by the minimax algorithm, and the best move found so far is returned
 class MiniMaxTimeoutException(Exception):
     pass
 
@@ -18,6 +26,7 @@ def perform_minimax_move(player_clone, interface_clone, move):
     """
     Contains the logic for performing a move within a minimax search
     Performs a move within a minimax search, for a specific player
+    Acts as a simple interpreter for the move, and calls the appropriate function on the interface
     :param move: The move to be performed
     :param player_clone: The player object to perform the move from
     :param interface_clone: The interface object to perform the move on
@@ -47,6 +56,7 @@ def perform_minimax_move(player_clone, interface_clone, move):
     elif move[0] == "end turn":
         pass
     else:
+        # If the move is not recognised, raise an error
         raise NotImplementedError(
             "perform_minimax_move does not know how to perform " + str(move)
         )
@@ -60,8 +70,17 @@ class ai_minimax(ai_player):
         colour,
         time_limit=CONFIG["minimax_time_limit"],
         max_depth=CONFIG["minimax_max_depth"],
-    ):
+    ) -> None:
+        """
+        Constructor for the minimax AI player
+        :param number: The player number
+        :param colour: The player colour
+        :param time_limit: The time limit for the minimax algorithm to run for, defaults to CONFIG["minimax_time_limit"]
+        :param max_depth: The maximum depth for the minimax algorithm to search to, defaults to CONFIG["minimax_max_depth"]
+        """
+        # Call the parent constructor
         super().__init__(number=number, colour=colour, strategy="minimax")
+        # Log the creation of the player
         self.log(
             "Minimax player created with time limit of "
             + str(time_limit)
@@ -69,25 +88,34 @@ class ai_minimax(ai_player):
             + str(max_depth)
             + " levels"
         )
+        # Set the time limit and max depth, and initialise the root score map
         self.time_limit = time_limit
         self.max_depth = max_depth
         self.root_score_map = []
         self.temp_score_variation_map = [0, {}]
         self.start_time = None
 
-    def evaluate_board(self, interface):
+    def evaluate_board(self, interface) -> int:
         """
         Heuristic function to evaluate the board state
+        Most of this is self-explanatory
         See README for more details of how the heuristic is calculated
         :param interface: board_interface
         :return: The evaluation of the board as an integer
-
         """
 
+        # The score variation map is a map of the reasons for the score variation, and the amount of the variation
+        # Useful for debugging
         score_variation_map = {}
         score = 0
 
-        def update_score(amount, reason):
+        def update_score(amount, reason) -> None:
+            """
+            Updates the score and score variation map
+            :param amount: The amount to update the score by
+            :param reason: The reason for the score update
+            :return:
+            """
             nonlocal score
             nonlocal score_variation_map
             score += amount
@@ -97,7 +125,7 @@ class ai_minimax(ai_player):
 
         buildings_list = interface.get_buildings_list()
 
-        # Victory Points ------------------------------------------------------
+        # Victory Points Scoring ------------------------------------------------------
 
         current_vp = self.calculateVictoryPoints(
             interface, buildings_list=buildings_list
@@ -108,6 +136,7 @@ class ai_minimax(ai_player):
             for player in interface.get_players_list()
             if player.number != self.number
         ]
+
         other_players.sort(
             key=lambda x: x.calculateVictoryPoints(
                 interface, buildings_list=buildings_list
@@ -115,10 +144,12 @@ class ai_minimax(ai_player):
             reverse=True,
         )
 
+        # Score based on victory points
         update_score(current_vp * 10, "victory points")
 
         target_score = CONFIG["target_score"]
 
+        # Score based on being close to, or actually, winning
         if current_vp >= target_score:
             return 1000000
         if current_vp == target_score - 1:  # Bonus points for being close to winning
@@ -133,7 +164,7 @@ class ai_minimax(ai_player):
         ):
             update_score(25, "tied for first")
 
-        # Number of _roads -----------------------------------------------------
+        # Number of roads -----------------------------------------------------
 
         update_score(-interface.count_structure(self, "road") * 1.5, "roads")
 
@@ -171,7 +202,7 @@ class ai_minimax(ai_player):
                         cities_count += 1
                         update_score(1000, "city at " + str(key))
 
-                    # Rate based on frequency of dice roll
+                    # Rate based on frequency of dice roll for each resource
                     update_score(
                         (
                             sum(
@@ -184,6 +215,7 @@ class ai_minimax(ai_player):
                         ),
                         "tiles and frequency of dice roll at " + str(key),
                     )
+
                     for tile in buildings_list[key]["tiles"]:
                         multiplier = 1 if building_type == "settlement" else 2
                         if tile.resource not in roll_map:
@@ -208,28 +240,21 @@ class ai_minimax(ai_player):
 
         update_score(len(resources), "total amount of resources")
 
-        # check for ports
+        # Check for ports
         for port in interface.get_ports_list():
             if interface.get_ports_list()[port] is not None:
                 if interface.get_ports_list()[port]["player"] is not None:
                     if interface.get_ports_list()[port]["player"].number == self.number:
-                        # Now add points
 
+                        # Rate based on whether the port is a 3:1 port or a 2:1 port
+                        # and whether the player has access to the resource, and if so whether it is a city or settlement
                         if interface.get_ports_list()[port]["symbol"] == "3:1":
+                            # Resource = any
                             if cities_count >= 1:
                                 update_score(
-                                    (
-                                        4
-                                        * roll_map[
-                                            interface.get_ports_list()[port]["resource"]
-                                        ]
-                                    ),
+                                    (4 * max(roll_map.values())),
                                     "3:1 port and building on "
-                                    + str(
-                                        roll_map[
-                                            interface.get_ports_list()[port]["resource"]
-                                        ]
-                                    ),
+                                    + str(max(roll_map.values())),
                                 )
                         else:
                             if (
@@ -324,12 +349,13 @@ class ai_minimax(ai_player):
                     else:
                         score += tile.frequency if building["player"].number == self.number else -tile.frequency"""
 
+        # Overwrite score with temp score if it is better, as this is the score that will be used for the minimax algorithm
         if score > self.temp_score_variation_map[0]:
             self.temp_score_variation_map = [score, score_variation_map]
 
         return score
 
-    def choose_road_location(self, interface):
+    def choose_road_location(self, interface) -> tuple[int, int]:
         """
         Chooses the location of a road to be built
         :param interface:
@@ -340,34 +366,47 @@ class ai_minimax(ai_player):
 
         self.log("Choosing road location")
 
+        # Iterate through all potential road locations and evaluate the board at each location
         for location in interface.get_potential_road_locations(self):
             interface_copy = copy.deepcopy(interface)
             interface_copy.set_minimax(True)
             player_copy = copy.deepcopy(self)
             interface_copy.place_road(player_copy, location)
+            # Save the score of the board at this location
             score_map[location] = self.evaluate_board(interface_copy)
 
         self.log("Potential Roads Score Map: " + str(score_map))
 
+        # Return the location with the highest score
         return max(score_map, key=score_map.get)
 
-    def initial_placement(self, interface):
+    def initial_placement(self, interface) -> None:
+        """
+        Chooses the location of a settlement and road to be built
+        :param interface: Interface object
+        :return: None
+        """
 
+        # Get all potential locations for the settlement
         potential_locations = interface.get_potential_building_locations(
             self, initial_placement=True
         )
 
+        # Iterate through all potential locations and evaluate the board at each location
         location_score_map = {}
         for location in potential_locations:
             interface_clone = copy.deepcopy(interface)
             interface_clone.set_minimax(True)
             interface_clone.place_settlement(self, location)
-
+            # Save the score of the board at this location
             location_score_map[location] = self.evaluate_board(interface_clone)
 
+        # Return the location with the highest score
         best_location = max(location_score_map, key=location_score_map.get)
         interface.place_settlement(self, best_location, True)
 
+        # Get all potential locations for the road
+        # Cannot use the above method as this is the first road placed and the player has no roads
         road_score_map = {}
 
         for road in [
@@ -378,87 +417,116 @@ class ai_minimax(ai_player):
             interface_clone.place_road(self, road)
             road_score_map[road] = self.evaluate_board(interface_clone)
 
+        # Return the road with the highest score and place it
         best_road = max(road_score_map, key=road_score_map.get)
         interface.place_road(self, best_road)
 
         return best_location
 
-    def robber(self, interface):
+    def robber(self, interface) -> None:
         """
         Decide which player to rob and where to move the robber
         :param interface:
-        :return:
+        :return: None
         """
 
+        # Get all potential locations for the robber
         potential_locations = [
             tile for tile in interface.get_tiles_list() if tile.resource != "desert"
         ]
+
+        # Iterate through all potential locations and evaluate the board at each location
         location_score_map = {}
         for location in potential_locations:
             interface_clone = copy.deepcopy(interface)
             interface_clone.set_minimax(True)
             interface_clone.move_robber(location)
-
+            # Save the score of the board at this location
             location_score_map[location] = self.evaluate_board(interface_clone)
+
+        # Move the robber to the location with the highest score
         location = max(location_score_map, key=location_score_map.get)
         interface.move_robber(location)
 
+        # Get all players that have resources
         potential_players = []
         for player in interface.get_players_list():
             if player.number != self.number:
                 if len(player.resources) > 0:
                     potential_players.append(player)
 
+        # If there are no players with resources, return
         if len(potential_players) == 0:
             return None
+        # If there is only one player with resources, steal from them
         if len(potential_players) == 1:
             interface.steal_from_player(self, potential_players[0])
+        # If there are multiple players with resources, steal from the player with the most resources
         else:
             interface.steal_from_player(
                 self, max(potential_players, key=lambda x: len(x.resources))
             )
 
-    def robber_discard(self, interface):
+    def robber_discard(self, interface) -> None:
+        """
+        Discard half of the players resources
+        :param interface: Interface object
+        :return: None
+        """
+        # Discard half of the players resources
+        # Does this by evaluating the board at each possible discard and choosing the discard that results in the best board
         required_length = len(self.resources) // 2
         while len(self.resources) > required_length:
             could_discard = list(set(self.resources))
             scores = {}
+            # Evaluate the board at each possible discard
             for card in could_discard:
                 clone = copy.deepcopy(self)
                 clone.resources.remove(card)
                 scores[card] = clone.evaluate_board(interface)
 
+            # Discard the card that results in the best board, and loop again
             interface.return_player_card(
                 self, self.resources[self.resources.index(min(scores, key=scores.get))]
             )
 
     # Minimax functions --------------------------------------------------------
 
-    def get_move_combinations(self, interface, player_):
+    def get_move_combinations(self, interface, player_) -> list | bool:
         """
-        Returns a list of all possible combinations of moves for the player
+        Returns a list of all possible _combinations_ of moves for the player
         :param interface: The current state of the game
         :return: A list of all possible combinations of moves for the player
         """
+
+        # Get all possible moves for the player
         potential_moves = interface.return_possible_moves(player_)
         if not potential_moves:
-            return
+            return False
         # print(potential_moves)
 
         # Append all combinations of moves to a list
         full_move_list = []
         for move in potential_moves:
+
+            # Append settlement locations
             if move == "build settlement":
                 for location in interface.get_potential_building_locations(player_):
                     full_move_list.append(["build settlement", location])
+
+            # Append city locations
             elif move == "build city":
                 for location in interface.get_potential_building_locations(
                     player_, "city"
                 ):
                     full_move_list.append(["build city", location])
+
+            # Append road locations
             elif move == "build road":
                 for location in interface.get_potential_road_locations(player_):
                     full_move_list.append(["build road", location])
+
+            # Append trade with bank moves
             elif move == "trade with bank":
                 resources_can_trade = list(
                     set(
@@ -473,6 +541,8 @@ class ai_minimax(ai_player):
                     for resource_to_get in ["clay", "rock", "sheep", "wheat", "wood"]:
                         if resource_to_get != resource:
                             full_move_list.append([move, resource, resource_to_get])
+
+            # Append trade with port moves
             elif move == "trade with port":
                 port_resources = []
                 for port in interface.get_ports_list():
@@ -483,8 +553,8 @@ class ai_minimax(ai_player):
                                 == self.number
                             ):
                                 resource = interface.get_ports_list()[port]["resource"]
+                                # If the port is a 3:1 port, add all resources to the list
                                 if resource == "any":
-                                    # choose random resource from player's resources which has more than 3
                                     for card in self.resources:
                                         if self.resources.count(card) >= 3:
                                             port_resources.append(card)
@@ -495,10 +565,13 @@ class ai_minimax(ai_player):
                                             and self.resources.count(card) >= 2
                                         ):
                                             port_resources.append(card)
+                # Add all possible trades to the list to receive
                 for resource in port_resources:
                     for resource_to_get in ["clay", "rock", "sheep", "wheat", "wood"]:
                         if resource_to_get != resource:
                             full_move_list.append([move, resource, resource_to_get])
+
+            # Append development card moves
             elif move == "play development card":
                 if self.number == player_.number:
                     # Development cards are private information
@@ -511,6 +584,8 @@ class ai_minimax(ai_player):
                             full_move_list.append([move, card])
                         elif card == "road building":
                             full_move_list.append([move, card])
+
+                        # Year of Plenty with all possible combinations of resources
                         elif card == "year of plenty":
                             for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
                                 for resource2 in [
@@ -523,40 +598,64 @@ class ai_minimax(ai_player):
                                     full_move_list.append(
                                         [move, card, resource, resource2]
                                     )
+
+                        # Monopoly with all possible resources
                         elif card == "monopoly":
                             for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
                                 full_move_list.append([move, card, resource])
                 else:
                     pass
+
+            # Else just append the move
             else:
                 full_move_list.append(
                     [
                         move,
                     ]
                 )
+
+        # If there are no moves, return a list containing 'end turn'
         if not full_move_list:
             full_move_list = [["end turn"]]
 
+        # Sort the list.
         # List is sorted so that 'build' comes before 'trade' in the list of possible moves, so that in the event of a
         # MiniMaxTimeOutException, the player will build before trading
         full_move_list.sort(key=lambda x: x[0])
 
         return full_move_list
 
-    def minimax(self, interface, max_depth, alpha, beta, current_player):
+    def minimax(self, interface, max_depth, alpha, beta, current_player) -> list:
+        """
+        Recursive Minimax algorithm
+        Slightly based on my previous CE213 assignment
+        NOTE: Maximum depth is the starting depth, and the score is increased. Imagine Maximum depth as the top of the
+        tree, and the score is decremented to 0 each layer
+        :param interface: The current state of the game
+        :param max_depth: The maximum depth of the tree.
+        :param alpha: The alpha value
+        :param beta: The beta value
+        :param current_player: The current player
+        :return: A list pair containing the best move and the score of that move
+        """
 
+        # Check that the depth is correctly set
         if (
             max_depth == CONFIG["minimax_max_depth"]
             and self.number != current_player.number
         ):
             raise Exception("Cannot start minimax on opponent's turn")
 
+        # Check if the time limit has been reached, and if so, return a MiniMaxTimeoutException
         if self.start_time + timedelta(seconds=self.time_limit) < datetime.now():
             # Recursively return if limit is reached
             self.log("Time limit reached")
             raise MiniMaxTimeoutException
 
+        # Log the current depth
         self.log(f"Depth: {max_depth}, Maximising: {current_player.name}")
+
+        # Check if the depth is at the maximum depth, and if so set the variables
         if max_depth == self.max_depth:
             self.root_score_map = []
             self.log("Resetting root_score_map")
@@ -565,28 +664,35 @@ class ai_minimax(ai_player):
         if current_player.number == self.number:
             # It is the Minimax AI's turn
             max_combo = ["move_here", -math.inf]
+            # Get all possible moves for this player
             potential_moves = self.get_move_combinations(
                 interface, current_player
             )  # This line was changed from self to current_player
             # self.log(f"Potential moves: {potential_moves}")
+            # If there are no moves, return the end turn move
             if not potential_moves:
                 self.root_score_map.append(
                     [["end turn"], self.evaluate_board(interface)]
                 )
                 max_combo = [["end turn"], self.evaluate_board(interface)]
 
+            # Else, for each move, perform the move and recursively call minimax
             else:
                 for move in potential_moves:
+                    # Create a clone of the interface and player so that the original is not modified
                     interface_clone = copy.deepcopy(interface)
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(self)
 
+                    # Perform the move
                     interface_clone = perform_minimax_move(
                         player_clone, interface_clone, move
                     )
 
+                    # If the depth is at 0, evaluate the board and add the move and score to the list
                     if max_depth == 0:
                         eval_combo = [move, self.evaluate_board(interface_clone)]
+                    # Else, recursively call minimax with the new interface and player
                     else:
                         eval_combo = self.minimax(
                             interface_clone,
@@ -595,28 +701,37 @@ class ai_minimax(ai_player):
                             beta,
                             interface.get_next_player(current_player),
                         )
+                    # If the depth is at the maximum depth (the top layer), add the move and score to the list as
+                    # these are the immediate moves that can be made and need to be evaluated
                     if max_depth == self.max_depth:
                         self.root_score_map.append([move, eval_combo[1]])
                     max_combo = max(max_combo, eval_combo, key=lambda x: x[1])
 
+                    # Perform alpha-beta pruning to speed up the algorithm
                     alpha = max(alpha, max_combo[1])
                     if beta <= alpha:
                         self.log(f"Pruning at depth {max_depth}")
                         break
 
+            # If the depth is at the maximum depth, return the best move
             self.log(f"Max combo: {max_combo}")
             return max_combo
 
         else:
             # It is the opponent's turn
+            # Perform the same as above, but with the opponent's player, and return the minimum score
             min_combo = ["move_here", math.inf]
-            opposing_player = interface.get_next_player(current_player)
+            opposing_player = current_player  # THIS LINE WAS CHANGED FROM interface.get_next_player(current_player) TO current_player
+
+            # Get all possible moves for this player
             potential_moves = self.get_move_combinations(interface, opposing_player)
             if not potential_moves:
                 min_combo = [["end turn"], self.evaluate_board(interface)]
 
             else:
+                # Else, for each move, perform the move and recursively call minimax
                 for move in potential_moves:
+                    # Create a clone of the interface and player so that the original is not modified
                     interface_clone = copy.deepcopy(interface)
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(opposing_player)
@@ -625,14 +740,18 @@ class ai_minimax(ai_player):
                         player_clone, interface_clone, move
                     )
 
+                    # If the depth is at 0, evaluate the board and add the move and score to the list
                     if max_depth == 0:
                         eval_combo = [move, self.evaluate_board(interface_clone)]
                     else:
                         eval_combo = self.minimax(
                             interface_clone, max_depth - 1, alpha, beta, opposing_player
                         )
+
+                    # If the depth is at the maximum depth (the top layer), add the move and score to the list as
                     min_combo = min(min_combo, eval_combo, key=lambda x: x[1])
 
+                    # Perform alpha-beta pruning to speed up the algorithm
                     beta = min(beta, min_combo[1])
                     if beta <= alpha:
                         self.log(f"Pruning at depth {max_depth}")
@@ -644,32 +763,46 @@ class ai_minimax(ai_player):
                     # information based on the dice roll. Given that it would be possible to keep track of this, I
                     # believe that it is fair to allow the minimax player to 'see' the opponents hand.
 
+            # If the depth is at the maximum depth, return the best move
             self.log("Min combo: " + str(min_combo))
             return min_combo
 
     # noinspection DuplicatedCode
-    def turn_actions(self, interface):
+    def turn_actions(self, interface) -> None:
+        """
+        This function is called at the start of the player's turn. It is responsible for calling the minimax algorithm
+        :param interface: The interface object
+        :return: The move to be made
+        """
 
         print("Beginning minimax")
-        self.log("\n\n$!\n\nBeginning minimax search on turn " + str(interface.turn))
+        # Log that the minimax search has begun
+        self.log(
+            "\n\n$!\n\nBeginning minimax search on turn " + str(interface.turn_number)
+        )
         self.log("Full moves list: " + str(self.get_move_combinations(interface, self)))
+        # Set the start time
         self.start_time = datetime.now()
         self.log("Start time: " + str(self.start_time))
+        # Run the minimax algorithm
         try:
             self.minimax(interface, self.max_depth, -math.inf, math.inf, self)
+        # If the minimax algorithm times out, find the best move from the moves that have been evaluated
         except MiniMaxTimeoutException as e:
             self.log("MiniMaxTimeoutException: " + str(e))
             print("MiniMaxTimeoutException: " + str(e))
             time.sleep(1)
             if not self.root_score_map:
-                # Not sure whether I like this?
+                # Not sure whether I like this? Potentially should search for other items
                 raise endOfTurnException
         self.log("Root score map: " + str(self.root_score_map))
+        # Find the best move from the moves that have been evaluated
         best_move_from_minimax = max(self.root_score_map, key=lambda x: x[1])
         best_move_from_minimax = {
             "move": best_move_from_minimax[0],
             "score": best_move_from_minimax[1],
         }
+        # Print and log the best move
         print("Best move: ", best_move_from_minimax)
         self.log(
             "Best move: "
@@ -677,12 +810,18 @@ class ai_minimax(ai_player):
             + " with score "
             + str(best_move_from_minimax["score"])
         )
+        # Log reasoning, which is the score variation map
+        # Useful for debugging
         self.log("Reasoning: " + str(self.temp_score_variation_map))
         self.entire_game_moves.append(
-            f"Turn {interface.turn}, VP {self.calculateVictoryPoints(interface)} - {best_move_from_minimax}"
+            f"Turn {interface.turn_number}, VP {self.calculateVictoryPoints(interface)} - {best_move_from_minimax}"
         )
 
+        # Perform the best move
         best_move = best_move_from_minimax["move"]
+
+        # Best move logic
+        # Very similar to the logic in the minimax function but with a few differences
 
         if best_move[0] == "build road":
             interface.place_road(self, best_move[1])
@@ -705,6 +844,8 @@ class ai_minimax(ai_player):
                 interface.play_development_card(self, best_move[1], best_move[2])
             else:
                 interface.play_development_card(self, best_move[1])
+
+        # Raise an exception to end the turn
         elif best_move[0] == "end turn":
             raise endOfTurnException
         else:

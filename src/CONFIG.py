@@ -1,3 +1,11 @@
+"""
+Configuration file for the games
+Is overwritten by anything set while the program is running, but then will return to this upon a restart
+
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+"""
+
+
 CONFIG = {
     # Minimax Depth -
     # Depth to which the minimax algorithm will search
@@ -19,6 +27,11 @@ CONFIG = {
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not just with a human
     "log_minimax_score_calculation": False,
+    # Board Layout -
+    # Set to either 'default' or 'random'
+    # 'default' will use the standard board layout
+    # 'random' will use a random board layout
+    "board_layout": "default",
     # Log MiniMax Score Calculation -
     # If enabled, logs the score calculation for each move in the MiniMax algorithm
     # This is useful for debugging, but will fill up the log file very quickly
