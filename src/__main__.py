@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     # Create the default players
 
-    players = [ai_random(1, "red"), ai_minimax(2, "yellow")]
+    players = [player(1, "red"), ai_minimax(2, "yellow")]
 
     # If the user has specified the "--no-menu" argument, skip the menu
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
                                 # Choose the type of AI to add
                                 potential_player = ["human", "random", "minimax"]
-                                print("Please choose the number of an AI to add:")
+                                print("Please choose the number of a player to add:")
                                 for i, ai in enumerate(potential_player):
                                     print(str(i + 1) + ". " + ai)
                                 player_choice = int(input(""))

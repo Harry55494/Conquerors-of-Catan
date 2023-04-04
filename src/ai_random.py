@@ -245,7 +245,7 @@ class ai_random(ai_player):
         ]
         # If a victory point card is chosen, return
         if card == "victory point":
-            return
+            print("You can't play a victory point card!")
         else:
             # Play the chosen card
             print(f"{self} is playing a development card - {card}")

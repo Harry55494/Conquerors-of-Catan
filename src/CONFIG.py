@@ -57,4 +57,7 @@ CONFIG = {
     # Recommended Level is 1
     # See README.md for more information
     "epsilon_pruning_level": 1,
+    # Randomise Starting Locations -
+    # If enabled, the starting locations of all players will be randomised
+    "randomise_starting_locations": False,
 }

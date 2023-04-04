@@ -42,6 +42,8 @@ class board_interface:
         self.board = board(board_type=CONFIG["board_layout"], players=players)
         self.turn_number = 0
 
+        self.all_players_ai = all(isinstance(player, ai_player) for player in players)
+
         # Clear log file
         with open("logs/board_actions.log", "w") as f:
             pass
@@ -1114,8 +1116,26 @@ class board_interface:
             player_ = order.pop(0)
             print(f"{player_} is placing settlement number {2 - order.count(player_)}")
 
-            # Get the location of the settlement and place it
-            location = player_.initial_placement(self)
+            if CONFIG["randomise_starting_locations"]:
+                location = random.choice(
+                    [
+                        l
+                        for l in self.get_buildings_list()
+                        if self.get_buildings_list()[l]["building"] is None
+                        and not self.check_for_nearby_settlements(l)
+                    ]
+                )
+                road = random.choice(
+                    [road for road in self.get_roads_list() if location in road]
+                )
+                print(f"Randomly placing settlement at {location}")
+                self.board._buildings[location].update(
+                    {"player": player_, "building": "settlement"}
+                )
+                self.board._roads[road].update({"player": player_, "road": "road"})
+            else:
+                # Get the location of the settlement and place it
+                location = player_.initial_placement(self)
             print(f"{player_} has placed their settlement at {location}")
             if len(order) < len(self.board.players):
                 # Players receive resources from their second settlement

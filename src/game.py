@@ -76,12 +76,12 @@ class game:
 
         # Set up the game variables
         self.players = players
-        self.interface = board_interface(self.players)
-        self.turn = 1
-        self.player_has_won = False
         self.all_players_ai = all(
             isinstance(player, ai_player) for player in self.players
         )
+        self.interface = board_interface(self.players)
+        self.turn = 1
+        self.player_has_won = False
         self.results = {player.name: 0 for player in self.players}
 
     def initial_placement(self):
@@ -177,6 +177,9 @@ class game:
                 self.interface.log_action(
                     f"{player_.name}'s resources are now {player_.resources}"
                 )
+
+                if not isinstance(player_, ai_player):
+                    input("Press enter to continue...")
 
                 # Player Actions -----------------------------------------------------
                 num_moves_made = 0

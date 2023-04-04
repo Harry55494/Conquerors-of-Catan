@@ -191,11 +191,14 @@ class player:
                 f"\n(Single corner numbers increase as you move clockwise around a tile)\n"
             )
             # Make the location lowercase and split it into a list, then sort it to make it easier to check
-            location = location.lower()
-            letters = location.split(",")
-            letters = [letter.strip() for letter in letters]
-            letters.sort()
-            location = ",".join(letters)
+            letters = location.lower()
+            if "," in location:
+                letters = location.split(",")
+            # check for number references
+            if not any([letter.isdigit() for letter in letters]):
+                letters = [letter.strip() for letter in letters]
+                letters.sort()
+                location = ",".join(letters)
 
             # Check if the location is valid and not already occupied
             if location in interface.get_buildings_list():
@@ -245,8 +248,10 @@ class player:
             # Keep asking for a location until two valid locations are in the list
             while len(coordinates) < 2:
                 print(
-                    f"{self} , where would you like to place your road?\n"
-                    f"Please enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"
+                    f"{self} , where would you like to place the "
+                    + ("start" if len(coordinates) == 0 else "end")
+                    + " of your road?"
+                    f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"
                 )
                 # If a requirement is given, print it out
                 if requirement is not None:
@@ -257,11 +262,14 @@ class player:
                 )
 
                 # Make the location lowercase and split it into a list, then sort it to make it easier to check
-                location = location.lower()
-                letters = location.split(",")
-                letters = [letter.strip() for letter in letters]
-                letters.sort()
-                location = ",".join(letters)
+                letters = location.lower()
+                if "," in location:
+                    letters = location.split(",")
+                # check for number references
+                if not any([letter.isdigit() for letter in letters]):
+                    letters = [letter.strip() for letter in letters]
+                    letters.sort()
+                    location = ",".join(letters)
                 coordinates.append(location)
 
             # Check if the location is valid and not already occupied
@@ -280,6 +288,8 @@ class player:
                         return coordinates
                 else:
                     print("That location is already occupied!")
+            else:
+                print("That is not a valid location!")
 
     def initial_placement(self, interface) -> str:
         """
@@ -604,16 +614,20 @@ class player:
         print(f"{self}, what would you like to do?")
         # Get the possible moves
         moves = interface.return_possible_moves(self)
-        moves.append("view building list")
+        moves.insert(0, "view building cost list")
         # Ask the player what they want to do
-        for move in moves:
-            print(f"- {move.title()}")
+        number_move_pairings = {str(i + 1): move for i, move in enumerate(moves)}
+        for i, move in enumerate(moves):
+            print(f"{i + 1}: {move.title()}")
         # Get the player's action
-        action = input().lower()
+        action = int(input())
+        while action not in range(1, len(moves) + 1):
+            action = int(input("Please enter a valid action\n"))
+        action = number_move_pairings[str(action)]
 
         # Switch on the action
-        if action in ["view building list", "building list", "view", "list"]:
-            for building, resources in interface.get_building_cost_list.items():
+        if action in ["view building cost list"]:
+            for building, resources in interface.get_building_cost_list().items():
                 print(f"{building}: {resources}")
         elif action in [
             "build",
