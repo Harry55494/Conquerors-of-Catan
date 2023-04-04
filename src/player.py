@@ -482,7 +482,60 @@ class player:
         else:
             print("You do not have enough of a resource to trade with the bank")
 
-    def respond_to_trade(self, original_player, receiving, giving) -> bool:
+    def offer_trade(self, interface):
+        """
+        Allows the player to offer a trade to another player
+        :param interface: Interface object
+        :return: None
+        """
+        # Get the player to trade with
+        other_players = [player for player in interface.players if player != self]
+        print("Which player would you like to trade with?")
+        for i, player in enumerate(other_players):
+            print(f"{i}: {player} - {player.resources}")
+        player_to_trade_with = other_players[int(input())]
+        # Get the resource to trade for
+        while True:
+            print("What resource would you like to gain from the trade?")
+            resource_to_gain = input()
+            if resource_to_gain in ["wood", "clay", "sheep", "wheat", "ore"]:
+                if resource_to_gain not in player_to_trade_with.resources:
+                    print("That player does not have that resource")
+                else:
+                    break
+            else:
+                print("Please enter a valid resource")
+        # Get the resource to trade
+        while True:
+            print("What resource would you like to give up in the trade?")
+            self.printHand("resource")
+            resource_to_give = input()
+            if resource_to_give in ["wood", "clay", "sheep", "wheat", "ore"]:
+                if resource_to_give not in self.resources:
+                    print("You do not have that resource")
+                else:
+                    break
+            else:
+                print("Please enter a valid resource")
+        # Offer the trade
+        print("Trade Summary:")
+        print(
+            f"Player {self} would like to trade {resource_to_give} for {resource_to_gain}"
+        )
+        while True:
+            print("Would you like to proceed? (y/n)")
+            if input().lower() == "y":
+                interface.offer_trade(
+                    self, player_to_trade_with, resource_to_gain, resource_to_give
+                )
+                return
+            elif input().lower() == "n":
+                print("Trade cancelled")
+                return
+            else:
+                print("Please enter a valid response")
+
+    def respond_to_trade(self, interface, original_player, receiving, giving) -> bool:
         """
         Allows the player to respond to a trade offer
         :param original_player: The player who made the offer

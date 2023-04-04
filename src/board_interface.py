@@ -95,27 +95,27 @@ class board_interface:
         """
         return self.board.tiles
 
-    def get_buildings_list(self) -> list:
+    def get_buildings_list(self) -> dict:
         """
-        Gets the list of buildings
+        Gets the dict of buildings
         This is a private variable, so this is the only method to access it
-        :return: The list of buildings
+        :return: The dict of buildings
         """
         return self.board._buildings
 
-    def get_roads_list(self) -> list:
+    def get_roads_list(self) -> dict:
         """
-        Gets the list of roads
+        Gets the dict of roads
         Again, this is a private variable, so this is the only method to access it
-        :return: The list of roads
+        :return: The dict of roads
         """
         return self.board._roads
 
-    def get_ports_list(self) -> list:
+    def get_ports_list(self) -> dict:
         """
-        Gets the list of ports
+        Gets the dict of ports
         Again, this is a private variable, so this is the only method to access it
-        :return: The list of ports
+        :return: The dict of ports
         """
         return self.board._ports
 
@@ -574,6 +574,13 @@ class board_interface:
                             ) or ("3" in type_ and highest_resource >= 3):
                                 moves.append("trade with port")
 
+            if len(player_.resources) > 0 and any(
+                len(other_player.resources) > 0
+                for other_player in self.get_players_list()
+                if other_player != player_
+            ):
+                moves.append("trade with player")
+
         # BUILDING MOVES
 
         # Check if player can build a city
@@ -916,7 +923,7 @@ class board_interface:
         ):
             # Ask the other player if they want to trade
             result = player_to_trade_with.respond_to_trade(
-                original_player, resource_to_give, resource_to_get
+                self, original_player, resource_to_give, resource_to_get
             )
             # If they do, perform the trade
             if result:

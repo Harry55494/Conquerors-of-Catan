@@ -22,47 +22,6 @@ class MiniMaxTimeoutException(Exception):
     pass
 
 
-def perform_minimax_move(player_clone, interface_clone, move):
-    """
-    Contains the logic for performing a move within a minimax search
-    Performs a move within a minimax search, for a specific player
-    Acts as a simple interpreter for the move, and calls the appropriate function on the interface
-    :param move: The move to be performed
-    :param player_clone: The player object to perform the move from
-    :param interface_clone: The interface object to perform the move on
-    :return: The interface object after the move has been performed
-    """
-    if move[0] == "buy development card":
-        interface_clone.buy_development_card(player_clone)
-    elif move[0] == "play development card":
-        if move[1] == "year of plenty":
-            interface_clone.play_development_card(
-                player_clone, move[1], move[2], move[3]
-            )
-        elif move[1] == "monopoly":
-            interface_clone.play_development_card(player_clone, move[1], move[2])
-        else:
-            interface_clone.play_development_card(player_clone, move[1])
-    elif move[0] == "build road":
-        interface_clone.place_road(player_clone, move[1])
-    elif move[0] == "build settlement":
-        interface_clone.place_settlement(player_clone, move[1])
-    elif move[0] == "build city":
-        interface_clone.place_city(player_clone, move[1])
-    elif move[0] == "trade with bank":
-        interface_clone.trade_with_bank(player_clone, move[1], move[2])
-    elif move[0] == "trade with port":
-        interface_clone.trade_with_port(player_clone, move[1], move[2])
-    elif move[0] == "end turn":
-        pass
-    else:
-        # If the move is not recognised, raise an error
-        raise NotImplementedError(
-            "perform_minimax_move does not know how to perform " + str(move)
-        )
-    return interface_clone
-
-
 class ai_minimax(ai_player):
     def __init__(
         self,
@@ -94,6 +53,52 @@ class ai_minimax(ai_player):
         self.root_score_map = []
         self.temp_score_variation_map = [0, {}]
         self.start_time = None
+
+    def perform_minimax_move(self, player_clone, interface_clone, move):
+        """
+        Contains the logic for performing a move within a minimax search
+        Performs a move within a minimax search, for a specific player
+        Acts as a simple interpreter for the move, and calls the appropriate function on the interface
+        :param move: The move to be performed
+        :param player_clone: The player object to perform the move from
+        :param interface_clone: The interface object to perform the move on
+        :return: The interface object after the move has been performed
+        """
+        if move[0] == "buy development card":
+            interface_clone.buy_development_card(player_clone)
+        elif move[0] == "play development card":
+            if move[1] == "year of plenty":
+                interface_clone.play_development_card(
+                    player_clone, move[1], move[2], move[3]
+                )
+            elif move[1] == "monopoly":
+                interface_clone.play_development_card(player_clone, move[1], move[2])
+            else:
+                interface_clone.play_development_card(player_clone, move[1])
+        elif move[0] == "build road":
+            interface_clone.place_road(player_clone, move[1])
+        elif move[0] == "build settlement":
+            interface_clone.place_settlement(player_clone, move[1])
+        elif move[0] == "build city":
+            interface_clone.place_city(player_clone, move[1])
+        elif move[0] == "trade with bank":
+            interface_clone.trade_with_bank(player_clone, move[1], move[2])
+        elif move[0] == "trade with port":
+            interface_clone.trade_with_port(player_clone, move[1], move[2])
+        elif move[0] == "trade with player":
+            # Cannot suppose that the other player will trade with us, so don't trade if this is the case
+            if move[1] == self.number:
+                interface_clone.trade_with_player(
+                    player_clone, move[2], move[3], move[4]
+                )
+        elif move[0] == "end turn":
+            pass
+        else:
+            # If the move is not recognised, raise an error
+            raise NotImplementedError(
+                "perform_minimax_move does not know how to perform " + str(move)
+            )
+        return interface_clone
 
     def evaluate_board(self, interface) -> int:
         """
@@ -490,17 +495,68 @@ class ai_minimax(ai_player):
                 self, self.resources[self.resources.index(min(scores, key=scores.get))]
             )
 
+    def offer_trade(self, interface) -> None:
+        """
+        Use the minimax algorithm to decide which trade to offer
+        :param interface: Interface object
+        :return: None
+        """
+        trades = [
+            move
+            for move in interface.get_move_combinations(self)
+            if move[0] == "trade with player"
+        ]
+        scores = {}
+        # Evaluate the board at each possible trade
+        for trade in trades:
+            clone = copy.deepcopy(self)
+            interface_clone = copy.deepcopy(interface)
+            interface_clone.set_minimax(True)
+            clone.resources.extend(trade[2])
+            clone.resources.remove(trade[1])
+            scores[trade] = clone.evaluate_board(interface_clone)
+        best_trade = max(scores, key=scores.get)
+        interface.offer_trade(self, best_trade[1], best_trade[2], best_trade[3])
+
+    def respond_to_trade(self, interface, original_player, receiving, giving) -> bool:
+        """
+        Evaluate the trade and decide whether to accept or reject
+        :param interface: Interface object
+        :param original_player: The player who initiated the trade
+        :param receiving: What the player is receiving
+        :param giving: What the player is giving
+        :return: Whether to accept or reject the trade
+        """
+
+        # Evaluate the board at each possible response
+        scores = {}
+        for response in [True, False]:
+            clone = copy.deepcopy(self)
+            interface_clone = copy.deepcopy(interface)
+            interface_clone.set_minimax(True)
+            if response:
+                clone.resources.extend(receiving)
+                for card in giving:
+                    clone.resources.remove(card)
+            scores[response] = clone.evaluate_board(interface_clone)
+
+        # Return the response that results in the best board
+        return min(scores, key=scores.get)
+
     # Minimax functions --------------------------------------------------------
 
-    def get_move_combinations(self, interface, player_) -> list | bool:
+    def get_move_combinations(
+        self, interface, current_player, filter=None
+    ) -> list | bool:
         """
         Returns a list of all possible _combinations_ of moves for the player
         :param interface: The current state of the game
+        :param current_player: The player whose turn it is
         :return: A list of all possible combinations of moves for the player
         """
 
         # Get all possible moves for the player
-        potential_moves = interface.return_possible_moves(player_)
+        potential_moves = interface.return_possible_moves(current_player)
         if not potential_moves:
             return False
         # print(potential_moves)
@@ -511,19 +567,21 @@ class ai_minimax(ai_player):
 
             # Append settlement locations
             if move == "build settlement":
-                for location in interface.get_potential_building_locations(player_):
+                for location in interface.get_potential_building_locations(
+                    current_player
+                ):
                     full_move_list.append(["build settlement", location])
 
             # Append city locations
             elif move == "build city":
                 for location in interface.get_potential_building_locations(
-                    player_, "city"
+                    current_player, "city"
                 ):
                     full_move_list.append(["build city", location])
 
             # Append road locations
             elif move == "build road":
-                for location in interface.get_potential_road_locations(player_):
+                for location in interface.get_potential_road_locations(current_player):
                     full_move_list.append(["build road", location])
 
             # Append trade with bank moves
@@ -532,8 +590,8 @@ class ai_minimax(ai_player):
                     set(
                         [
                             resource
-                            for resource in player_.resources
-                            if player_.resources.count(resource) >= 4
+                            for resource in current_player.resources
+                            if current_player.resources.count(resource) >= 4
                         ]
                     )
                 )
@@ -571,15 +629,36 @@ class ai_minimax(ai_player):
                         if resource_to_get != resource:
                             full_move_list.append([move, resource, resource_to_get])
 
+            # Append trade with player moves
+            # can look at the other players resources to not offer trades that are impossible
+            elif move == "trade with player":
+                for other_player in [
+                    player
+                    for player in interface.get_players_list()
+                    if player != current_player
+                ]:
+                    for resource in list(set(current_player.resources)):
+                        for resource_to_get in list(set(other_player.resources)):
+                            if resource_to_get != resource:
+                                full_move_list.append(
+                                    [
+                                        move,
+                                        current_player,
+                                        other_player,
+                                        resource,
+                                        resource_to_get,
+                                    ]
+                                )
+
             # Append development card moves
             elif move == "play development card":
-                if self.number == player_.number:
+                if self.number == current_player.number:
                     # Development cards are private information
-                    for card in player_.development_cards:
+                    for card in current_player.development_cards:
                         if (
                             card == "soldier"
-                            and player_.development_cards.count("soldier")
-                            > player_.played_robber_cards
+                            and current_player.development_cards.count("soldier")
+                            > current_player.played_robber_cards
                         ):
                             full_move_list.append([move, card])
                         elif card == "road building":
@@ -623,6 +702,9 @@ class ai_minimax(ai_player):
         # MiniMaxTimeOutException, the player will build before trading
         full_move_list.sort(key=lambda x: x[0])
 
+        if filter is not None:
+            full_move_list = [move for move in full_move_list if move[0] in filter]
+
         return full_move_list
 
     def minimax(self, interface, max_depth, alpha, beta, current_player) -> list:
@@ -660,6 +742,11 @@ class ai_minimax(ai_player):
             self.root_score_map = []
             self.log("Resetting root_score_map")
             self.temp_score_variation_map = [0, {}]
+            print(
+                "There are "
+                + str(len(self.get_move_combinations(interface, current_player)))
+                + " possible moves at the top level"
+            )
 
         if current_player.number == self.number:
             # It is the Minimax AI's turn
@@ -685,7 +772,7 @@ class ai_minimax(ai_player):
                     player_clone = copy.deepcopy(self)
 
                     # Perform the move
-                    interface_clone = perform_minimax_move(
+                    interface_clone = self.perform_minimax_move(
                         player_clone, interface_clone, move
                     )
 
@@ -736,7 +823,7 @@ class ai_minimax(ai_player):
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(opposing_player)
 
-                    interface_clone = perform_minimax_move(
+                    interface_clone = self.perform_minimax_move(
                         player_clone, interface_clone, move
                     )
 
@@ -794,6 +881,8 @@ class ai_minimax(ai_player):
             time.sleep(1)
             if not self.root_score_map:
                 # Not sure whether I like this? Potentially should search for other items
+                print("No moves found, ending turn")
+                time.sleep(5)
                 raise endOfTurnException
         self.log("Root score map: " + str(self.root_score_map))
         # Find the best move from the moves that have been evaluated

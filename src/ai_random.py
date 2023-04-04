@@ -203,6 +203,36 @@ class ai_random(ai_player):
         else:
             print("Invalid building type")
 
+    def offer_trade(self, interface) -> None:
+        """
+        Offer a trade
+        :param interface: Interface object
+        :return: None
+        """
+        # Choose a random player to trade with
+        players = interface.get_players()
+        players.remove(self)
+        player = random.choice(players)
+
+        # Choose a random resource to give
+        giving = random.choice(list(interface.get_resources(self).keys()))
+
+        # Choose a random resource to receive
+        receiving = random.choice(list(interface.get_resources(player).keys()))
+
+        # Offer the trade
+        interface.offer_trade(self, player, giving, receiving)
+
+    def respond_to_trade(self, interface, original_player, receiving, giving) -> bool:
+        """
+        Respond to a trade
+        :param original_player: Original player
+        :param receiving: The resource being received
+        :param giving: The resource being given
+        :return: True if accepted, False if rejected
+        """
+        return random.uniform(0, 1) > 0.5
+
     def play_development_card(self, interface) -> None:
         """
         Play a development card

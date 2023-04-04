@@ -119,7 +119,10 @@ class ai_player(player):
     def robber_discard(self, interface):
         raise self.notImplementedError("robber_discard")
 
-    def respond_to_trade(self, original_player, receiving, giving):
+    def offer_trade(self, interface):
+        raise self.notImplementedError("offer_trade")
+
+    def respond_to_trade(self, inteface, original_player, receiving, giving):
         raise self.notImplementedError("respond_to_trade")
 
     def trade_with_port(self, interface):
