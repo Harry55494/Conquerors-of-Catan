@@ -261,9 +261,12 @@ class ai_random(ai_player):
 
             # Play a year of plenty card, choosing two random resource types
             elif card == "year of plenty":
+                res = []
                 for i in range(2):
-                    res_type = random.choice(["wheat", "sheep", "rock", "clay", "wood"])
-                    interface.play_development_card(self, "year of plenty", res_type)
+                    res.append(
+                        random.choice(["wheat", "sheep", "rock", "clay", "wood"])
+                    )
+                interface.play_development_card(self, "year of plenty", res[0], res[1])
 
             # Play a road building card, choosing two random road locations
             elif card == "road building":
@@ -445,32 +448,7 @@ class ai_random(ai_player):
 
             # If the chosen move is to trade with a port, trade with a port
             elif "trade with port" in chosen_move:
-                port_resources = []
-                # Get a list of all the ports that the player can trade with
-                for port in interface.get_ports_list():
-                    if interface.get_ports_list()[port] is not None:
-                        if interface.get_ports_list()[port]["player"] is not None:
-                            if (
-                                interface.get_ports_list()[port]["player"].number
-                                == self.number
-                            ):
-                                # Get the resource that the port trades for
-                                resource = interface.get_ports_list()[port]["resource"]
-                                if resource == "any":
-                                    # choose random resource from player's resources which has more than 3
-                                    for card in self.resources:
-                                        if self.resources.count(card) >= 3:
-                                            # Add the resource to the list of resources that the player can trade with
-                                            port_resources.append(card)
-                                else:
-                                    for card in self.resources:
-                                        if (
-                                            card == resource
-                                            and self.resources.count(card) >= 2
-                                        ):
-                                            # Add the resource to the list of resources that the player can trade with
-                                            port_resources.append(card)
-
+                port_resources = get_port_combinations(interface, self)
                 # If there are no resources to trade with the port, log it
                 if len(port_resources) == 0:
                     self.log("No resources to trade with port - how did this happen?")

@@ -5,7 +5,7 @@ Game class, for setting up and running a game
 """
 
 from src.board_interface import *
-from src.player import endOfTurnException
+from src.player import player, endOfTurnException
 
 
 class game:
@@ -250,6 +250,6 @@ class game:
 
         # Dump the moves of the players
         for player in self.players:
-            # TODO: Add dump_moves to the player class
-            player.dump_moves()
+            if isinstance(player, ai_player):
+                player.dump_moves()
             self.results[player.name] = player.calculateVictoryPoints(self.interface)

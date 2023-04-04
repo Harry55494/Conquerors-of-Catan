@@ -574,12 +574,18 @@ class board_interface:
                             ) or ("3" in type_ and highest_resource >= 3):
                                 moves.append("trade with port")
 
-            if len(player_.resources) > 0 and any(
-                len(other_player.resources) > 0
-                for other_player in self.get_players_list()
-                if other_player != player_
+            if (
+                not isinstance(player_, ai_player)
+                or isinstance(player_, ai_player)
+                and not CONFIG["ai_doesnt_initiate_trades"]
             ):
-                moves.append("trade with player")
+                # Check if the player can trade with another player
+                if len(player_.resources) > 0 and any(
+                    len(other_player.resources) > 0
+                    for other_player in self.get_players_list()
+                    if other_player != player_
+                ):
+                    moves.append("trade with player")
 
         # BUILDING MOVES
 

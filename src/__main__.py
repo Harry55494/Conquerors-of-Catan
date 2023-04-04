@@ -124,14 +124,16 @@ if __name__ == "__main__":
                                     continue
 
                                 # Choose the type of AI to add
-                                potential_ais = ["random", "minimax"]
+                                potential_player = ["human", "random", "minimax"]
                                 print("Please choose the number of an AI to add:")
-                                for i, ai in enumerate(potential_ais):
+                                for i, ai in enumerate(potential_player):
                                     print(str(i + 1) + ". " + ai)
-                                ai_choice = int(input(""))
-                                if ai_choice == 1:
+                                player_choice = int(input(""))
+                                if player_choice == 1:
+                                    ai = src.player.player
+                                elif player_choice == 2:
                                     ai = ai_random
-                                elif ai_choice == 2:
+                                elif player_choice == 3:
                                     ai = ai_minimax
                                 else:
                                     raise ValueError
@@ -368,7 +370,7 @@ if __name__ == "__main__":
     player_data.sort(key=lambda x: x[1], reverse=True)
 
     # Print data using tabulate to format it nicely
-    print("\n\nFinal Results: \n")
+    print("\nFinal Results: \n")
     print(
         tabulate(
             player_data,

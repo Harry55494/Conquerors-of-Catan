@@ -893,7 +893,9 @@ class board:
         )
         # Sort the players by victory points
         players_in_order = sorted(
-            self.players, key=lambda x: x.victory_points, reverse=True
+            self.players,
+            key=lambda x: x.victory_points - x.development_cards.count("Victory Point"),
+            reverse=True,
         )
 
         # Print the players and their stats, including longest road, largest army and soldier cards
@@ -901,6 +903,10 @@ class board:
             text = f"{player_}".ljust(35)
             LR = "LR" if player_ == self.longest_road[0] else "  "
             LA = "LA" if player_ == self.largest_army[0] else "  "
+            # Victory Points Development Cards are hidden, so we need to subtract them from the total
+            VP = player_.victory_points - player_.development_cards.count(
+                "Victory Point"
+            )
             Soldiers = (
                 f"{player_.played_robber_cards}" + "S"
                 if player_.played_robber_cards > 0
@@ -908,7 +914,7 @@ class board:
             )
             # Spacing here is specific so that if they don't have LR or LA, it still looks good
             print(
-                f"          {text}|  VP: {player_.victory_points}   |   Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
+                f"          {text}|  VP: {VP}  |  Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
                     terminal_width
                 )
             )

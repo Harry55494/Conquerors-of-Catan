@@ -29,13 +29,15 @@ class ai_minimax(ai_player):
         colour,
         time_limit=CONFIG["minimax_time_limit"],
         max_depth=CONFIG["minimax_max_depth"],
+        epsilon_pruning_level=CONFIG["epsilon_pruning_level"],
     ) -> None:
         """
         Constructor for the minimax AI player
         :param number: The player number
         :param colour: The player colour
         :param time_limit: The time limit for the minimax algorithm to run for, defaults to CONFIG["minimax_time_limit"]
-        :param max_depth: The maximum depth for the minimax algorithm to search to, defaults to CONFIG["minimax_max_depth"]
+        :param max_depth: The maximum depth for the minimax algorithm to search to, defaults to CONFIG["minimax_max_depth"]\
+        :param epsilon_pruning_level: Whether to use epsilon pruning, defaults to CONFIG["epsilon_pruning"]
         """
         # Call the parent constructor
         super().__init__(number=number, colour=colour, strategy="minimax")
@@ -45,7 +47,8 @@ class ai_minimax(ai_player):
             + str(time_limit)
             + " seconds and max depth of "
             + str(max_depth)
-            + " levels"
+            + " levels, epsilon pruning is set to level "
+            + str(epsilon_pruning_level)
         )
         # Set the time limit and max depth, and initialise the root score map
         self.time_limit = time_limit
@@ -53,6 +56,7 @@ class ai_minimax(ai_player):
         self.root_score_map = []
         self.temp_score_variation_map = [0, {}]
         self.start_time = None
+        self.epsilon_pruning = epsilon_pruning_level
 
     def perform_minimax_move(self, player_clone, interface_clone, move):
         """
@@ -87,6 +91,8 @@ class ai_minimax(ai_player):
             interface_clone.trade_with_port(player_clone, move[1], move[2])
         elif move[0] == "trade with player":
             # Cannot suppose that the other player will trade with us, so don't trade if this is the case
+            # We will assume that the opposing player always trades with us
+            # TODO Currently does this actually trade?
             if move[1] == self.number:
                 interface_clone.trade_with_player(
                     player_clone, move[2], move[3], move[4]
@@ -151,6 +157,11 @@ class ai_minimax(ai_player):
 
         # Score based on victory points
         update_score(current_vp * 10, "victory points")
+
+        update_score(
+            -self.development_cards.count("Victory Point") * 5,
+            "Penalise relying on VP cards",
+        )
 
         target_score = CONFIG["target_score"]
 
@@ -235,7 +246,7 @@ class ai_minimax(ai_player):
                     # Rate settlement higher if there are more tiles nearby
                     num_tiles = len([item for item in buildings_list[key]["tiles"]])
                     update_score(
-                        num_tiles * 2, "number of tiles nearby to building" + str(key)
+                        num_tiles, "number of tiles nearby to building" + str(key)
                     )
 
                     # Rate higher if there is one of each tile nearby
@@ -244,6 +255,11 @@ class ai_minimax(ai_player):
                         resources_has_access_to.append(resource.resource)
 
         update_score(len(resources), "total amount of resources")
+
+        update_score(
+            int(0.5 * max(len(self.resources) - 7, 0)),
+            "Penalise having too many resources",
+        )
 
         # Check for ports
         for port in interface.get_ports_list():
@@ -268,7 +284,7 @@ class ai_minimax(ai_player):
                             ):
                                 update_score(
                                     (
-                                        1
+                                        2
                                         * roll_map[
                                             interface.get_ports_list()[port]["resource"]
                                         ]
@@ -297,8 +313,14 @@ class ai_minimax(ai_player):
         player_roads = []
         for road in interface.get_roads_list():
             if interface.get_roads_list()[road]["player"] is not None:
-                if interface.get_roads_list()[road]["player"].number == self.number:
+                if interface.get_roads_list()[road]["player"] == self:
                     player_roads.append(road)
+
+        if player_roads:
+            # Prefer nicely spaced settlements (2 roads between each, not more)
+            # TODO Do this better
+            if settlements_count + cities_count / len(player_roads) <= 1:
+                update_score(25, "Nicely Spaced Settlements")
 
         clusters = return_clusters(player_roads)
         if clusters:
@@ -545,11 +567,10 @@ class ai_minimax(ai_player):
 
     # Minimax functions --------------------------------------------------------
 
-    def get_move_combinations(
-        self, interface, current_player, filter=None
-    ) -> list | bool:
+    def get_move_combinations(self, interface, current_player) -> list | bool:
         """
-        Returns a list of all possible _combinations_ of moves for the player
+        Returns a list of all possible combinations of moves for the player
+        Also performs Epsilon Pruning if set by the MiniMax AI
         :param interface: The current state of the game
         :param current_player: The player whose turn it is
         :return: A list of all possible combinations of moves for the player
@@ -581,11 +602,24 @@ class ai_minimax(ai_player):
 
             # Append road locations
             elif move == "build road":
+                local_moves = []
                 for location in interface.get_potential_road_locations(current_player):
-                    full_move_list.append(["build road", location])
+                    local_moves.append(["build road", location])
+
+                if self.epsilon_pruning >= 2:
+                    scores = []
+                    for move in local_moves:
+                        clone = copy.deepcopy(current_player)
+                        interface_clone = copy.deepcopy(interface)
+                        interface_clone.set_minimax(True)
+                        self.perform_minimax_move(clone, interface_clone, move)
+                        scores.append([move, self.evaluate_board(interface_clone)])
+                    local_moves = [max(scores, key=lambda x: x[1])[0]]
+                full_move_list.extend(local_moves)
 
             # Append trade with bank moves
             elif move == "trade with bank":
+                local_moves = []
                 resources_can_trade = list(
                     set(
                         [
@@ -598,40 +632,49 @@ class ai_minimax(ai_player):
                 for resource in resources_can_trade:
                     for resource_to_get in ["clay", "rock", "sheep", "wheat", "wood"]:
                         if resource_to_get != resource:
-                            full_move_list.append([move, resource, resource_to_get])
+                            local_moves.append([move, resource, resource_to_get])
+
+                if self.epsilon_pruning >= 1:
+                    scores = []
+                    for trade in local_moves:
+                        clone = copy.deepcopy(current_player)
+                        interface_clone = copy.deepcopy(interface)
+                        interface_clone.set_minimax(True)
+                        clone.resources.extend(trade[2])
+                        for i in range(4):
+                            clone.resources.remove(trade[1])
+                        scores.append([trade, self.evaluate_board(interface_clone)])
+                    local_moves = [max(scores, key=lambda x: x[1])[0]]
+
+                full_move_list.extend(local_moves)
 
             # Append trade with port moves
             elif move == "trade with port":
-                port_resources = []
-                for port in interface.get_ports_list():
-                    if interface.get_ports_list()[port] is not None:
-                        if interface.get_ports_list()[port]["player"] is not None:
-                            if (
-                                interface.get_ports_list()[port]["player"].number
-                                == self.number
-                            ):
-                                resource = interface.get_ports_list()[port]["resource"]
-                                # If the port is a 3:1 port, add all resources to the list
-                                if resource == "any":
-                                    for card in self.resources:
-                                        if self.resources.count(card) >= 3:
-                                            port_resources.append(card)
-                                else:
-                                    for card in self.resources:
-                                        if (
-                                            card == resource
-                                            and self.resources.count(card) >= 2
-                                        ):
-                                            port_resources.append(card)
+                local_moves = []
+                port_resources = get_port_combinations(interface, current_player)
                 # Add all possible trades to the list to receive
                 for resource in port_resources:
                     for resource_to_get in ["clay", "rock", "sheep", "wheat", "wood"]:
                         if resource_to_get != resource:
-                            full_move_list.append([move, resource, resource_to_get])
+                            local_moves.append([move, resource, resource_to_get])
+
+                if self.epsilon_pruning >= 1:
+                    scores = []
+                    for trade in local_moves:
+                        clone = copy.deepcopy(current_player)
+                        interface_clone = copy.deepcopy(interface)
+                        interface_clone.set_minimax(True)
+                        clone.resources.extend(trade[2])
+                        clone.resources.remove(trade[1])
+                        scores.append([trade, self.evaluate_board(interface_clone)])
+                    local_moves = [max(scores, key=lambda x: x[1])[0]]
+
+                full_move_list.extend(local_moves)
 
             # Append trade with player moves
             # can look at the other players resources to not offer trades that are impossible
             elif move == "trade with player":
+                local_moves = []
                 for other_player in [
                     player
                     for player in interface.get_players_list()
@@ -640,7 +683,7 @@ class ai_minimax(ai_player):
                     for resource in list(set(current_player.resources)):
                         for resource_to_get in list(set(other_player.resources)):
                             if resource_to_get != resource:
-                                full_move_list.append(
+                                local_moves.append(
                                     [
                                         move,
                                         current_player,
@@ -649,12 +692,26 @@ class ai_minimax(ai_player):
                                         resource_to_get,
                                     ]
                                 )
+                if not local_moves:
+                    continue
+                if self.epsilon_pruning >= 1:
+                    # reduce list to only the best trade, using the perform_minimax_move to get the interface object, and the evaluate_board function to rank them
+                    scores = []
+                    for trade in local_moves:
+                        clone = copy.deepcopy(current_player)
+                        interface_clone = copy.deepcopy(interface)
+                        interface_clone.set_minimax(True)
+                        clone.resources.extend(trade[4])
+                        clone.resources.remove(trade[3])
+                        scores.append([trade, self.evaluate_board(interface_clone)])
+                    local_moves = [max(scores, key=lambda x: x[1])[0]]
+                full_move_list.extend(local_moves)
 
             # Append development card moves
             elif move == "play development card":
-                if self.number == current_player.number:
-                    # Development cards are private information
+                if self == current_player:
                     for card in current_player.development_cards:
+                        move = "play development card"
                         if (
                             card == "soldier"
                             and current_player.development_cards.count("soldier")
@@ -666,6 +723,7 @@ class ai_minimax(ai_player):
 
                         # Year of Plenty with all possible combinations of resources
                         elif card == "year of plenty":
+                            local_moves = []
                             for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
                                 for resource2 in [
                                     "clay",
@@ -674,14 +732,45 @@ class ai_minimax(ai_player):
                                     "wheat",
                                     "wood",
                                 ]:
-                                    full_move_list.append(
+                                    local_moves.append(
                                         [move, card, resource, resource2]
                                     )
 
+                            if self.epsilon_pruning >= 1:
+                                scores = []
+                                for move in local_moves:
+                                    clone = copy.deepcopy(current_player)
+                                    interface_clone = copy.deepcopy(interface)
+                                    interface_clone.set_minimax(True)
+                                    self.perform_minimax_move(
+                                        clone, interface_clone, move
+                                    )
+                                    scores.append(
+                                        [move, self.evaluate_board(interface_clone)]
+                                    )
+                                local_moves = [max(scores, key=lambda x: x[1])[0]]
+                            full_move_list.extend(local_moves)
+
                         # Monopoly with all possible resources
                         elif card == "monopoly":
+                            local_moves = []
                             for resource in ["clay", "rock", "sheep", "wheat", "wood"]:
-                                full_move_list.append([move, card, resource])
+                                local_moves.append([move, card, resource])
+
+                            if self.epsilon_pruning >= 1:
+                                scores = []
+                                for move in local_moves:
+                                    clone = copy.deepcopy(current_player)
+                                    interface_clone = copy.deepcopy(interface)
+                                    interface_clone.set_minimax(True)
+                                    self.perform_minimax_move(
+                                        clone, interface_clone, move
+                                    )
+                                    scores.append(
+                                        [move, self.evaluate_board(interface_clone)]
+                                    )
+                                local_moves = [max(scores, key=lambda x: x[1])[0]]
+                            full_move_list.extend(local_moves)
                 else:
                     pass
 
@@ -697,15 +786,23 @@ class ai_minimax(ai_player):
         if not full_move_list:
             full_move_list = [["end turn"]]
 
+        # Remove duplicates. Can happen if player has multiple development cards of the same type
+        return_list = []
+        for move in full_move_list:
+            if move not in return_list:
+                return_list.append(move)
+
         # Sort the list.
         # List is sorted so that 'build' comes before 'trade' in the list of possible moves, so that in the event of a
         # MiniMaxTimeOutException, the player will build before trading
-        full_move_list.sort(key=lambda x: x[0])
+        try:
+            return_list.sort(key=lambda x: x[0])
+        except:
+            print("RETURN LIST")
+            print(return_list)
+            sys.exit()
 
-        if filter is not None:
-            full_move_list = [move for move in full_move_list if move[0] in filter]
-
-        return full_move_list
+        return return_list
 
     def minimax(self, interface, max_depth, alpha, beta, current_player) -> list:
         """
@@ -867,7 +964,7 @@ class ai_minimax(ai_player):
         self.log(
             "\n\n$!\n\nBeginning minimax search on turn " + str(interface.turn_number)
         )
-        self.log("Full moves list: " + str(self.get_move_combinations(interface, self)))
+        self.log("Top level moves: " + str(self.get_move_combinations(interface, self)))
         # Set the start time
         self.start_time = datetime.now()
         self.log("Start time: " + str(self.start_time))

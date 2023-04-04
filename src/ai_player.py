@@ -10,6 +10,7 @@ import sys
 import logging
 
 from src.player import *
+from src.ports import *
 
 
 class ai_player(player):
@@ -31,7 +32,13 @@ class ai_player(player):
             super().__init__(self.message)
             raise self
 
-    def __init__(self, number, colour, strategy: str = "random"):
+    def __init__(
+        self,
+        number,
+        colour,
+        strategy: str = "random",
+        no_initiate_trades: bool = CONFIG["ai_doesnt_initiate_trades"],
+    ):
         """
         Initialises an ai_player object.
         AI players inherit from the player class, but have different methods for calculating their moves
