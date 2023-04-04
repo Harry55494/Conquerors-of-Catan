@@ -945,17 +945,28 @@ class board_interface:
                     self.log_action(
                         f"{original_player.name} traded {resource_to_give} for {resource_to_get} with {player_to_trade_with.name}"
                     )
+                if not self.all_players_ai:
+                    print(
+                        f"{original_player.name} traded {resource_to_give} for {resource_to_get} with {player_to_trade_with.name}"
+                    )
+                    await_user_input()
             # If they don't, log the action if not in minimax mode
             else:
                 if not self.minimax_mode:
                     self.log_action(
                         f"{player_to_trade_with.name} refused to trade with {original_player.name}"
                     )
+                if not self.all_players_ai:
+                    print(
+                        f"{player_to_trade_with.name} refused to trade with {original_player.name}"
+                    )
+                    await_user_input()
 
         # If the players don't have enough resources to trade, log the action if not in minimax mode
         else:
             if not self.minimax_mode:
-                print("Not enough resources to trade")
+                print("One or both players do not have enough resources to trade!")
+                await_user_input()
 
     def play_development_card(self, player_, card_to_play, *args) -> None:
         """
@@ -1022,7 +1033,7 @@ class board_interface:
 
     # Turn Actions and Processing a Roll ---------------------------------------------------------
 
-    def process_roll(self, roll: int, current_player: player) -> None:
+    def process_roll(self, roll, current_player: player) -> None:
         """
         Processes a roll of the dice and performs the necessary board actions
         :param current_player: The player who rolled the dice
@@ -1030,9 +1041,15 @@ class board_interface:
         :return: None
         """
 
+        if isinstance(roll, list):
+            self.board.current_roll = roll
+            roll = sum(roll)
+        else:
+            self.board.roll = None
+
         # If the roll is a 7, the robber is rolled and the player must discard half their resources if they have more than 7
         if roll == 7:
-            print("The robber has been rolled")
+            print("The robber has been rolled!")
             for player_ in self.get_players_list():
                 if len(player_.resources) >= 7:
                     player_.robber_discard(self)
@@ -1044,7 +1061,7 @@ class board_interface:
 
         # If the roll is not a 7, the player gets the resources from the tiles they have settlements on
         else:
-
+            player_gained_resources = False
             # Get every building a player has
             for player_ in self.get_players_list():
                 # Cards to give is a dictionary of the resources to give to the player, and the number of each resource
@@ -1087,11 +1104,19 @@ class board_interface:
                                     else:
                                         cards_to_give[building_tile.resource] = 2
 
-                # Give the player the resources
                 for card in cards_to_give:
+                    if not self.all_players_ai:
+                        print(
+                            f"{player_} has gained {cards_to_give[card]} {card} card"
+                            + ("s" if cards_to_give[card] > 1 else "")
+                        )
                     self.give_player_card(
                         player_, "resource", card, cards_to_give[card]
                     )
+                    player_gained_resources = True
+
+            if not player_gained_resources and not self.all_players_ai:
+                print("No resources were gained this turn")
 
     # Initial Placement --------
 

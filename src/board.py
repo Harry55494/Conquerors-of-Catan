@@ -18,7 +18,29 @@ def roll_dice():
     Statistical distribution of dice rolls is maintained by combining two random numbers between 1 and 6
     :return: Dice roll result
     """
-    return random.randint(1, 6) + random.randint(1, 6)
+    return [random.randint(1, 6), random.randint(1, 6)]
+
+
+def convert_dice_to_emoji(dice: list[int]) -> str:
+    """
+    Converts a dice roll to an emoji
+    :param dice: The dice roll
+    :return: The emoji
+    """
+    for i in range(2):
+        if dice[i] == 1:
+            dice[i] = "1️"
+        elif dice[i] == 2:
+            dice[i] = "2️"
+        elif dice[i] == 3:
+            dice[i] = "3️"
+        elif dice[i] == 4:
+            dice[i] = "4️"
+        elif dice[i] == 5:
+            dice[i] = "5️"
+        elif dice[i] == 6:
+            dice[i] = "6️"
+    return f"{dice[0]}{dice[1]}"
 
 
 # noinspection DuplicatedCode
@@ -34,6 +56,8 @@ class board:
         """
 
         self.players = players
+        self.current_roll = [6, 6]
+        self.turn = 0
 
         # Board Setup
 
@@ -883,9 +907,17 @@ class board:
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
 
+        if self.current_roll is not None:
+            dice = convert_dice_to_emoji(self.current_roll)
+
         # This prints the deck, players and their stats
         print("\n")
-        print(f"🌾 🌲 🐑 🧱 🪨    ❔        ".center(terminal_width), end="")
+        print(
+            f"Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨   ❔    Roll: {dice}    ".center(
+                terminal_width
+            ),
+            end="",
+        )
         print(
             f"Bank has {len(self.resource_deck)} resource cards and {len(self.development_card_deck)} development cards          ".center(
                 terminal_width

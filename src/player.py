@@ -5,6 +5,7 @@ Implementations all require human input
 
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
+import sys
 
 import termcolor
 from src.CONFIG import CONFIG
@@ -13,6 +14,10 @@ from src.CONFIG import CONFIG
 # This is a hack to break out of the loop in the game class
 class endOfTurnException(Exception):
     pass
+
+
+def await_user_input(prompt="Press any key to continue..."):
+    input(prompt)
 
 
 class player:
@@ -105,6 +110,8 @@ class player:
             # Print each card and its count
             for card in card_count:
                 print(f"{card_count[card]} x {card} ", end=" ")
+            print("")
+        else:
             print("")
         self.resources.sort()
         self.development_cards.sort()
@@ -373,6 +380,7 @@ class player:
         # If there are no players to steal from, print that
         else:
             print("No players to steal from")
+            await_user_input()
 
         # If a player was chosen to steal from, steal from them
         if singular_player_to_steal_from is not None:
@@ -485,7 +493,7 @@ class player:
                     )
             trade_for = ""
             # Wait for a valid response for what to trade for
-            while trade_for not in ["wood", "clay", "sheep", "wheat", "ore"]:
+            while trade_for not in ["wood", "clay", "sheep", "wheat", "rock"]:
                 trade_for = input("What resource would you like to trade for?\n")
             # Trade with the bank
             interface.trade_with_bank(self, resource, trade_for)
@@ -499,20 +507,19 @@ class player:
         :return: None
         """
         # Get the player to trade with
-        other_players = [player for player in interface.players if player != self]
+        other_players = [
+            player for player in interface.get_players_list() if player != self
+        ]
         print("Which player would you like to trade with?")
         for i, player in enumerate(other_players):
-            print(f"{i}: {player} - {player.resources}")
-        player_to_trade_with = other_players[int(input())]
+            print(f"{i + 1}: {player}")
+        player_to_trade_with = other_players[int(input()) - 1]
         # Get the resource to trade for
         while True:
             print("What resource would you like to gain from the trade?")
             resource_to_gain = input()
-            if resource_to_gain in ["wood", "clay", "sheep", "wheat", "ore"]:
-                if resource_to_gain not in player_to_trade_with.resources:
-                    print("That player does not have that resource")
-                else:
-                    break
+            if resource_to_gain in ["wood", "clay", "sheep", "wheat", "rock"]:
+                break
             else:
                 print("Please enter a valid resource")
         # Get the resource to trade
@@ -520,7 +527,7 @@ class player:
             print("What resource would you like to give up in the trade?")
             self.printHand("resource")
             resource_to_give = input()
-            if resource_to_give in ["wood", "clay", "sheep", "wheat", "ore"]:
+            if resource_to_give in ["wood", "clay", "sheep", "wheat", "rock"]:
                 if resource_to_give not in self.resources:
                     print("You do not have that resource")
                 else:
@@ -535,7 +542,7 @@ class player:
         while True:
             print("Would you like to proceed? (y/n)")
             if input().lower() == "y":
-                interface.offer_trade(
+                interface.trade_with_player(
                     self, player_to_trade_with, resource_to_gain, resource_to_give
                 )
                 return
@@ -581,7 +588,7 @@ class player:
                 res_type = input(
                     "What resource would you like to take from all other players?\n"
                 )
-                while res_type not in ["wood", "clay", "sheep", "wheat", "ore"]:
+                while res_type not in ["wood", "clay", "sheep", "wheat", "rock"]:
                     res_type = input(
                         "What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n"
                     )
@@ -591,7 +598,7 @@ class player:
                     res_type = input(
                         "What resource would you like to take from the bank?\n"
                     )
-                    while res_type not in ["wood", "clay", "sheep", "wheat", "ore"]:
+                    while res_type not in ["wood", "clay", "sheep", "wheat", "rock"]:
                         res_type = input(
                             "What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n"
                         )
@@ -623,20 +630,32 @@ class player:
         action = int(input())
         while action not in range(1, len(moves) + 1):
             action = int(input("Please enter a valid action\n"))
-        action = number_move_pairings[str(action)]
+        action = number_move_pairings[str(action)].lower()
 
         # Switch on the action
-        if action in ["view building cost list"]:
+        if action == "view building cost list":
             for building, resources in interface.get_building_cost_list().items():
                 print(f"{building}: {resources}")
-        elif action in [
-            "build",
-            "buy development card",
-            "buy",
-        ] or action.__contains__("build"):
-            self.build(interface)
-        elif action in ["trade with bank", "trade"]:
+        elif action == "place settlement":
+            interface.place_settlement(
+                self, self.choose_placement_location(interface, "settlement")
+            )
+        elif action == "place city":
+            interface.place_city(
+                self, self.choose_placement_location(interface, "city")
+            )
+        # If the player built a road, place it
+        elif action == "build road":
+            interface.place_road(
+                self, self.choose_road_location(interface, None, False)
+            )
+        # If the player bought a development card, buy it
+        elif action == "buy development card":
+            interface.buy_development_card(self)
+        elif action in ["trade with bank"]:
             self.trade_with_bank(interface)
+        elif action == "trade with player":
+            self.offer_trade(interface)
         elif action in [
             "play development card",
             "development card",
@@ -644,9 +663,10 @@ class player:
             "dev card",
         ]:
             self.play_development_card(interface)
-        elif action in ["end turn", "end"]:
+        elif action == "end turn":
             # If the player ends their turn, raise an exception to end the turn
             raise endOfTurnException
         else:
             # If the player enters an invalid action, print an error message and loop
             print("Invalid action")
+            sys.exit(1)

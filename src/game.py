@@ -137,8 +137,9 @@ class game:
                 print("\n")
                 print("- Turn " + str(self.turn) + " -")
                 self.interface.turn_number = self.turn
+                self.interface.board.turn = self.turn
                 self.interface.log_action(f"{player_.name}'s turn")
-                if not self.all_players_ai:
+                if not self.interface.all_players_ai:
                     print(player_, "is playing")
 
                 # Dice Roll
@@ -160,18 +161,36 @@ class game:
                     # If the player is a human, the dice roll is done after a keypress
                     if player_.__class__ == src.player.player:
                         input("Press enter to roll the dice")
-                        dice_roll = roll_dice()
-                        print(f"You rolled {dice_roll}")
+                        print("\033[F", end="")
+                        two_dice = roll_dice()
+                        dice_roll = sum(two_dice)
+                        if isinstance(two_dice, list):
+                            self.interface.board.current_roll = two_dice
+                            two_dice = sum(two_dice)
+                        else:
+                            self.interface.board.roll = None
+                        self.interface.print_board()
+                        print(f"You rolled {dice_roll}" + " " * 20 + "\033[K")
 
                     else:
-                        dice_roll = roll_dice()
+                        two_dice = roll_dice()
+                        dice_roll = sum(two_dice)
+                        if isinstance(two_dice, list):
+                            self.interface.board.current_roll = two_dice
+                            two_dice = sum(two_dice)
+                        else:
+                            self.interface.board.roll = None
+                        self.interface.print_board()
                         print(f"{player_} rolled {dice_roll}")
 
                 # Log the dice roll
                 self.interface.log_action(f"{player_.name} rolled {dice_roll}")
 
+                if two_dice is None:
+                    two_dice = dice_roll
+
                 # Process the dice roll, giving the players resources
-                self.interface.process_roll(dice_roll, player_)
+                self.interface.process_roll(two_dice, player_)
 
                 # Print the player's resources
                 self.interface.log_action(
@@ -179,7 +198,7 @@ class game:
                 )
 
                 if not isinstance(player_, ai_player):
-                    input("Press enter to continue...")
+                    await_user_input()
 
                 # Player Actions -----------------------------------------------------
                 num_moves_made = 0
@@ -211,14 +230,15 @@ class game:
 
                 # End of turn waiting
                 if not CONFIG["table_top_mode"]:
-                    if self.all_players_ai:
+                    if self.interface.all_players_ai:
                         time.sleep(0.1)
                     else:
-                        time.sleep(3)
+                        await_user_input()
+
                 else:
                     # If tabletop mode, wait for the user to acknowledge the end of the turn so that the physical board can be updated
                     if isinstance(player_, ai_player):
-                        input("\nPress enter to acknowledge and continue")
+                        await_user_input()
 
                 # Check if the player has won
                 if (

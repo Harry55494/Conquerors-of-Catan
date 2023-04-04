@@ -47,7 +47,12 @@ if __name__ == "__main__":
 
     # Create the default players
 
-    players = [player(1, "red"), ai_minimax(2, "yellow")]
+    players = [
+        ai_random(1, "red"),
+        ai_minimax(2, "yellow"),
+        ai_random(3, "blue"),
+        ai_random(4, "green"),
+    ]
 
     # If the user has specified the "--no-menu" argument, skip the menu
 
@@ -211,22 +216,26 @@ if __name__ == "__main__":
                                 "\nSelect a number to modify the current setup, or return to go back:\n"
                             )
                             print(
-                                "1. Number of Matches: ".ljust(25)
+                                "1. Number of Matches: ".ljust(35)
                                 + str(CONFIG["number_of_matches"]).rjust(5)
                             )
                             print(
-                                "2. Victory Point Target: ".ljust(25)
+                                "2. Victory Point Target: ".ljust(35)
                                 + str(CONFIG["target_score"]).rjust(5)
                             )
                             print(
-                                "3. Table Top Mode: ".ljust(25)
+                                "3. Table Top Mode: ".ljust(35)
                                 + str(CONFIG["table_top_mode"]).rjust(5)
                             )
                             print(
-                                "4. Display Mode: ".ljust(25)
+                                "4. Display Mode: ".ljust(35)
                                 + str(CONFIG["display_mode_focus"]).rjust(5)
                             )
-                            print("5. Return")
+                            print(
+                                "5. Randomise Starting Locations".ljust(35)
+                                + str(CONFIG["randomise_starting_locations"]).rjust(5)
+                            )
+                            print("6. Return")
 
                             # Get the answer
                             answer = int(input(""))
@@ -284,8 +293,20 @@ if __name__ == "__main__":
                                 else:
                                     raise ValueError
 
-                            # Catch invalid options
                             elif answer == 5:
+                                print(
+                                    "Please enter whether you would like to randomise starting locations (y/n):"
+                                )
+                                answer = input("")
+                                if answer == "y":
+                                    CONFIG["randomise_starting_locations"] = True
+                                elif answer == "n":
+                                    CONFIG["randomise_starting_locations"] = False
+                                else:
+                                    raise ValueError
+
+                            # Catch invalid options
+                            elif answer == 6:
                                 break
 
                         # Catch invalid values
