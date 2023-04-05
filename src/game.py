@@ -216,6 +216,12 @@ class game:
                         limit = 100
                     for i in range(limit):
                         # Get the player to perform an action
+                        if (
+                            isinstance(player_, ai_random)
+                            and not self.interface.all_players_ai
+                        ):
+                            print(f"{player_} is thinking...")
+                            time.sleep(random.uniform(0.5, 1.5))
                         player_.turn_actions(self.interface)
                         self.interface.update_special_cards()
                         num_moves_made += 1

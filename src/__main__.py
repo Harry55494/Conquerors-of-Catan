@@ -209,34 +209,48 @@ if __name__ == "__main__":
 
                     while True:
                         try:
-
                             # Print all the options
                             os.system("clear" if os.name == "posix" else "cls")
+                            option_mapping = {
+                                "1": {
+                                    "CONFIG": "number_of_matches",
+                                    "Prompt": "Number of Matches",
+                                },
+                                "2": {
+                                    "CONFIG": "target_score",
+                                    "Prompt": "Victory Point Target",
+                                },
+                                "3": {
+                                    "CONFIG": "table_top_mode",
+                                    "Prompt": "Table Top Mode",
+                                },
+                                "4": {
+                                    "CONFIG": "display_mode_focus",
+                                    "Prompt": "Display Mode",
+                                },
+                                "5": {
+                                    "CONFIG": "board_layout",
+                                    "Prompt": "Board Layout",
+                                },
+                                "6": {
+                                    "CONFIG": "randomise_starting_locations",
+                                    "Prompt": "Randomise Starting Locations",
+                                },
+                            }
                             print(
                                 "\nSelect a number to modify the current setup, or return to go back:\n"
                             )
-                            print(
-                                "1. Number of Matches: ".ljust(35)
-                                + str(CONFIG["number_of_matches"]).rjust(5)
-                            )
-                            print(
-                                "2. Victory Point Target: ".ljust(35)
-                                + str(CONFIG["target_score"]).rjust(5)
-                            )
-                            print(
-                                "3. Table Top Mode: ".ljust(35)
-                                + str(CONFIG["table_top_mode"]).rjust(5)
-                            )
-                            print(
-                                "4. Display Mode: ".ljust(35)
-                                + str(CONFIG["display_mode_focus"]).rjust(5)
-                            )
-                            print(
-                                "5. Randomise Starting Locations".ljust(35)
-                                + str(CONFIG["randomise_starting_locations"]).rjust(5)
-                            )
-                            print("6. Return")
 
+                            for option in option_mapping:
+                                print(
+                                    option
+                                    + ". "
+                                    + option_mapping[option]["Prompt"].ljust(35)
+                                    + str(
+                                        CONFIG[option_mapping[option]["CONFIG"]]
+                                    ).rjust(7)
+                                )
+                            print(len(option_mapping) + 1, ". Return")
                             # Get the answer
                             answer = int(input(""))
 
@@ -295,6 +309,20 @@ if __name__ == "__main__":
 
                             elif answer == 5:
                                 print(
+                                    "Please enter which board layout you want, 'default' or 'random'"
+                                )
+                                print("1. Default")
+                                print("2. Random")
+                                answer = int(input(""))
+                                if answer == 1:
+                                    CONFIG["board_layout"] = "default"
+                                elif answer == 2:
+                                    CONFIG["board_layout"] = "random"
+                                else:
+                                    raise ValueError
+
+                            elif answer == 6:
+                                print(
                                     "Please enter whether you would like to randomise starting locations (y/n):"
                                 )
                                 answer = input("")
@@ -306,7 +334,7 @@ if __name__ == "__main__":
                                     raise ValueError
 
                             # Catch invalid options
-                            elif answer == 6:
+                            elif answer == 7:
                                 break
 
                         # Catch invalid values

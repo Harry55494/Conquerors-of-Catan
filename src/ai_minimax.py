@@ -567,6 +567,16 @@ class ai_minimax(ai_player):
 
     # Minimax functions --------------------------------------------------------
 
+    def get_best_move(self, interface, current_player, local_moves):
+        scores = []
+        for move in local_moves:
+            clone = copy.deepcopy(current_player)
+            interface_clone = copy.deepcopy(interface)
+            interface_clone.set_minimax(True)
+            self.perform_minimax_move(clone, interface_clone, move)
+            scores.append([move, self.evaluate_board(interface_clone)])
+        return [max(scores, key=lambda x: x[1])[0]]
+
     def get_move_combinations(self, interface, current_player) -> list | bool:
         """
         Returns a list of all possible combinations of moves for the player
@@ -588,17 +598,30 @@ class ai_minimax(ai_player):
 
             # Append settlement locations
             if move == "build settlement":
+                local_moves = []
                 for location in interface.get_potential_building_locations(
                     current_player
                 ):
-                    full_move_list.append(["build settlement", location])
+                    local_moves.append(["build settlement", location])
+
+                if self.epsilon_pruning >= 2:
+                    local_moves = self.get_best_move(
+                        interface, current_player, local_moves
+                    )
+                full_move_list.extend(local_moves)
 
             # Append city locations
             elif move == "build city":
+                local_moves = []
                 for location in interface.get_potential_building_locations(
                     current_player, "city"
                 ):
-                    full_move_list.append(["build city", location])
+                    local_moves.append(["build city", location])
+                if self.epsilon_pruning >= 2:
+                    local_moves = self.get_best_move(
+                        interface, current_player, local_moves
+                    )
+                full_move_list.extend(local_moves)
 
             # Append road locations
             elif move == "build road":
@@ -607,14 +630,9 @@ class ai_minimax(ai_player):
                     local_moves.append(["build road", location])
 
                 if self.epsilon_pruning >= 2:
-                    scores = []
-                    for move in local_moves:
-                        clone = copy.deepcopy(current_player)
-                        interface_clone = copy.deepcopy(interface)
-                        interface_clone.set_minimax(True)
-                        self.perform_minimax_move(clone, interface_clone, move)
-                        scores.append([move, self.evaluate_board(interface_clone)])
-                    local_moves = [max(scores, key=lambda x: x[1])[0]]
+                    local_moves = self.get_best_move(
+                        interface, current_player, local_moves
+                    )
                 full_move_list.extend(local_moves)
 
             # Append trade with bank moves
@@ -737,18 +755,9 @@ class ai_minimax(ai_player):
                                     )
 
                             if self.epsilon_pruning >= 1:
-                                scores = []
-                                for move in local_moves:
-                                    clone = copy.deepcopy(current_player)
-                                    interface_clone = copy.deepcopy(interface)
-                                    interface_clone.set_minimax(True)
-                                    self.perform_minimax_move(
-                                        clone, interface_clone, move
-                                    )
-                                    scores.append(
-                                        [move, self.evaluate_board(interface_clone)]
-                                    )
-                                local_moves = [max(scores, key=lambda x: x[1])[0]]
+                                local_moves = self.get_best_move(
+                                    interface, current_player, local_moves
+                                )
                             full_move_list.extend(local_moves)
 
                         # Monopoly with all possible resources
@@ -758,18 +767,9 @@ class ai_minimax(ai_player):
                                 local_moves.append([move, card, resource])
 
                             if self.epsilon_pruning >= 1:
-                                scores = []
-                                for move in local_moves:
-                                    clone = copy.deepcopy(current_player)
-                                    interface_clone = copy.deepcopy(interface)
-                                    interface_clone.set_minimax(True)
-                                    self.perform_minimax_move(
-                                        clone, interface_clone, move
-                                    )
-                                    scores.append(
-                                        [move, self.evaluate_board(interface_clone)]
-                                    )
-                                local_moves = [max(scores, key=lambda x: x[1])[0]]
+                                local_moves = self.get_best_move(
+                                    interface, current_player, local_moves
+                                )
                             full_move_list.extend(local_moves)
                 else:
                     pass
@@ -941,7 +941,7 @@ class ai_minimax(ai_player):
                         self.log(f"Pruning at depth {max_depth}")
                         break
 
-                    # TODO - A note on imperfect information
+                    # A note on imperfect information
                     # In a regular board game, you cannot see your opponent's hand.
                     # However, you can, in fact, keep an eye on which cards are given and played, as this is public
                     # information based on the dice roll. Given that it would be possible to keep track of this, I
@@ -959,12 +959,16 @@ class ai_minimax(ai_player):
         :return: The move to be made
         """
 
-        print("Beginning minimax")
+        print(self.name + " is thinking...")
         # Log that the minimax search has begun
         self.log(
             "\n\n$!\n\nBeginning minimax search on turn " + str(interface.turn_number)
         )
-        self.log("Top level moves: " + str(self.get_move_combinations(interface, self)))
+        moves = self.get_move_combinations(interface, self)
+        self.log("Top level moves: " + str(moves))
+        if len(moves) == 1 and moves[0] == ["end turn"]:
+            print("Only one move available, ending turn")
+            raise endOfTurnException
         # Set the start time
         self.start_time = datetime.now()
         self.log("Start time: " + str(self.start_time))

@@ -669,6 +669,8 @@ class board:
                     )
                     i += 1
 
+            # TODO Random port location
+
         # Add the required cards to their decks
 
         # Resource Deck
@@ -913,7 +915,7 @@ class board:
         # This prints the deck, players and their stats
         print("\n")
         print(
-            f"Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨   ❔    Roll: {dice}    ".center(
+            f"Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨  ❔    Roll: {dice}    ".center(
                 terminal_width
             ),
             end="",
@@ -930,7 +932,7 @@ class board:
             reverse=True,
         )
 
-        # Print the players and their stats, including longest road, largest army and soldier cards
+        # Print the players and their stats, including the longest road, the largest army and soldier cards
         for player_ in players_in_order:
             text = f"{player_}".ljust(35)
             LR = "LR" if player_ == self.longest_road[0] else "  "
