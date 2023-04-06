@@ -137,7 +137,6 @@ class game:
                 # Set the turn number and print the board
                 self.interface.print_board()
                 print("\n")
-                print("- Turn " + str(self.turn) + " -")
                 self.interface.turn_number = self.turn
                 self.interface.board.turn = self.turn
                 self.interface.log_action(f"{player_.name}'s turn")
@@ -217,6 +216,14 @@ class game:
                         limit = 100
                     for i in range(limit):
                         # Get the player to perform an action
+
+                        if (
+                            isinstance(player_, ai_random)
+                            and not self.interface.all_players_ai
+                        ):
+                            print(f"{player_.name} is thinking...")
+                            time.sleep(random.uniform(0.5, 1.5))
+
                         player_.turn_actions(self.interface)
                         self.interface.update_special_cards()
                         num_moves_made += 1

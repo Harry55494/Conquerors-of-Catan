@@ -346,9 +346,6 @@ class ai_random(ai_player):
         no_place_to_build_city = False
         no_place_to_build_road = False
 
-        print(f"{self.name} is thinking...")
-        time.sleep(random.uniform(0.5, 1.5))
-
         while True:
 
             # Get possible moves
@@ -463,6 +460,24 @@ class ai_random(ai_player):
                         random.choice(list(interface.get_resource_deck())),
                     )
 
+            elif "trade with player" in chosen_move:
+                # Choose a random player to trade with
+                player = random.choice(
+                    [
+                        player
+                        for player in interface.get_players_list()
+                        if player != self
+                    ]
+                )
+                # Choose a random resource that the player has at least 4 of
+                interface.trade_with_player(
+                    self,
+                    player,
+                    random.choice(self.resources),
+                    # Choose a random card from the resource deck
+                    random.choice(interface.get_resource_deck()),
+                )
+
             # Choose a random development card to play
             elif "play development card" in chosen_move and random.randint(0, 1) == 1:
                 self.play_development_card(interface)
@@ -486,5 +501,19 @@ class ai_random(ai_player):
                     f"Turn {interface.turn_number}, VP {self.calculateVictoryPoints(interface)} - Ended turn"
                 )
                 raise endOfTurnException
+
+            else:
+                if chosen_move[0] not in [
+                    "build road",
+                    "buy development card",
+                    "play development card",
+                    "trade with bank",
+                    "trade with port",
+                    "trade with player",
+                    "build settlement",
+                    "build city",
+                    "end turn",
+                ]:
+                    raise unknownMoveException(f"Unknown move: {chosen_move}")
 
             break

@@ -35,11 +35,11 @@ CONFIG = {
     # Minimax Depth -
     # Depth to which the minimax algorithm will search
     # 0 means it only looks at the current state
-    "minimax_max_depth": 4,
+    "minimax_max_depth": 5,
     # MiniMax Max Time -
     # Maximum time in seconds that the MiniMax algorithm will take to find the best move
     # If it takes longer than this, it will return the best move it has found so far
-    "minimax_time_limit": 90,
+    "minimax_time_limit": 60,
     # Log MiniMax Score Calculation -
     # If enabled, logs the score calculation for each move in the MiniMax algorithm
     # This is useful for debugging, but will fill up the log file very quickly
@@ -62,5 +62,19 @@ CONFIG = {
     # AI Doesn't Initiate Trades -
     # If enabled, the AI will not initiate trades
     # This can save a lot of time in the MiniMax algorithm
-    "ai_doesnt_initiate_trades": False,
+    "ai_doesnt_initiate_trades": True,
+    # Sort Order for Moves -
+    # Set the order in which the AI will evaluate moves
+    # Can influence the AI's strategy if the full move set is not explored
+    "move_sort_order": [
+        "build_city",
+        "build_settlement",
+        "build_road",
+        "play_development_card",
+        "trade with player",
+        "trade with port",
+        "trade with bank",
+        "buy_development_card",
+        "end_turn",
+    ],
 }

@@ -17,6 +17,10 @@ class endOfTurnException(Exception):
     pass
 
 
+class unknownMoveException(Exception):
+    pass
+
+
 def await_user_input(prompt="Press any key to continue..."):
     input(prompt)
 
@@ -64,6 +68,21 @@ class player:
         if not isinstance(other, player):
             return False
         return self.number == other.number
+
+    def has_access_to(self, interface) -> list:
+        """
+        Returns a list of the resources that the player has access to
+        :return: A list of the resources that the player has access to
+        """
+        res = []
+        buildings_list = interface.get_buildings_list()
+        for key, item in buildings_list.items():
+            if buildings_list[key]["player"] is not None:
+                if buildings_list[key]["player"].number == self.number:
+                    for tile in buildings_list[key]["tiles"]:
+                        if tile.resource not in res:
+                            res.append(tile.resource)
+        return res
 
     def count_cards(self, card_type) -> dict:
         """
@@ -200,7 +219,7 @@ class player:
         # Keep asking for a location until a valid one is given
         while not accepted:
             location = input(
-                f"{self} , where would you like to place your {type_}? "
+                f"{self.coloured_name}, where would you like to place your {type_}? "
                 f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"
                 f"\n(Single corner numbers increase as you move clockwise around a tile)\n"
             )

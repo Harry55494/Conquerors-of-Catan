@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from src.longest_road import *
 
 from src.ai_player import *
+from src.heuristic_modifiers import *
 
 import time
 
@@ -30,6 +31,7 @@ class ai_minimax(ai_player):
         time_limit=CONFIG["minimax_time_limit"],
         max_depth=CONFIG["minimax_max_depth"],
         epsilon_pruning_level=CONFIG["epsilon_pruning_level"],
+        heuristic_modifier=HMDefault(),
     ) -> None:
         """
         Constructor for the minimax AI player
@@ -57,6 +59,7 @@ class ai_minimax(ai_player):
         self.temp_score_variation_map = [0, {}]
         self.start_time = None
         self.epsilon_pruning = epsilon_pruning_level
+        self.heuristic_modifier = heuristic_modifier
 
     def perform_minimax_move(self, player_clone, interface_clone, move):
         """
@@ -302,11 +305,11 @@ class ai_minimax(ai_player):
         # Check for longest road
         if interface.get_longest_road()[0] is not None:
             if interface.get_longest_road()[0].number == self.number:
-                update_score(25, "longest road")
+                update_score(50, "longest road")
                 has_longest_road = True
         if interface.get_largest_army()[0] is not None:
             if interface.get_largest_army()[0].number == self.number:
-                update_score(25, "largest army")
+                update_score(50, "largest army")
 
         # Check for how long the longest road is
 
@@ -325,9 +328,9 @@ class ai_minimax(ai_player):
         clusters = return_clusters(player_roads)
         if clusters:
             longest_cluster = max(clusters, key=len)
-            max_cluster = len(find_longest_route(longest_cluster)) - 1
+            longest_route = len(find_longest_route(longest_cluster)) - 1
             update_score(
-                max_cluster * (2 if not has_longest_road else 1),
+                longest_route * (4 if not has_longest_road else 2),
                 "longest continuous road",
             )
 
@@ -376,11 +379,23 @@ class ai_minimax(ai_player):
                     else:
                         score += tile.frequency if building["player"].number == self.number else -tile.frequency"""
 
-        # Overwrite score with temp score if it is better, as this is the score that will be used for the minimax algorithm
-        if score > self.temp_score_variation_map[0]:
-            self.temp_score_variation_map = [score, score_variation_map]
+        # Apply Heuristic Modifier
 
-        return score
+        score_variation_map = self.heuristic_modifier(interface, score_variation_map)
+        new_score = sum(score_variation_map.values())
+        if isinstance(self.heuristic_modifier, HMDefault) and not new_score == score:
+            print(score_variation_map)
+            print(score)
+            print(new_score)
+            raise Exception(
+                "Heuristic modifier is not returning the correct score variation map"
+            )
+
+        # Overwrite score with temp score if it is better, as this is the score that will be used for the minimax algorithm
+        if new_score > self.temp_score_variation_map[0]:
+            self.temp_score_variation_map = [new_score, score_variation_map]
+
+        return new_score
 
     def choose_road_location(self, interface) -> tuple[int, int]:
         """
@@ -558,8 +573,7 @@ class ai_minimax(ai_player):
             interface_clone.set_minimax(True)
             if response:
                 clone.resources.extend(receiving)
-                for card in giving:
-                    clone.resources.remove(card)
+                clone.resources.remove(giving)
             scores[response] = clone.evaluate_board(interface_clone)
 
         # Return the response that results in the best board
@@ -568,6 +582,8 @@ class ai_minimax(ai_player):
     # Minimax functions --------------------------------------------------------
 
     def get_best_move(self, interface, current_player, local_moves):
+        if not local_moves:
+            return []
         scores = []
         for move in local_moves:
             clone = copy.deepcopy(current_player)
@@ -795,12 +811,7 @@ class ai_minimax(ai_player):
         # Sort the list.
         # List is sorted so that 'build' comes before 'trade' in the list of possible moves, so that in the event of a
         # MiniMaxTimeOutException, the player will build before trading
-        try:
-            return_list.sort(key=lambda x: x[0])
-        except:
-            print("RETURN LIST")
-            print(return_list)
-            sys.exit()
+        return_list.sort(key=lambda x: x[0])
 
         return return_list
 
@@ -867,6 +878,16 @@ class ai_minimax(ai_player):
                     interface_clone = copy.deepcopy(interface)
                     interface_clone.set_minimax(True)
                     player_clone = copy.deepcopy(self)
+
+                    # The Wishful Thinking Modification
+                    # Inject extra resources into the player's hand to simulate the possibility of getting a resource,
+                    # and therefore the ability to perform a move
+
+                    for card in self.has_access_to(interface_clone):
+                        for _ in range(
+                            math.floor(len(interface_clone.get_players_list()) / 2)
+                        ):
+                            player_clone.resources.append(card)
 
                     # Perform the move
                     interface_clone = self.perform_minimax_move(

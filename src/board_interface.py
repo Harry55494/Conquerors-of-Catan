@@ -548,11 +548,23 @@ class board_interface:
         # This is an example of me repeatedly checking whether they have the resources, as it is already checked
         # when finding the moves
         if not self.setup_mode:
-            for resource, amount in self.board.building_cost_list.get(
-                "settlement"
-            ).items():
-                for j in range(amount):
-                    self.return_player_card(player_, resource)
+            resources_taken = []
+            try:
+                for resource, amount in self.board.building_cost_list.get(
+                    "settlement"
+                ).items():
+                    for j in range(amount):
+                        self.return_player_card(player_, resource)
+                        resources_taken.append(resource)
+            except KeyError:
+                # If the player does not have enough resources, return the resources taken
+                for res in resources_taken:
+                    self.give_player_card(player_, "resource", res)
+                if not self.minimax_mode:
+                    self.log_action(
+                        f"{player_.name} tried to place a settlement at {location} but did not have enough resources"
+                    )
+                return False
 
         # Update the board
         self.board._buildings[location].update(
@@ -606,8 +618,20 @@ class board_interface:
 
         # Check if the player has enough resources and take them
         for resource, amount in self.board.building_cost_list.get("city").items():
-            for j in range(amount):
-                self.return_player_card(player_, resource)
+            resources_taken = []
+            try:
+                for j in range(amount):
+                    self.return_player_card(player_, resource)
+                    resources_taken.append(resource)
+            except KeyError:
+                # If the player does not have enough resources, return the resources taken
+                for res in resources_taken:
+                    self.give_player_card(player_, "resource", res)
+                if not self.minimax_mode:
+                    self.log_action(
+                        f"{player_.name} tried to place a city at {location} but did not have enough resources"
+                    )
+                return False
 
         # Update the board
         self.board._buildings[location].update({"player": player_, "building": "city"})
@@ -639,8 +663,6 @@ class board_interface:
             raise self.moveNotValid("Road already placed at location")
 
         try:
-            # Place the road
-            self.board._roads[location].update({"player": player_})
 
             # If not in setup mode, check if the player has enough resources and take them
             if not self.setup_mode:
@@ -649,8 +671,23 @@ class board_interface:
                 ).items():
                     # If the road is being placed for free from a development card, do not take resources
                     if not self.minimax_mode and not free_from_dev_card:
-                        for i in range(amount):
-                            self.return_player_card(player_, resource)
+                        taken_resources = []
+                        try:
+                            for i in range(amount):
+                                self.return_player_card(player_, resource)
+                                taken_resources.append(resource)
+                        except KeyError:
+                            # If the player does not have enough resources, return them
+                            for res in taken_resources:
+                                self.give_player_card(player_, "resource", res)
+                            if not self.minimax_mode:
+                                self.log_action(
+                                    f"{player_.name} tried to place a road at {location} but did not have enough resources"
+                                )
+                            return False
+
+            # Place the road
+            self.board._roads[location].update({"player": player_})
 
             # Log the action if not in minimax mode
             if not self.minimax_mode:
@@ -847,13 +884,15 @@ class board_interface:
                     print(
                         f"{player_to_trade_with.name} refused to trade with {original_player.name}"
                     )
-                    await_user_input()
+                    if not self.all_players_ai:
+                        await_user_input()
 
         # If the players don't have enough resources to trade, log the action if not in minimax mode
         else:
             if not self.minimax_mode:
                 print("One or both players do not have enough resources to trade!")
-                await_user_input()
+                if not self.all_players_ai:
+                    await_user_input()
 
     def play_development_card(self, player_, card_to_play, *args) -> None:
         """

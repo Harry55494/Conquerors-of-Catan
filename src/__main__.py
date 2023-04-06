@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        player(1, "red"),
+        ai_random(1, "red"),
         ai_minimax(2, "yellow"),
         ai_random(3, "blue"),
         ai_random(4, "green"),
