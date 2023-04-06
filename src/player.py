@@ -8,6 +8,7 @@ Implementations all require human input
 import sys
 
 import termcolor
+from tabulate import tabulate
 from src.CONFIG import CONFIG
 
 # Exception to be raised when a player ends their turn
@@ -43,6 +44,8 @@ class player:
         self.played_robber_cards = 0
         self.has_built_this_turn = False
         self.has_played_dev_card_this_turn = False
+        self.dev_cards_at_start_of_turn = []
+        self.gained_dev_cards_this_turn = []
         print(self.coloured_name, "has joined the game")
 
     def __str__(self) -> str:
@@ -87,7 +90,7 @@ class player:
 
         return card_count
 
-    def printHand(self, type_="resources") -> None:
+    def printHand(self, type_="resources", filter_bought_dev_cards=False) -> None:
         """
         Prints the player's hand of either resource cards or development cards
         :return: None
@@ -98,6 +101,10 @@ class player:
         else:
             list_to_print = self.development_cards
         list_to_print.sort()
+
+        if filter_bought_dev_cards and type_ == "development":
+            for card in self.gained_dev_cards_this_turn:
+                list_to_print.remove(card)
 
         print(
             f"{'You'} ({self.coloured_name}) have {len(list_to_print)} {type_} card(s) in your hand.",
@@ -543,7 +550,7 @@ class player:
             print("Would you like to proceed? (y/n)")
             if input().lower() == "y":
                 interface.trade_with_player(
-                    self, player_to_trade_with, resource_to_gain, resource_to_give
+                    self, player_to_trade_with, resource_to_give, resource_to_gain
                 )
                 return
             elif input().lower() == "n":
@@ -576,10 +583,13 @@ class player:
         :return: None
         """
         # Check if the player has any development cards
-        self.printHand("development")
+        self.printHand("development", True)
         if len(self.development_cards) > 0:
             # Ask the player which card they want to play
-            card = input("Which card would you like to play?\n")
+            card = input(
+                "Which card would you like to play?\nYou can only play one card per turn, and it can't be one you gained this turn!\n"
+            )
+
             while card not in self.development_cards:
                 card = input("Please enter a valid card\n")
             args = []
@@ -634,8 +644,20 @@ class player:
 
         # Switch on the action
         if action == "view building cost list":
+            buildings = []
             for building, resources in interface.get_building_cost_list().items():
-                print(f"{building}: {resources}")
+                res = ""
+                for resource, amount in resources.items():
+                    res += f"{amount} x {resource}, "
+                buildings.append([building.title(), res])
+            print(
+                tabulate(
+                    buildings,
+                    headers=["Building", "Required Resources"],
+                    tablefmt="grid",
+                )
+            )
+            await_user_input()
         elif action == "place settlement":
             interface.place_settlement(
                 self, self.choose_placement_location(interface, "settlement")

@@ -131,6 +131,8 @@ class game:
                 player_.development_cards.sort()
                 player_.has_built_this_turn = False
                 player_.has_played_dev_card_this_turn = False
+                player_.dev_cards_at_start_of_turn = player_.development_cards.copy()
+                player_.gained_dev_cards_this_turn = []
 
                 # Set the turn number and print the board
                 self.interface.print_board()
@@ -143,7 +145,7 @@ class game:
                     print(player_, "is playing")
 
                 # Dice Roll
-                # If the game is in table top mode, the dice roll is input by the user
+                # If the game is in table-top mode, the dice roll is input by the user
                 if CONFIG["table_top_mode"]:
                     while True:
                         dice_roll = input("Enter dice roll: ")
@@ -206,7 +208,6 @@ class game:
                 # Limit the number of moves that can be made in a turn
                 # Different limits for AI and human players
                 try:
-                    # TODO: Need to ban buying and playing cards on the same turn
                     limit = (
                         CONFIG["max_moves_per_turn_ai"]
                         if isinstance(player_, ai_player)
@@ -216,12 +217,6 @@ class game:
                         limit = 100
                     for i in range(limit):
                         # Get the player to perform an action
-                        if (
-                            isinstance(player_, ai_random)
-                            and not self.interface.all_players_ai
-                        ):
-                            print(f"{player_} is thinking...")
-                            time.sleep(random.uniform(0.5, 1.5))
                         player_.turn_actions(self.interface)
                         self.interface.update_special_cards()
                         num_moves_made += 1

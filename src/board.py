@@ -520,68 +520,46 @@ class board:
         }
 
         # Ports, with the key being the two nodes that the port is between
-        # If the port is not None, then the owning player, type and resource are specified
+        # Ports are only ever at the locations listed below
         self._ports = {
-            tuple(["a1", "a2"]): None,
-            tuple(["a2", "a,c"]): None,
             tuple(["a,c", "c1"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["c1", "c,f"]): None,
-            tuple(["c,f", "f1"]): None,
             tuple(["f1", "f2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["f2", "f,k"]): None,
-            tuple(["f,k", "k1"]): None,
             tuple(["k1", "k,p"]): {
                 "player": None,
                 "symbol": r"2:1",
                 "resource": "clay",
                 "emoji": " 🧱",
             },
-            tuple(["k,p", "p1"]): None,
-            tuple(["p1", "p2"]): None,
-            tuple(["p2", "p,r"]): None,
             tuple(["p,r", "r1"]): {
                 "player": None,
                 "symbol": r"2:1",
                 "resource": "wood",
                 "emoji": " 🌲",
             },
-            tuple(["r1", "r,s"]): None,
-            tuple(["r,s", "s1"]): None,
             tuple(["s1", "s2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["s2", "q,s"]): None,
-            tuple(["q,s", "q1"]): None,
             tuple(["q1", "n,q"]): {
                 "player": None,
                 "symbol": r"2:1",
                 "resource": "wheat",
                 "emoji": " 🌾",
             },
-            tuple(["n,q", "n1"]): None,
-            tuple(["n1", "n2"]): None,
-            tuple(["n2", "i,n"]): None,
             tuple(["i,n", "i1"]): {
                 "player": None,
                 "symbol": r"2:1",
                 "resource": "rock",
                 "emoji": " 🪨",
             },
-            tuple(["i1", "d,i"]): None,
-            tuple(["d,i", "d1"]): None,
             tuple(["d1", "d2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["d2", "b,d"]): None,
-            tuple(["b,d", "b1"]): None,
             tuple(["b1", "a,b"]): {
                 "player": None,
                 "symbol": r"2:1",
                 "resource": "sheep",
                 "emoji": " 🐑",
             },
-            tuple(["a,b", "a1"]): None,
         }
 
         # Create the tiles and board
-        # Use the default layout if the random layout is not specified
-        # If the board layout is the default, this is skipped as the tile are already in the default order
+        # The default layout has already been created, but if the layout is random it is now modified here
         if board_type != "default":
 
             # If the layout is random, form the tiles from the possible options in the correct order
@@ -669,7 +647,12 @@ class board:
                     )
                     i += 1
 
-            # TODO Random port location
+            # Shuffle the port order by reassigning the keys and items in the dictionary
+            port_keys = list(self._ports.keys())
+            port_values = list(self._ports.values())
+            random.shuffle(port_values)
+            self._ports = dict(zip(port_keys, port_values))
+            print(self._ports)
 
         # Add the required cards to their decks
 
@@ -850,37 +833,37 @@ class board:
         # moving parts. However, it works, and I won't need to edit it later on.
 
         lines_to_print = [
-            f'                                  {p_tp["a1", "a2"]}                                  ',
+            f"                                                                       ",
             f'                               {b_tp.get("a1")} {r_tp[tuple(["a1", "a2"])] * 5} {b_tp.get("a2")}                               ',
-            f'                          {p_tp["a,b", "a1"]} {r_tp[tuple(["a,b", "a1"])]}        {r_tp[tuple(["a2", "a,c"])]}{p_tp["a2", "a,c"]}                          ',
+            f'                              {r_tp[tuple(["a,b", "a1"])]}        {r_tp[tuple(["a2", "a,c"])]}                             ',
             f'                       {p_tp["b1", "a,b"]}   {r_tp[tuple(["a,b", "a1"])]}   {t_tp[0][0]}     {r_tp[tuple(["a2", "a,c"])]}  {p_tp["a,c", "c1"]}                       ',
             f'                    {b_tp.get("b1")} {r_tp[tuple(["a,b", "b1"])] * 5} {b_tp.get("a,b")}      {l_tp[0]}      {b_tp.get("a,c")} {r_tp[tuple(["a,c", "c1"])] * 5} {b_tp.get("c1")}                    ',
-            f'               {p_tp["b,d", "b1"]} {r_tp[tuple(["b1", "b,d"])]}         {r_tp[tuple(["a,b,e", "a,b"])]}    {t_tp[0][1]}   {r_tp[tuple(["a,c", "a,c,e"])]}        {r_tp[tuple(["c1", "c,f"])]}{p_tp["c1", "c,f"]}               ',
-            f'            {p_tp["d2", "b,d"]}   {r_tp[tuple(["b1", "b,d"])]}    {t_tp[1][0]}     {r_tp[tuple(["a,b,e", "a,b"])]}        {r_tp[tuple(["a,c", "a,c,e"])]}   {t_tp[2][0]}     {r_tp[tuple(["c1", "c,f"])]}  {p_tp["c,f", "f1"]}            ',
+            f'                   {r_tp[tuple(["b1", "b,d"])]}         {r_tp[tuple(["a,b,e", "a,b"])]}    {t_tp[0][1]}   {r_tp[tuple(["a,c", "a,c,e"])]}        {r_tp[tuple(["c1", "c,f"])]}                  ',
+            f'                  {r_tp[tuple(["b1", "b,d"])]}    {t_tp[1][0]}     {r_tp[tuple(["a,b,e", "a,b"])]}        {r_tp[tuple(["a,c", "a,c,e"])]}   {t_tp[2][0]}     {r_tp[tuple(["c1", "c,f"])]}                 ',
             f'         {b_tp.get("d2")} {r_tp[tuple(["d2", "b,d"])] * 5} {b_tp.get("b,d")}      {l_tp[1]}      {b_tp.get("a,b,e")} {r_tp[tuple(["a,c,e", "a,b,e"])] * 5} {b_tp.get("a,c,e")}      {l_tp[2]}      {b_tp.get("c,f")} {r_tp[tuple(["c,f", "f1"])] * 5} {b_tp.get("f1")}         ',
             f'   {p_tp["d1", "d2"]}  {r_tp[tuple(["d1", "d2"])]}         {r_tp[tuple(["b,d", "b,d,g"])]}   {t_tp[1][1]}     {r_tp[tuple(["b,e,g", "a,b,e"])]}         {r_tp[tuple(["c,e,h", "a,c,e"])]}   {t_tp[2][1]}     {r_tp[tuple(["c,f", "c,f,h"])]}         {r_tp[tuple(["f1", "f2"])]} {p_tp["f1", "f2"]}   ',
             f'       {r_tp[tuple(["d1", "d2"])]}    {t_tp[3][0]}     {r_tp[tuple(["b,d", "b,d,g"])]}        {r_tp[tuple(["b,e,g", "a,b,e"])]}    {t_tp[4][0]}     {r_tp[tuple(["c,e,h", "a,c,e"])]}        {r_tp[tuple(["c,f", "c,f,h"])]}    {t_tp[5][0]}     {r_tp[tuple(["f1", "f2"])]}      ',
             f'      {b_tp.get("d1")}      {l_tp[3]}      {b_tp.get("b,d,g")} {r_tp[tuple(["b,d,g", "b,e,g"])] * 5} {b_tp.get("b,e,g")}      {l_tp[4]}      {b_tp.get("c,e,h")} {r_tp[tuple(["c,f,h", "c,e,h"])] * 5} {b_tp.get("c,f,h")}      {l_tp[5]}      {b_tp.get("f2")}      ',
             f'       {r_tp[tuple(["d,i", "d1"])]}   {t_tp[3][1]}     {r_tp[tuple(["b,d,g", "d,g,i"])]}         {r_tp[tuple(["e,g,j", "b,e,g"])]}   {t_tp[4][1]}    {r_tp[tuple(["c,e,h", "e,h,j"])]}         {r_tp[tuple(["f,h,k", "c,f,h"])]}   {t_tp[5][1]}    {r_tp[tuple(["f2", "f,k"])]}       ',
-            f'   {p_tp["d,i", "d1"]}  {r_tp[tuple(["d,i", "d1"])]}        {r_tp[tuple(["b,d,g", "d,g,i"])]}    {t_tp[6][0]}     {r_tp[tuple(["e,g,j", "b,e,g"])]}        {r_tp[tuple(["c,e,h", "e,h,j"])]}    {t_tp[7][0]}     {r_tp[tuple(["f,h,k", "c,f,h"])]}        {r_tp[tuple(["f2", "f,k"])]}  {p_tp["f2", "f,k"]}   ',
+            f'        {r_tp[tuple(["d,i", "d1"])]}        {r_tp[tuple(["b,d,g", "d,g,i"])]}    {t_tp[6][0]}     {r_tp[tuple(["e,g,j", "b,e,g"])]}        {r_tp[tuple(["c,e,h", "e,h,j"])]}    {t_tp[7][0]}     {r_tp[tuple(["f,h,k", "c,f,h"])]}        {r_tp[tuple(["f2", "f,k"])]}        ',
             f'         {b_tp.get("d,i")} {r_tp[tuple(["d,g,i", "d,i"])] * 5} {b_tp.get("d,g,i")}      {l_tp[6]}      {b_tp.get("e,g,j")} {r_tp[tuple(["e,h,j", "e,g,j"])] * 5} {b_tp.get("e,h,j")}      {l_tp[7]}      {b_tp.get("f,h,k")} {r_tp[tuple(["f,k", "f,h,k"])] * 5} {b_tp.get("f,k")}         ',
-            f'   {p_tp["i1", "d,i"]}  {r_tp[tuple(["i1", "d,i"])]}         {r_tp[tuple(["g,i,l", "d,g,i"])]}   {t_tp[6][1]}    {r_tp[tuple(["e,g,j", "g,j,l"])]}         {r_tp[tuple(["h,j,m", "e,h,j"])]}   {t_tp[7][1]}    {r_tp[tuple(["f,h,k", "h,k,m"])]}         {r_tp[tuple(["f,k", "k1"])]} {p_tp["f,k", "k1"]}   ',
+            f'        {r_tp[tuple(["i1", "d,i"])]}         {r_tp[tuple(["g,i,l", "d,g,i"])]}   {t_tp[6][1]}    {r_tp[tuple(["e,g,j", "g,j,l"])]}         {r_tp[tuple(["h,j,m", "e,h,j"])]}   {t_tp[7][1]}    {r_tp[tuple(["f,h,k", "h,k,m"])]}         {r_tp[tuple(["f,k", "k1"])]}       ',
             f'       {r_tp[tuple(["i1", "d,i"])]}    {t_tp[8][0]}     {r_tp[tuple(["g,i,l", "d,g,i"])]}        {r_tp[tuple(["e,g,j", "g,j,l"])]}    {t_tp[9][0]}     {r_tp[tuple(["h,j,m", "e,h,j"])]}        {r_tp[tuple(["f,h,k", "h,k,m"])]}    {t_tp[10][0]}     {r_tp[tuple(["f,k", "k1"])]}      ',
             f'      {b_tp.get("i1")}      {l_tp[8]}      {b_tp.get("g,i,l")} {r_tp[tuple(["g,j,l", "g,i,l"])] * 5} {b_tp.get("g,j,l")}      {l_tp[9]}      {b_tp.get("h,j,m")} {r_tp[tuple(["h,k,m", "h,j,m"])] * 5} {b_tp.get("h,k,m")}      {l_tp[10]}      {b_tp.get("k1")}      ',
             f'       {r_tp[tuple(["i,n", "i1"])]}   {t_tp[8][1]}    {r_tp[tuple(["g,i,l", "i,l,n"])]}         {r_tp[tuple(["j,l,o", "g,j,l"])]}   {t_tp[9][1]}     {r_tp[tuple(["h,j,m", "j,m,o"])]}         {r_tp[tuple(["k,m,p", "h,k,m"])]}   {t_tp[10][1]}    {r_tp[tuple(["k1", "k,p"])]}       ',
             f'   {p_tp["i,n", "i1"]}  {r_tp[tuple(["i,n", "i1"])]}        {r_tp[tuple(["g,i,l", "i,l,n"])]}    {t_tp[11][0]}     {r_tp[tuple(["j,l,o", "g,j,l"])]}        {r_tp[tuple(["h,j,m", "j,m,o"])]}    {t_tp[12][0]}     {r_tp[tuple(["k,m,p", "h,k,m"])]}        {r_tp[tuple(["k1", "k,p"])]}  {p_tp["k1", "k,p"]}   ',
             f'         {b_tp.get("i,n")} {r_tp[tuple(["i,l,n", "i,n"])] * 5} {b_tp.get("i,l,n")}      {l_tp[11]}      {b_tp.get("j,l,o")} {r_tp[tuple(["j,m,o", "j,l,o"])] * 5} {b_tp.get("j,m,o")}      {l_tp[12]}      {b_tp.get("k,m,p")} {r_tp[tuple(["k,p", "k,m,p"])] * 5} {b_tp.get("k,p")}         ',
-            f'   {p_tp["n2", "i,n"]}  {r_tp[tuple(["n2", "i,n"])]}         {r_tp[tuple(["l,n,q", "i,l,n"])]}   {t_tp[11][1]}    {r_tp[tuple(["j,l,o", "l,o,q"])]}         {r_tp[tuple(["m,o,r", "j,m,o"])]}   {t_tp[12][1]}    {r_tp[tuple(["k,m,p", "m,p,r"])]}         {r_tp[tuple(["k,p", "p1"])]} {p_tp["k,p", "p1"]}   ',
+            f'        {r_tp[tuple(["n2", "i,n"])]}         {r_tp[tuple(["l,n,q", "i,l,n"])]}   {t_tp[11][1]}    {r_tp[tuple(["j,l,o", "l,o,q"])]}         {r_tp[tuple(["m,o,r", "j,m,o"])]}   {t_tp[12][1]}    {r_tp[tuple(["k,m,p", "m,p,r"])]}         {r_tp[tuple(["k,p", "p1"])]}       ',
             f'       {r_tp[tuple(["n2", "i,n"])]}    {t_tp[13][0]}     {r_tp[tuple(["l,n,q", "i,l,n"])]}        {r_tp[tuple(["j,l,o", "l,o,q"])]}    {t_tp[14][0]}     {r_tp[tuple(["m,o,r", "j,m,o"])]}        {r_tp[tuple(["k,m,p", "m,p,r"])]}    {t_tp[15][0]}     {r_tp[tuple(["k,p", "p1"])]}      ',
             f'      {b_tp.get("n2")}      {l_tp[13]}      {b_tp.get("l,n,q")} {r_tp[tuple(["l,o,q", "l,n,q"])] * 5} {b_tp.get("l,o,q")}      {l_tp[14]}      {b_tp.get("m,o,r")} {r_tp[tuple(["m,p,r", "m,o,r"])] * 5} {b_tp.get("m,p,r")}      {l_tp[15]}      {b_tp.get("p1")}      ',
-            f'   {p_tp["n1", "n2"]} {r_tp[tuple(["n1", "n2"])]}   {t_tp[13][1]}    {r_tp[tuple(["l,n,q", "n,q"])]}         {r_tp[tuple(["o,q,s", "l,o,q"])]}   {t_tp[14][1]}     {r_tp[tuple(["m,o,r", "o,r,s"])]}         {r_tp[tuple(["p,r", "m,p,r"])]}   {t_tp[15][1]}    {r_tp[tuple(["p1", "p2"])]} {p_tp["p1", "p2"]}   ',
+            f'       {r_tp[tuple(["n1", "n2"])]}   {t_tp[13][1]}    {r_tp[tuple(["l,n,q", "n,q"])]}         {r_tp[tuple(["o,q,s", "l,o,q"])]}   {t_tp[14][1]}     {r_tp[tuple(["m,o,r", "o,r,s"])]}         {r_tp[tuple(["p,r", "m,p,r"])]}   {t_tp[15][1]}    {r_tp[tuple(["p1", "p2"])]}       ',
             f'        {r_tp[tuple(["n1", "n2"])]}        {r_tp[tuple(["l,n,q", "n,q"])]}    {t_tp[16][0]}     {r_tp[tuple(["o,q,s", "l,o,q"])]}        {r_tp[tuple(["m,o,r", "o,r,s"])]}    {t_tp[17][0]}     {r_tp[tuple(["p,r", "m,p,r"])]}        {r_tp[tuple(["p1", "p2"])]}        ',
             f'         {b_tp.get("n1")} {r_tp[tuple(["n,q", "n1"])] * 5} {b_tp.get("n,q")}      {l_tp[16]}      {b_tp.get("o,q,s")} {r_tp[tuple(["o,r,s", "o,q,s"])] * 5} {b_tp.get("o,r,s")}      {l_tp[17]}      {b_tp.get("p,r")} {r_tp[tuple(["p2", "p,r"])] * 5} {b_tp.get("p2")}         ',
-            f'            {p_tp["n,q", "n1"]}   {r_tp[tuple(["q1", "n,q"])]}   {t_tp[16][1]}    {r_tp[tuple(["o,q,s", "q,s"])]}         {r_tp[tuple(["r,s", "o,r,s"])]}    {t_tp[17][1]}   {r_tp[tuple(["p1", "p2"])]}   {p_tp["p2", "p,r"]}            ',
+            f'                  {r_tp[tuple(["q1", "n,q"])]}   {t_tp[16][1]}    {r_tp[tuple(["o,q,s", "q,s"])]}         {r_tp[tuple(["r,s", "o,r,s"])]}    {t_tp[17][1]}   {r_tp[tuple(["p1", "p2"])]}                  ',
             f'               {p_tp["q1", "n,q"]} {r_tp[tuple(["q1", "n,q"])]}        {r_tp[tuple(["o,q,s", "q,s"])]}    {t_tp[18][0]}     {r_tp[tuple(["r,s", "o,r,s"])]}        {r_tp[tuple(["p1", "p2"])]} {p_tp["p,r", "r1"]}               ',
             f'                    {b_tp.get("q1")} {r_tp[tuple(["q,s", "q1"])] * 5} {b_tp.get("q,s")}      {l_tp[18]}      {b_tp.get("r,s")} {r_tp[tuple(["r1", "r,s"])] * 5} {b_tp.get("r1")}                    ',
-            f'                       {p_tp["q,s", "q1"]}   {r_tp[tuple(["s2", "q,s"])]}   {t_tp[18][1]}    {r_tp[tuple(["r,s", "s1"])]}   {p_tp["r1", "r,s"]}                       ',
-            f'                          {p_tp["s2", "q,s"]} {r_tp[tuple(["s2", "q,s"])]}        {r_tp[tuple(["r,s", "s1"])]} {p_tp["r,s", "s1"]}                          ',
+            f'                             {r_tp[tuple(["s2", "q,s"])]}   {t_tp[18][1]}    {r_tp[tuple(["r,s", "s1"])]}                             ',
+            f'                              {r_tp[tuple(["s2", "q,s"])]}        {r_tp[tuple(["r,s", "s1"])]}                              ',
             f'                               {b_tp.get("s2")} {r_tp[tuple(["s1", "s2"])] * 5} {b_tp.get("s1")}                               ',
             f'                                  {p_tp["s1", "s2"]}                                  ',
         ]

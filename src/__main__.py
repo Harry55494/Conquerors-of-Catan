@@ -14,7 +14,6 @@ Options:
 import signal
 
 from src.game import *
-from tabulate import tabulate
 from datetime import datetime
 
 if __name__ == "__main__":
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        ai_random(1, "red"),
+        player(1, "red"),
         ai_minimax(2, "yellow"),
         ai_random(3, "blue"),
         ai_random(4, "green"),
@@ -246,9 +245,9 @@ if __name__ == "__main__":
                                     option
                                     + ". "
                                     + option_mapping[option]["Prompt"].ljust(35)
-                                    + str(
-                                        CONFIG[option_mapping[option]["CONFIG"]]
-                                    ).rjust(7)
+                                    + str(CONFIG[option_mapping[option]["CONFIG"]])
+                                    .rjust(7)
+                                    .title()
                                 )
                             print(len(option_mapping) + 1, ". Return")
                             # Get the answer

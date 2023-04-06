@@ -20,7 +20,7 @@ CONFIG = {
     # Set to either 'default' or 'random'
     # 'default' will use the standard board layout
     # 'random' will use a random board layout
-    "board_layout": "default",
+    "board_layout": "random",
     # Table Top Mode -
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not just with a human

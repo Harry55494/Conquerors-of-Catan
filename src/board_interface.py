@@ -324,6 +324,8 @@ class board_interface:
                         f"{player_.name} now has {len(player_.development_cards)} development cards"
                     )
 
+                return card_given
+
             # Exception if there are not enough cards in the bank
             except IndexError:
                 if not self.minimax_mode:
@@ -520,125 +522,6 @@ class board_interface:
                         f"{player_.name} has a road of length {max_cluster} and has been given the longest road card"
                     )
 
-    # Moves -------------------------------------------------------------------------------------------------------------
-
-    def return_possible_moves(self, player_: player) -> list[str]:
-        """
-        Returns a list of possible moves for a given player
-        Sometimes called multiple times in a turn if multiple moves are being made
-        One of the biggest functions in the game
-        :param player_: The player to check
-        :return: A list of possible moves
-        """
-
-        # Initial counting of settlements and cities for future use
-        hand = player_.count_cards("resources")
-        buildings_count = {"settlements": 0, "cities": 0}
-        for building in self.get_buildings_list():
-            if self.get_buildings_list()[building]["player"] is not None:
-                if (
-                    self.get_buildings_list()[building]["player"].number
-                    == player_.number
-                ):
-                    if self.get_buildings_list()[building]["building"] == "settlement":
-                        buildings_count["settlements"] += 1
-                    elif self.get_buildings_list()[building]["building"] == "city":
-                        buildings_count["cities"] += 1
-        moves = []
-
-        # TRADING MOVES
-
-        # If the player has not already built this turn, they can trade
-        if not player_.has_built_this_turn:
-
-            # Check if the player can trade with the bank
-            for card in hand:
-                if hand[card] >= 4:
-                    moves.append("trade with bank")
-
-            # Check if the player can trade with a port
-            for port in self.get_ports_list():
-                # Check if the port is owned by the player
-                if self.get_ports_list()[port] is not None:
-                    if self.get_ports_list()[port]["player"] is not None:
-                        if (
-                            self.get_ports_list()[port]["player"].number
-                            == player_.number
-                        ):
-                            # Get the type of port and the resource it gives
-                            type_ = self.get_ports_list()[port]["symbol"]
-                            player_resources = player_.count_cards("resources")
-                            port_resource = self.get_ports_list()[port]["resource"]
-                            highest_resource = max(player_resources.values())
-                            # If the player has enough of the resource, they can trade
-                            if (
-                                "2" in type_ and player_resources[port_resource] >= 2
-                            ) or ("3" in type_ and highest_resource >= 3):
-                                moves.append("trade with port")
-
-            if (
-                not isinstance(player_, ai_player)
-                or isinstance(player_, ai_player)
-                and not CONFIG["ai_doesnt_initiate_trades"]
-            ):
-                # Check if the player can trade with another player
-                if len(player_.resources) > 0 and any(
-                    len(other_player.resources) > 0
-                    for other_player in self.get_players_list()
-                    if other_player != player_
-                ):
-                    moves.append("trade with player")
-
-        # BUILDING MOVES
-
-        # Check if player can build a city
-        if (
-            hand["wheat"] >= 2
-            and hand["rock"] >= 3
-            and 0 < buildings_count["settlements"] < 4
-        ):
-            moves.append("build city")
-
-        # Check if player can build a settlement
-        if (
-            hand["wheat"] >= 1
-            and hand["sheep"] >= 1
-            and hand["wood"] >= 1
-            and hand["clay"] >= 1
-            and buildings_count["settlements"] < 5
-        ):
-            moves.append("build settlement")
-
-        # Check if player can build a road
-        if (
-            hand["wood"] >= 1
-            and hand["clay"] >= 1
-            and self.has_potential_road(player_)
-            and self.count_structure(player_, "road") < 15
-        ):
-            moves.append("build road")
-
-        # Check if player can buy a development card
-        if hand["sheep"] >= 1 and hand["rock"] >= 1 and hand["wheat"] >= 1:
-            moves.append("buy development card")
-
-        # DEVELOPMENT CARD MOVES
-
-        # Check if the player can play a development card
-        # Player can only play one development card per turn
-        if (
-            len(player_.development_cards) > 0
-            and len(player_.development_cards)
-            > player_.development_cards.count("victory point")
-            and not player_.has_played_dev_card_this_turn
-        ):
-            moves.append("play development card")
-
-        # Player can always end their turn
-        moves.append("end turn")
-
-        return moves
-
     def place_settlement(self, player_, location, setup=False) -> bool:
         """
         Places a settlement on the board
@@ -801,11 +684,12 @@ class board_interface:
             self.return_player_card(player_, "wheat")
             self.return_player_card(player_, "sheep")
             self.return_player_card(player_, "rock")
-            self.give_player_card(player_, "development", "development_card")
+            card = self.give_player_card(player_, "development", "development_card")
 
             # Log the action if not in minimax mode
             if not self.minimax_mode:
                 self.log_action(f"{player_.name} bought a development card")
+                player_.gained_dev_cards_this_turn.append(card)
 
             return True
 
@@ -906,10 +790,10 @@ class board_interface:
         """
         Allows a player to trade with another player
         Trades are always 1:1
-        :param original_player:
-        :param player_to_trade_with:
-        :param resource_to_give:
-        :param resource_to_get:
+        :param original_player: The player trading
+        :param player_to_trade_with: The player to trade with
+        :param resource_to_give: The resource to be given
+        :param resource_to_get: The resource to be received
         :return: None
         """
 
@@ -921,6 +805,9 @@ class board_interface:
                 )
                 return
             print(
+                f"{original_player.name} is offering to trade with {player_to_trade_with.name} - {resource_to_give} for {resource_to_get}"
+            )
+            self.log_action(
                 f"{original_player.name} is offering to trade with {player_to_trade_with.name} - {resource_to_give} for {resource_to_get}"
             )
 
@@ -1117,6 +1004,130 @@ class board_interface:
 
             if not player_gained_resources and not self.all_players_ai:
                 print("No resources were gained this turn")
+
+    # Moves -------------------------------------------------------------------------------------------------------------
+
+    def return_possible_moves(self, player_: player) -> list[str]:
+        """
+        Returns a list of possible moves for a given player
+        Sometimes called multiple times in a turn if multiple moves are being made
+        One of the biggest functions in the game
+        :param player_: The player to check
+        :return: A list of possible moves
+        """
+
+        # Initial counting of settlements and cities for future use
+        hand = player_.count_cards("resources")
+        buildings_count = {"settlements": 0, "cities": 0}
+        for building in self.get_buildings_list():
+            if self.get_buildings_list()[building]["player"] is not None:
+                if (
+                    self.get_buildings_list()[building]["player"].number
+                    == player_.number
+                ):
+                    if self.get_buildings_list()[building]["building"] == "settlement":
+                        buildings_count["settlements"] += 1
+                    elif self.get_buildings_list()[building]["building"] == "city":
+                        buildings_count["cities"] += 1
+        moves = []
+
+        # TRADING MOVES
+
+        # If the player has not already built this turn, they can trade
+        if not player_.has_built_this_turn:
+
+            # Check if the player can trade with the bank
+            for card in hand:
+                if hand[card] >= 4:
+                    moves.append("trade with bank")
+
+            # Check if the player can trade with a port
+            for port in self.get_ports_list():
+                # Check if the port is owned by the player
+                if self.get_ports_list()[port] is not None:
+                    if self.get_ports_list()[port]["player"] is not None:
+                        if (
+                            self.get_ports_list()[port]["player"].number
+                            == player_.number
+                        ):
+                            # Get the type of port and the resource it gives
+                            type_ = self.get_ports_list()[port]["symbol"]
+                            player_resources = player_.count_cards("resources")
+                            port_resource = self.get_ports_list()[port]["resource"]
+                            highest_resource = max(player_resources.values())
+                            # If the player has enough of the resource, they can trade
+                            if (
+                                "2" in type_ and player_resources[port_resource] >= 2
+                            ) or ("3" in type_ and highest_resource >= 3):
+                                moves.append("trade with port")
+
+            if (
+                not isinstance(player_, ai_player)
+                or isinstance(player_, ai_player)
+                and not CONFIG["ai_doesnt_initiate_trades"]
+            ):
+                # Check if the player can trade with another player
+                if len(player_.resources) > 0 and any(
+                    len(other_player.resources) > 0
+                    for other_player in self.get_players_list()
+                    if other_player != player_
+                ):
+                    moves.append("trade with player")
+
+        # BUILDING MOVES
+
+        # Check if player can build a city
+        if (
+            hand["wheat"] >= 2
+            and hand["rock"] >= 3
+            and 0 < buildings_count["settlements"] < 4
+        ):
+            moves.append("build city")
+
+        # Check if player can build a settlement
+        if (
+            hand["wheat"] >= 1
+            and hand["sheep"] >= 1
+            and hand["wood"] >= 1
+            and hand["clay"] >= 1
+            and buildings_count["settlements"] < 5
+        ):
+            moves.append("build settlement")
+
+        # Check if player can build a road
+        if (
+            hand["wood"] >= 1
+            and hand["clay"] >= 1
+            and self.has_potential_road(player_)
+            and self.count_structure(player_, "road") < 15
+        ):
+            moves.append("build road")
+
+        # Check if player can buy a development card
+        if hand["sheep"] >= 1 and hand["rock"] >= 1 and hand["wheat"] >= 1:
+            moves.append("buy development card")
+
+        # DEVELOPMENT CARD MOVES
+
+        # Check if the player can play a development card
+        # Player can only play one development card per turn
+
+        # Remove any cards that the player has gained this turn as per the rules
+        dev_cards = player_.development_cards.copy()
+        for card in player_.gained_dev_cards_this_turn:
+            dev_cards.remove(card)
+
+        if (
+            len(dev_cards) > 0
+            and len(dev_cards) > dev_cards.count("victory point")
+            and not player_.has_played_dev_card_this_turn
+        ):
+            moves.append("play development card")
+
+        # Player can always end their turn
+        moves.append("end turn")
+
+        return moves
 
     # Initial Placement --------
 

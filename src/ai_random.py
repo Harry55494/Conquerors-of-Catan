@@ -346,6 +346,9 @@ class ai_random(ai_player):
         no_place_to_build_city = False
         no_place_to_build_road = False
 
+        print(f"{self.name} is thinking...")
+        time.sleep(random.uniform(0.5, 1.5))
+
         while True:
 
             # Get possible moves
