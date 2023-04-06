@@ -386,7 +386,6 @@ if __name__ == "__main__":
         results_list[match_number] = results
         print("\nMatch " + match_number + " Results: " + str(results))
         print("Total Results: " + str(results_list))
-        print("\n")
         time.sleep(3)
 
     player_data = []
@@ -523,4 +522,4 @@ if __name__ == "__main__":
 
     else:
 
-        print("Not enough matches to plot results")
+        print("\nNot enough matches to plot results")

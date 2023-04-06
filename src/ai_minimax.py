@@ -382,7 +382,7 @@ class ai_minimax(ai_player):
         # Apply Heuristic Modifier
 
         for modifier in self.heuristic_modifiers:
-            score_variation_map = modifier(score_variation_map, interface)
+            score_variation_map = modifier(interface, score_variation_map)
         new_score = sum(score_variation_map.values())
         if len(self.heuristic_modifiers) == 1:
             if (
