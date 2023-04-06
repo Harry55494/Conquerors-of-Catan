@@ -31,7 +31,7 @@ class ai_minimax(ai_player):
         time_limit=CONFIG["minimax_time_limit"],
         max_depth=CONFIG["minimax_max_depth"],
         epsilon_pruning_level=CONFIG["epsilon_pruning_level"],
-        heuristic_modifier=HMDefault(),
+        heuristic_modifiers=[HMDefault()],
     ) -> None:
         """
         Constructor for the minimax AI player
@@ -59,7 +59,7 @@ class ai_minimax(ai_player):
         self.temp_score_variation_map = [0, {}]
         self.start_time = None
         self.epsilon_pruning = epsilon_pruning_level
-        self.heuristic_modifier = heuristic_modifier
+        self.heuristic_modifiers = heuristic_modifiers
 
     def perform_minimax_move(self, player_clone, interface_clone, move):
         """
@@ -381,15 +381,20 @@ class ai_minimax(ai_player):
 
         # Apply Heuristic Modifier
 
-        score_variation_map = self.heuristic_modifier(interface, score_variation_map)
+        for modifier in self.heuristic_modifiers:
+            score_variation_map = modifier(score_variation_map, interface)
         new_score = sum(score_variation_map.values())
-        if isinstance(self.heuristic_modifier, HMDefault) and not new_score == score:
-            print(score_variation_map)
-            print(score)
-            print(new_score)
-            raise Exception(
-                "Heuristic modifier is not returning the correct score variation map"
-            )
+        if len(self.heuristic_modifiers) == 1:
+            if (
+                isinstance(self.heuristic_modifiers[0], HMDefault)
+                and not new_score == score
+            ):
+                print(score_variation_map)
+                print(score)
+                print(new_score)
+                raise Exception(
+                    "Heuristic modifier is not returning the correct score variation map"
+                )
 
         # Overwrite score with temp score if it is better, as this is the score that will be used for the minimax algorithm
         if new_score > self.temp_score_variation_map[0]:
