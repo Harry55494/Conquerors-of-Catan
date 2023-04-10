@@ -23,7 +23,7 @@ class board_interface:
             super().__init__(self.message)
             raise self
 
-    def __init__(self, players: list[player]):
+    def __init__(self, players: list[player], game_number: list[int] = [0, 0]):
         """
         Initialises a board_interface object.
         Object is used to interact with the board object in a standardised way e.g. takes cards from a player
@@ -41,6 +41,7 @@ class board_interface:
         # Define the board object
         self.board = board(board_type=CONFIG["board_layout"], players=players)
         self.turn_number = 0
+        self.board.game_number = game_number
 
         self.all_players_ai = all(isinstance(player, ai_player) for player in players)
 
@@ -49,7 +50,7 @@ class board_interface:
             pass
 
         # Setup logger, including formatting and file handler
-        self.logger = logging.getLogger("board_interface")
+        self.logger = logging.getLogger("board_interface" + str(game_number[0]))
         self.logger.setLevel(logging.DEBUG)
         file_format = logging.Formatter("[%(asctime)s] %(message)s")
         fh = logging.FileHandler("logs/board_actions.log")
@@ -165,9 +166,9 @@ class board_interface:
         else:
             # Find the player with matching number
             current_player_number = current_player.number
-            for player in self.board.players:
-                if player.number == current_player_number + 1:
-                    return player
+            for position, player in enumerate(self.board.players):
+                if player.number == current_player_number:
+                    return self.board.players[position + 1]
 
         # If the player is not found, raise an exception. This should never happen
         print(self.get_players_list())
@@ -225,11 +226,15 @@ class board_interface:
             card = player_to_steal_from.resources.pop(
                 random.randint(0, len(player_to_steal_from.resources) - 1)
             )
-            self.give_player_card(player_to_give_to, "resource", card)
+            player_to_give_to.resources.append(card)
+            self.log_action(
+                f"{player_to_give_to.name} stole a {card} from {player_to_steal_from.name}"
+            )
         else:
             # If the player has no cards, print a message
             # Shouldn't technically happen, but just in case
             print(f"{player_to_steal_from.name} has no cards to steal")
+            self.log_action(f"{player_to_steal_from.name} has no cards to steal")
 
     def count_structure(self, player_, structure) -> int:
         """
@@ -271,6 +276,33 @@ class board_interface:
             if self.get_buildings_list()[coord]["player"] is not None:
                 return True
         return False
+
+    def log_number_of_cards(self) -> None:
+        """
+        Logs the number of cards in the bank
+        :return: None
+        """
+        print(
+            f"Resource cards: {len(self.board.resource_deck)}, Development cards: {len(self.board.development_card_deck)}"
+        )
+        for player_ in self.board.players:
+            print(f"{player_.name} has {len(player_.resources)} cards")
+        print(
+            f"Cards in players hands total: {sum([len(player_.resources) for player_ in self.board.players])}"
+        )
+        if (
+            len(self.board.resource_deck)
+            + sum([len(player_.resources) for player_ in self.board.players])
+            != 95
+        ):
+            raise Exception("Resource card count is incorrect")
+        if (
+            len(self.board.development_card_deck)
+            + sum([len(player_.development_cards) for player_ in self.board.players])
+            != 25
+        ):
+            raise Exception("Development card count is incorrect")
+        self.log_action("Cards are correct")
 
     # Moving Cards ----
 
@@ -726,7 +758,10 @@ class board_interface:
             # Log the action if not in minimax mode
             if not self.minimax_mode:
                 self.log_action(f"{player_.name} bought a development card")
-                player_.gained_dev_cards_this_turn.append(card)
+                self.log_action(
+                    f"{player_.name}'s development cards are now {player_.development_cards}"
+                )
+            player_.gained_dev_cards_this_turn.append(card)
 
             return True
 
@@ -911,6 +946,16 @@ class board_interface:
                 return
             self.log_action(f"{player_.name} is playing a {card_to_play}")
 
+        dev_cards = player_.development_cards.copy()
+        for card in player_.gained_dev_cards_this_turn:
+            dev_cards.remove(card)
+
+        if card_to_play not in dev_cards:
+            self.log_action(
+                f"{player_.name} attempted to play a {card_to_play} but could not as they gained it this turn"
+            )
+            return
+
         # Check the card the player wants to play
         card = card_to_play
         if card == "soldier":
@@ -976,9 +1021,15 @@ class board_interface:
         # If the roll is a 7, the robber is rolled and the player must discard half their resources if they have more than 7
         if roll == 7:
             print("The robber has been rolled!")
+            self.log_action("The robber has been rolled!")
             for player_ in self.get_players_list():
                 if len(player_.resources) >= 7:
+                    self.log_action(
+                        f"{player_.name} must discard half their resources as they have more than 7"
+                    )
                     player_.robber_discard(self)
+            self.log_number_of_cards()
+            self.log_action("Moving the robber...")
             current_player.robber(self)
 
             # If the player is an ai player, wait 3 seconds before continuing to allow the player to see the robber move

@@ -15,19 +15,19 @@ CONFIG = {
     # Target Score -
     # Modify the target score for shorter or longer games
     # Minimum is 3
-    "target_score": 10,
+    "target_score": 5,
+    # Number of Matches -
+    # Number of matches to play in a row before exiting
+    "number_of_matches": 3,
     # Board Layout -
     # Set to either 'default' or 'random'
     # 'default' will use the standard board layout
     # 'random' will use a random board layout
-    "board_layout": "random",
+    "board_layout": "default",
     # Table Top Mode -
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not just with a human
     "table_top_mode": False,
-    # Number of Matches -
-    # Number of matches to play in a row before exiting
-    "number_of_matches": 1,
     # Randomise Starting Locations -
     # If enabled, the starting locations of all players will be randomised
     "randomise_starting_locations": False,
@@ -35,11 +35,11 @@ CONFIG = {
     # Minimax Depth -
     # Depth to which the minimax algorithm will search
     # 0 means it only looks at the current state
-    "minimax_max_depth": 5,
+    "minimax_max_depth": 4,
     # MiniMax Max Time -
     # Maximum time in seconds that the MiniMax algorithm will take to find the best move
     # If it takes longer than this, it will return the best move it has found so far
-    "minimax_time_limit": 60,
+    "minimax_time_limit": 90,
     # Log MiniMax Score Calculation -
     # If enabled, logs the score calculation for each move in the MiniMax algorithm
     # This is useful for debugging, but will fill up the log file very quickly

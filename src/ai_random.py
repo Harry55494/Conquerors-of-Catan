@@ -239,9 +239,14 @@ class ai_random(ai_player):
         :param interface: Interface object
         :return: None
         """
+
+        development_cards_ = self.development_cards.copy()
+        for card in self.gained_dev_cards_this_turn:
+            development_cards_.remove(card)
+
         # Choose a random development card
-        card = self.development_cards[
-            self.development_cards.index(random.choice(self.development_cards))
+        card = development_cards_[
+            development_cards_.index(random.choice(self.development_cards))
         ]
         # If a victory point card is chosen, return
         if card == "victory point":

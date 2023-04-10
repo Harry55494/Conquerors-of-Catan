@@ -60,28 +60,28 @@ class game:
                 print("Continuing in " + str(i) + " seconds")
                 time.sleep(1)
 
-    def __init__(self, players: list[player]):
+    def __init__(self, players: list[player], game_number=[1, 1]):
         """
         Initialises a 'match' of the game, which is just a game with stored results.
         :param players: A list of the players in the game
         :return: None
         """
 
+        self.game_number = game_number
+
         # Shuffle the players so that the player order is random
         # Then sort the players by their number, so that the player order is correct
-        random.shuffle(players)
-        for i, player in enumerate(players):
-            player.number = i + 1
-        players = sorted(players, key=lambda x: x.number)
+        players = random.sample(players, len(players))
 
         # Set up the game variables
         self.players = players
         self.all_players_ai = all(
             isinstance(player, ai_player) for player in self.players
         )
-        self.interface = board_interface(self.players)
+        self.interface = board_interface(self.players, game_number)
         self.turn = 1
         self.player_has_won = False
+        self.stats = {}
         self.results = {player.name: 0 for player in self.players}
 
     def initial_placement(self):
@@ -132,7 +132,8 @@ class game:
                 player_.has_built_this_turn = False
                 player_.has_played_dev_card_this_turn = False
                 player_.dev_cards_at_start_of_turn = player_.development_cards.copy()
-                player_.gained_dev_cards_this_turn = []
+                for player__ in self.players:
+                    player__.gained_dev_cards_this_turn = []
 
                 # Set the turn number and print the board
                 self.interface.print_board()
@@ -227,6 +228,11 @@ class game:
                         player_.turn_actions(self.interface)
                         self.interface.update_special_cards()
                         num_moves_made += 1
+                        if (
+                            player_.calculateVictoryPoints(self.interface)
+                            >= CONFIG["target_score"]
+                        ):
+                            raise endOfTurnException
                 except endOfTurnException:
                     pass
 
@@ -235,6 +241,8 @@ class game:
                 self.interface.log_action(
                     f"{player_.name}'s resources are now {player_.resources} at the end of their turn"
                 )
+
+                self.interface.log_number_of_cards()
 
                 # End of turn waiting
                 if not CONFIG["table_top_mode"]:

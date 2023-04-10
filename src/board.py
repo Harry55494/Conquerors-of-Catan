@@ -33,6 +33,7 @@ class board:
         :param board_type: The board layout, either the default layout, or a randomised layout
         """
 
+        self.game_number = [1, 1]
         self.players = players
         self.current_roll = [6, 6]
         self.turn = 0
@@ -870,10 +871,16 @@ class board:
         print(f"{' ' * int(terminal_width / 2 - 40)}|    {' ' * line_length}    |")
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
 
+        game = (
+            "Game: " + str(self.game_number[0]) + "/" + str(self.game_number[1])
+            if self.game_number != [1, 1]
+            else "         "
+        )
+
         # This prints the deck, players and their stats
         print("\n")
         print(
-            f"Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨  ❔    Roll: {str(self.current_roll[0]) + ' ' +  str(self.current_roll[1]) }    ".center(
+            f"{game} - Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨  ❔    Roll: {str(self.current_roll[0]) + ' ' +  str(self.current_roll[1]) }      ".center(
                 terminal_width
             ),
             end="",
@@ -892,7 +899,7 @@ class board:
 
         # Print the players and their stats, including the longest road, the largest army and soldier cards
         for player_ in players_in_order:
-            text = f"{player_}".ljust(35)
+            name = f"{player_}".ljust(40)
             LR = "LR" if player_ == self.longest_road[0] else "  "
             LA = "LA" if player_ == self.largest_army[0] else "  "
             # Victory Points Development Cards are hidden, so we need to subtract them from the total
@@ -906,7 +913,7 @@ class board:
             )
             # Spacing here is specific so that if they don't have LR or LA, it still looks good
             print(
-                f"          {text}|  VP: {VP}  |  Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
+                f"                {name}|  VP: {VP}  |  Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
                     terminal_width
                 )
             )

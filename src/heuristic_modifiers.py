@@ -4,12 +4,12 @@ Multiple Modifiers can be chained together to create a more complex strategy
 
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
-import sys
 
 
 class HeuristicModifier:
-    def __init__(self, name):
+    def __init__(self, name, abbreviation):
         self.name = name
+        self.abbreviation = abbreviation
         if self.__class__ is HeuristicModifier:
             raise TypeError("HeuristicModifier cannot be instantiated directly")
         pass
@@ -23,7 +23,7 @@ class HeuristicModifier:
 
 class HMDefault(HeuristicModifier):
     def __init__(self):
-        super().__init__("Default")
+        super().__init__("Default", "D")
 
     def __call__(self, interface, score_map):
         return score_map
@@ -31,7 +31,7 @@ class HMDefault(HeuristicModifier):
 
 class HMHeavilyFavourCities(HeuristicModifier):
     def __init__(self):
-        super().__init__("Heavily Favour Cities")
+        super().__init__("Heavily Favour Cities", "FC")
 
     def __call__(self, interface, score_map):
         for city in self.game.cities:

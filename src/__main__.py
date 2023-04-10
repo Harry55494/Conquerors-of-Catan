@@ -1,6 +1,7 @@
 """
 Main file for the Conquerors of Catan game.
 Controls the setup and running of games
+Collects Stats and Produces Graphs
 
 Usage:
 python3 -m src [--no-menu]
@@ -10,7 +11,7 @@ Options:
 
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
-
+import shutil
 import signal
 
 from src.game import *
@@ -48,8 +49,8 @@ if __name__ == "__main__":
 
     players = [
         ai_random(1, "red"),
-        ai_minimax(2, "yellow"),
-        ai_random(3, "blue"),
+        ai_minimax(2, "yellow", wishful_thinking=True),
+        ai_minimax(3, "blue", wishful_thinking=False),
         ai_random(4, "green"),
     ]
 
@@ -117,6 +118,10 @@ if __name__ == "__main__":
                                 print(player)
                             print(len(players) + 1, "- Add New Player")
                             print(len(players) + 2, "- Return")
+                            if all(isinstance(player, ai_player) for player in players):
+                                print(
+                                    "\n! - All players are AI players. The game will be for observation purposes only.\n"
+                                )
 
                             answer = input("")
 
@@ -364,11 +369,12 @@ if __name__ == "__main__":
 
     match_queue = []
     results_list = {}
+    match_turns = []
 
     # Create Match
     for i in range(CONFIG["number_of_matches"]):
         players = copy.deepcopy(players)
-        match = game(players)
+        match = game(players, [i + 1, CONFIG["number_of_matches"]])
         match_queue.append(match)
         print("Match " + str(i + 1) + " created")
 
@@ -384,8 +390,19 @@ if __name__ == "__main__":
         # Get Match results
         results = match.results
         results_list[match_number] = results
+        match_turns.append(match.turn)
         print("\nMatch " + match_number + " Results: " + str(results))
-        print("Total Results: " + str(results_list))
+        print("\nTotal Results: " + str(results_list))
+
+        if not os.path.exists("temp"):
+            os.makedirs("temp")
+        if not os.path.exists(f"temp/match_{match_number}"):
+            os.makedirs(f"temp/match_{match_number}")
+        for file in os.listdir("logs"):
+            # copy to temp folder
+            shutil.copy("logs/" + file, f"temp/match_{match_number}" + file)
+        shutil.copytree("logs", f"temp/match_{match_number}")
+
         time.sleep(3)
 
     player_data = []
@@ -408,23 +425,54 @@ if __name__ == "__main__":
             + (player.strategy if isinstance(player, ai_player) else "")
             + ")"
         )
-        data.append(str(total_wins / CONFIG["number_of_matches"] * 100) + "%")
-        data.append(total_points / CONFIG["number_of_matches"])
+        data.append(str(round(total_wins / CONFIG["number_of_matches"] * 100, 2)) + "%")
+        data.append(round(total_points / CONFIG["number_of_matches"], 2))
+
+        # Calculate the average number of turns it takes to win
+        # If the player didn't win, calculate the average number of turns it would take to win at that pace
+        rounds_to_win = []
+
+        for turn, results in zip(match_turns, results_list.values()):
+            result = results[player.name]
+            if result >= CONFIG["target_score"]:
+                rounds_to_win.append(turn)
+            else:
+                progress = (turn / result) * (CONFIG["target_score"])
+                rounds_to_win.append(progress)
+
+        data.append(round(sum(rounds_to_win) / len(rounds_to_win), 3))
+
         # Append that player's data for that match into the overall list
         player_data.append(data)
 
     # Sort the data based on player number
-    player_data.sort(key=lambda x: x[1], reverse=True)
+    player_data.sort(key=lambda x: (x[1], x[2]), reverse=True)
+
+    time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
     # Print data using tabulate to format it nicely
     print("\nFinal Results: \n")
-    print(
-        tabulate(
-            player_data,
-            headers=["Player", "Win Rate", "Average Victory Points"],
-            tablefmt="grid",
-        )
+    tabbed_data = tabulate(
+        player_data,
+        headers=[
+            "Player",
+            "Win Rate",
+            "Average Victory Points",
+            "Average Turns to Win",
+        ],
+        tablefmt="grid",
     )
+    print(tabbed_data)
+
+    # Save the data to a file
+    if not os.path.exists("games"):
+        os.mkdir("games")
+    if not os.path.exists("games/" + time):
+        os.mkdir("games/" + time)
+    with open("games/" + time + "/results.txt", "w+") as file:
+        file.write(tabbed_data)
+
+    shutil.copytree("temp", "games/" + time)
 
     # No point showing graphs for less than one match
     if CONFIG["number_of_matches"] > 1:
@@ -514,8 +562,13 @@ if __name__ == "__main__":
             "Results of " + str(CONFIG["number_of_matches"]) + " Matches at " + time
         )
 
+        if not os.path.exists("games"):
+            os.mkdir("games")
+        if not os.path.exists(f"games/{time}"):
+            os.mkdir(f"games/{time}")
+
         # Save figure
-        plt.savefig(f"graphs/{time}_figure.png")
+        plt.savefig(f"games/{time}/vp_matches.png")
 
         # Show it
         plt.show()

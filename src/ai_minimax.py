@@ -31,6 +31,7 @@ class ai_minimax(ai_player):
         time_limit=CONFIG["minimax_time_limit"],
         max_depth=CONFIG["minimax_max_depth"],
         epsilon_pruning_level=CONFIG["epsilon_pruning_level"],
+        wishful_thinking=False,
         heuristic_modifiers=[HMDefault()],
     ) -> None:
         """
@@ -41,8 +42,14 @@ class ai_minimax(ai_player):
         :param max_depth: The maximum depth for the minimax algorithm to search to, defaults to CONFIG["minimax_max_depth"]\
         :param epsilon_pruning_level: Whether to use epsilon pruning, defaults to CONFIG["epsilon_pruning"]
         """
+        hm_abbreviations = str([hm.abbreviation for hm in heuristic_modifiers])
+        hm_abbreviations = hm_abbreviations.replace("'", "")
+        if wishful_thinking:
+            hm_abbreviations = hm_abbreviations[:-1] + " + WT]"
         # Call the parent constructor
-        super().__init__(number=number, colour=colour, strategy="minimax")
+        super().__init__(
+            number=number, colour=colour, strategy=f"minimax {hm_abbreviations}"
+        )
         # Log the creation of the player
         self.log(
             "Minimax player created with time limit of "
@@ -51,6 +58,10 @@ class ai_minimax(ai_player):
             + str(max_depth)
             + " levels, epsilon pruning is set to level "
             + str(epsilon_pruning_level)
+            + ", wishful thinking is "
+            + str(wishful_thinking)
+            + ", and heuristic modifiers are "
+            + str(heuristic_modifiers)
         )
         # Set the time limit and max depth, and initialise the root score map
         self.time_limit = time_limit
@@ -59,6 +70,7 @@ class ai_minimax(ai_player):
         self.temp_score_variation_map = [0, {}]
         self.start_time = None
         self.epsilon_pruning = epsilon_pruning_level
+        self.wishful_thinking = wishful_thinking
         self.heuristic_modifiers = heuristic_modifiers
 
     def perform_minimax_move(self, player_clone, interface_clone, move):
@@ -522,6 +534,7 @@ class ai_minimax(ai_player):
         """
         # Discard half of the players resources
         # Does this by evaluating the board at each possible discard and choosing the discard that results in the best board
+        interface.log_action(f"{self.name}'s resources pre-discard: {self.resources}")
         required_length = len(self.resources) // 2
         while len(self.resources) > required_length:
             could_discard = list(set(self.resources))
@@ -535,6 +548,9 @@ class ai_minimax(ai_player):
             # Discard the card that results in the best board, and loop again
             interface.return_player_card(
                 self, self.resources[self.resources.index(min(scores, key=scores.get))]
+            )
+            interface.log_action(
+                f"{self.name}'s resources mid-discard: {self.resources}"
             )
 
     def offer_trade(self, interface) -> None:
@@ -749,11 +765,14 @@ class ai_minimax(ai_player):
             # Append development card moves
             elif move == "play development card":
                 if self == current_player:
-                    for card in current_player.development_cards:
+                    development_cards_ = current_player.development_cards.copy()
+                    for card in self.gained_dev_cards_this_turn:
+                        development_cards_.remove(card)
+                    for card in development_cards_:
                         move = "play development card"
                         if (
                             card == "soldier"
-                            and current_player.development_cards.count("soldier")
+                            and development_cards_.count("soldier")
                             > current_player.played_robber_cards
                         ):
                             full_move_list.append([move, card])
@@ -888,11 +907,12 @@ class ai_minimax(ai_player):
                     # Inject extra resources into the player's hand to simulate the possibility of getting a resource,
                     # and therefore the ability to perform a move
 
-                    for card in self.has_access_to(interface_clone):
-                        for _ in range(
-                            math.floor(len(interface_clone.get_players_list()) / 2)
-                        ):
-                            player_clone.resources.append(card)
+                    if self.wishful_thinking:
+                        for card in self.has_access_to(interface_clone):
+                            for _ in range(
+                                math.floor(len(interface_clone.get_players_list()) / 2)
+                            ):
+                                player_clone.resources.append(card)
 
                     # Perform the move
                     interface_clone = self.perform_minimax_move(
