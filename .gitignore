@@ -12,3 +12,4 @@ pydeps.png
 /dev/dist/
 *.spec
 docs/open_day
+/src/games/

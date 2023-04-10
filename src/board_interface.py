@@ -277,19 +277,11 @@ class board_interface:
                 return True
         return False
 
-    def log_number_of_cards(self) -> None:
+    def check_num_cards(self) -> None:
         """
         Logs the number of cards in the bank
         :return: None
         """
-        print(
-            f"Resource cards: {len(self.board.resource_deck)}, Development cards: {len(self.board.development_card_deck)}"
-        )
-        for player_ in self.board.players:
-            print(f"{player_.name} has {len(player_.resources)} cards")
-        print(
-            f"Cards in players hands total: {sum([len(player_.resources) for player_ in self.board.players])}"
-        )
         if (
             len(self.board.resource_deck)
             + sum([len(player_.resources) for player_ in self.board.players])
@@ -1028,7 +1020,7 @@ class board_interface:
                         f"{player_.name} must discard half their resources as they have more than 7"
                     )
                     player_.robber_discard(self)
-            self.log_number_of_cards()
+            self.check_num_cards()
             self.log_action("Moving the robber...")
             current_player.robber(self)
 

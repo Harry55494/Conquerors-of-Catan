@@ -25,6 +25,7 @@ if __name__ == "__main__":
         print(
             "\n\nKeyboardInterrupt (ID: {}) has been caught. Exiting...".format(signal)
         )
+        shutil.rmtree("temp")
         exit(signal)
 
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
@@ -365,6 +366,12 @@ if __name__ == "__main__":
 
     # Setup Logging
 
+    if not os.path.exists("temp"):
+        os.makedirs("temp")
+    for file in os.listdir("temp"):
+        if file.startswith("match_"):
+            shutil.rmtree(f"temp/{file}")
+
     # Setup Game
 
     match_queue = []
@@ -394,13 +401,6 @@ if __name__ == "__main__":
         print("\nMatch " + match_number + " Results: " + str(results))
         print("\nTotal Results: " + str(results_list))
 
-        if not os.path.exists("temp"):
-            os.makedirs("temp")
-        if not os.path.exists(f"temp/match_{match_number}"):
-            os.makedirs(f"temp/match_{match_number}")
-        for file in os.listdir("logs"):
-            # copy to temp folder
-            shutil.copy("logs/" + file, f"temp/match_{match_number}" + file)
         shutil.copytree("logs", f"temp/match_{match_number}")
 
         time.sleep(3)
@@ -460,19 +460,18 @@ if __name__ == "__main__":
             "Average Victory Points",
             "Average Turns to Win",
         ],
-        tablefmt="grid",
+        tablefmt="simple_grid",
     )
     print(tabbed_data)
 
     # Save the data to a file
     if not os.path.exists("games"):
         os.mkdir("games")
-    if not os.path.exists("games/" + time):
-        os.mkdir("games/" + time)
-    with open("games/" + time + "/results.txt", "w+") as file:
-        file.write(tabbed_data)
 
     shutil.copytree("temp", "games/" + time)
+
+    with open("games/" + time + "/results.txt", "w+") as file:
+        file.write(tabbed_data)
 
     # No point showing graphs for less than one match
     if CONFIG["number_of_matches"] > 1:
@@ -569,6 +568,8 @@ if __name__ == "__main__":
 
         # Save figure
         plt.savefig(f"games/{time}/vp_matches.png")
+
+        shutil.rmtree("temp")
 
         # Show it
         plt.show()

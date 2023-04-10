@@ -242,7 +242,7 @@ class game:
                     f"{player_.name}'s resources are now {player_.resources} at the end of their turn"
                 )
 
-                self.interface.log_number_of_cards()
+                self.interface.check_num_cards()
 
                 # End of turn waiting
                 if not CONFIG["table_top_mode"]:
