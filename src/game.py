@@ -67,6 +67,9 @@ class game:
         :return: None
         """
 
+        self.start_time = None
+        self.end_time = None
+        self.duration = None
         self.game_number = game_number
 
         # Shuffle the players so that the player order is random
@@ -82,6 +85,8 @@ class game:
         self.turn = 1
         self.player_has_won = False
         self.stats = {}
+        self.player_num_turns = {player.name: 0 for player in self.players}
+        self.turn_time_total = {player.name: 0 for player in self.players}
         self.results = {player.name: 0 for player in self.players}
 
     def initial_placement(self):
@@ -116,6 +121,8 @@ class game:
         :return: None
         """
 
+        self.start_time = time.time()
+
         # Checks if the game has been won
         while not self.player_has_won:
 
@@ -125,6 +132,8 @@ class game:
             # Game Loop for each player
             # Each iteration here is one round of turns
             for player_ in self.players:
+
+                player_turn_start_time = time.time()
 
                 # Sort cards and set variables
                 player_.resources.sort()
@@ -242,6 +251,15 @@ class game:
                     f"{player_.name}'s resources are now {player_.resources} at the end of their turn"
                 )
 
+                player_turn_end_time = time.time()
+                self.interface.log_action(
+                    f"{player_.name}'s turn took {player_turn_end_time - player_turn_start_time} seconds"
+                )
+                self.turn_time_total[player_.name] += (
+                    player_turn_end_time - player_turn_start_time
+                )
+                self.player_num_turns[player_.name] += 1
+
                 self.interface.check_num_cards()
 
                 # End of turn waiting
@@ -286,6 +304,9 @@ class game:
                 )
                 print(f"{winner} has won!")
                 break
+
+        self.end_time = time.time()
+        self.duration = self.end_time - self.start_time
 
         # Dump the moves of the players
         for player in self.players:

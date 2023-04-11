@@ -872,15 +872,17 @@ class board:
         print(f" {' ' * (int(terminal_width / 2 - 40))}{'-' * (line_length + 8)}")
 
         game = (
-            "Game: " + str(self.game_number[0]) + "/" + str(self.game_number[1])
+            "Game: "
+            + (str(self.game_number[0]) + "/" + str(self.game_number[1]))
+            + " - "
             if self.game_number != [1, 1]
-            else "         "
+            else "   "
         )
 
         # This prints the deck, players and their stats
         print("\n")
         print(
-            f"{game} - Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨  ❔    Roll: {str(self.current_roll[0]) + ' ' +  str(self.current_roll[1]) }      ".center(
+            f"{game}Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨  ❔    Roll: {str(self.current_roll[0]) + ' ' +  str(self.current_roll[1]) }      ".center(
                 terminal_width
             ),
             end="",
@@ -913,7 +915,7 @@ class board:
             )
             # Spacing here is specific so that if they don't have LR or LA, it still looks good
             print(
-                f"                {name}|  VP: {VP}  |  Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
+                f"              {name}|  VP: {VP}  |  Cards: {str(len(player_.resources)).rjust(2)}, {len(player_.development_cards)}  {LR} {LA} {Soldiers}".center(
                     terminal_width
                 )
             )

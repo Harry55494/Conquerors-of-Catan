@@ -867,7 +867,7 @@ class ai_minimax(ai_player):
             raise MiniMaxTimeoutException
 
         # Log the current depth
-        self.log(f"Depth: {max_depth}, Maximising: {current_player.name}")
+        # self.log(f"Depth: {max_depth}, Maximising: {current_player.name}")
 
         # Check if the depth is at the maximum depth, and if so set the variables
         if max_depth == self.max_depth:
@@ -940,11 +940,11 @@ class ai_minimax(ai_player):
                     # Perform alpha-beta pruning to speed up the algorithm
                     alpha = max(alpha, max_combo[1])
                     if beta <= alpha:
-                        self.log(f"Pruning at depth {max_depth}")
+                        # self.log(f"Pruning at depth {max_depth}")
                         break
 
             # If the depth is at the maximum depth, return the best move
-            self.log(f"Max combo: {max_combo}")
+            # self.log(f"Max combo: {max_combo}")
             return max_combo
 
         else:
@@ -984,7 +984,7 @@ class ai_minimax(ai_player):
                     # Perform alpha-beta pruning to speed up the algorithm
                     beta = min(beta, min_combo[1])
                     if beta <= alpha:
-                        self.log(f"Pruning at depth {max_depth}")
+                        # self.log(f"Pruning at depth {max_depth}")
                         break
 
                     # A note on imperfect information
@@ -994,7 +994,7 @@ class ai_minimax(ai_player):
                     # believe that it is fair to allow the minimax player to 'see' the opponents hand.
 
             # If the depth is at the maximum depth, return the best move
-            self.log("Min combo: " + str(min_combo))
+            # self.log("Min combo: " + str(min_combo))
             return min_combo
 
     # noinspection DuplicatedCode

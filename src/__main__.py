@@ -51,7 +51,7 @@ if __name__ == "__main__":
     players = [
         ai_random(1, "red"),
         ai_minimax(2, "yellow", wishful_thinking=True),
-        ai_minimax(3, "blue", wishful_thinking=False),
+        # ai_minimax(3, "blue", wishful_thinking=False),
         ai_random(4, "green"),
     ]
 
@@ -376,7 +376,9 @@ if __name__ == "__main__":
 
     match_queue = []
     results_list = {}
-    match_turns = []
+    match_turns = {}
+    times = []
+    player_turn_times = {}
 
     # Create Match
     for i in range(CONFIG["number_of_matches"]):
@@ -397,7 +399,9 @@ if __name__ == "__main__":
         # Get Match results
         results = match.results
         results_list[match_number] = results
-        match_turns.append(match.turn)
+        match_turns[match_number] = match.player_num_turns
+        times.append(match.duration)
+        player_turn_times[match_number] = match.turn_time_total
         print("\nMatch " + match_number + " Results: " + str(results))
         print("\nTotal Results: " + str(results_list))
 
@@ -418,6 +422,7 @@ if __name__ == "__main__":
             highest_score = max(results.values())
             if results[player.name] == highest_score:
                 total_wins += 1
+
         # Append each data type
         data.append(
             player.name
@@ -428,19 +433,30 @@ if __name__ == "__main__":
         data.append(str(round(total_wins / CONFIG["number_of_matches"] * 100, 2)) + "%")
         data.append(round(total_points / CONFIG["number_of_matches"], 2))
 
+        total_time = 0
+        for time in player_turn_times.values():
+            total_time += time[player.name]
+
         # Calculate the average number of turns it takes to win
         # If the player didn't win, calculate the average number of turns it would take to win at that pace
+        # Also Calculates the average turn time, as both require iterating over the turn maps
         rounds_to_win = []
 
-        for turn, results in zip(match_turns, results_list.values()):
+        total_player_turns = 0
+        for mt, results in zip(match_turns.values(), results_list.values()):
+            num_turns = int(mt[player.name])
             result = results[player.name]
             if result >= CONFIG["target_score"]:
-                rounds_to_win.append(turn)
+                rounds_to_win.append(num_turns)
             else:
-                progress = (turn / result) * (CONFIG["target_score"])
+                progress = (num_turns / result) * (CONFIG["target_score"])
                 rounds_to_win.append(progress)
+            total_player_turns += num_turns
+        total_time = round(total_time / total_player_turns, 2)
 
         data.append(round(sum(rounds_to_win) / len(rounds_to_win), 3))
+
+        data.append(str(total_time) + "s")
 
         # Append that player's data for that match into the overall list
         player_data.append(data)
@@ -457,12 +473,17 @@ if __name__ == "__main__":
         headers=[
             "Player",
             "Win Rate",
-            "Average Victory Points",
-            "Average Turns to Win",
+            "Avg Victory Points",
+            "Avg Turns to Win",
+            "Avg Turn Time",
         ],
         tablefmt="simple_grid",
     )
     print(tabbed_data)
+
+    average_time = sum(times) / len(times)
+    average_time = round(average_time / 60, 2)
+    print("\nAverage Time per Match: " + str(average_time) + " minutes\n")
 
     # Save the data to a file
     if not os.path.exists("games"):

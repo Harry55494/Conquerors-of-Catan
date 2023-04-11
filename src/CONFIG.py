@@ -9,13 +9,13 @@ Is overwritten by anything set while the program is running, but then will retur
 CONFIG = {
     # BOARD / GAME CONFIGURATION ----------------------------------------------
     # Display Mode -
-    # Whether to display the board cleanly but with poor text formatting, or with good text formatting but a flashing screen
+    # Whether to display the board cleanly but with poor text formatting ('board'), or with good text formatting but a flashing screen ('text')
     # Options are 'board' or 'text'
     "display_mode_focus": "text",
     # Target Score -
     # Modify the target score for shorter or longer games
     # Minimum is 3
-    "target_score": 5,
+    "target_score": 6,
     # Number of Matches -
     # Number of matches to play in a row before exiting
     "number_of_matches": 3,
@@ -26,7 +26,7 @@ CONFIG = {
     "board_layout": "default",
     # Table Top Mode -
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
-    # Used only when playing with a physical board, not just with a human
+    # Used only when playing with a physical board, not required when playing with a human on the computer
     "table_top_mode": False,
     # Randomise Starting Locations -
     # If enabled, the starting locations of all players will be randomised
