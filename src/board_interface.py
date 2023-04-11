@@ -44,6 +44,7 @@ class board_interface:
         self.board.game_number = game_number
 
         self.all_players_ai = all(isinstance(player, ai_player) for player in players)
+        self.board.all_players_ai = self.all_players_ai
 
         # Clear log file
         with open("logs/board_actions.log", "w") as f:
@@ -106,7 +107,11 @@ class board_interface:
         :param memodict: The memo dictionary
         :return: The deep copy
         """
-        return pickle.loads(pickle.dumps(self, -1))
+        obj = pickle.loads(pickle.dumps(self, -1))
+        obj.logger = logging.getLogger(
+            "board_interface" + str(self.board.game_number[0])
+        )
+        return obj
 
     def log_action(self, action: str):
         """

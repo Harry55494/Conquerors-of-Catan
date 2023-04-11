@@ -245,9 +245,7 @@ class ai_random(ai_player):
             development_cards_.remove(card)
 
         # Choose a random development card
-        card = development_cards_[
-            development_cards_.index(random.choice(self.development_cards))
-        ]
+        card = random.choice(development_cards_)
         # If a victory point card is chosen, return
         if card == "victory point":
             print("You can't play a victory point card!")

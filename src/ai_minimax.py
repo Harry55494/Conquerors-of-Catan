@@ -338,6 +338,7 @@ class ai_minimax(ai_player):
                 update_score(25, "Nicely Spaced Settlements")
 
             num_available_settlement_positions = 0
+            opponents_on_roads = 0
             road_endings = list(
                 set(
                     [road[0] for road in player_roads]
@@ -349,9 +350,16 @@ class ai_minimax(ai_player):
                     road
                 ] is None and not interface.check_for_nearby_settlements(road):
                     num_available_settlement_positions += 1
+                if buildings_list[road]["player"] is not None:
+                    if buildings_list[road]["player"] != self:
+                        opponents_on_roads += 1
             update_score(
                 num_available_settlement_positions * 10,
                 "Available Settlement Positions",
+            )
+            update_score(
+                -opponents_on_roads * 5,
+                "Opponents on Roads",
             )
 
         clusters = return_clusters(player_roads)
