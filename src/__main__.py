@@ -51,7 +51,7 @@ if __name__ == "__main__":
     players = [
         ai_random(1, "red"),
         ai_minimax(2, "yellow", wishful_thinking=True),
-        # ai_minimax(3, "blue", wishful_thinking=False),
+        ai_minimax(3, "blue", wishful_thinking=False),
         ai_random(4, "green"),
     ]
 
@@ -462,7 +462,7 @@ if __name__ == "__main__":
         player_data.append(data)
 
     # Sort the data based on player number
-    player_data.sort(key=lambda x: (x[1], x[2]), reverse=True)
+    player_data.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
 
     time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 

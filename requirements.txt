@@ -1,6 +1,7 @@
 termcolor==2.2.0
 matplotlib==3.7.1
 tabulate~=0.9.0
+json-fix==0.5.2
 # Below are the development dependencies. They are not required for running the code, uncomment them if there are any issues
 # pre-commit==3.2.1
 # pydeps==1.11.2

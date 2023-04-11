@@ -260,12 +260,12 @@ class game:
                 )
                 self.player_num_turns[player_.name] += 1
 
-                self.interface.check_num_cards()
+                self.interface.verify_game_integrity()
 
                 # End of turn waiting
                 if not CONFIG["table_top_mode"]:
                     if self.interface.all_players_ai:
-                        time.sleep(0.1)
+                        time.sleep(0.15)
                     else:
                         await_user_input()
 

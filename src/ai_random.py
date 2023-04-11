@@ -411,7 +411,7 @@ class ai_random(ai_player):
             # If the chosen move is to build a road, build a road
             elif (
                 "build road" in chosen_move
-                and random.randint(0, 1) == 1
+                and random.randint((0 if len(self.resources) < 10 else 1), 1) == 1
                 and not no_place_to_build_road
             ):
                 # Choose a random location to build a road
@@ -492,7 +492,10 @@ class ai_random(ai_player):
                 )
 
             # Choose to buy a random development card
-            elif "buy development card" in chosen_move and random.randint(0, 2) == 1:
+            elif (
+                "buy development card" in chosen_move
+                and random.randint(0, (2 if len(self.resources) < 10 else 1)) == 1
+            ):
                 interface.buy_development_card(self)
                 self.log("Bought development card")
                 self.entire_game_moves.append(

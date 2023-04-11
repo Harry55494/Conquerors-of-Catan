@@ -15,10 +15,10 @@ CONFIG = {
     # Target Score -
     # Modify the target score for shorter or longer games
     # Minimum is 3
-    "target_score": 6,
+    "target_score": 10,
     # Number of Matches -
     # Number of matches to play in a row before exiting
-    "number_of_matches": 3,
+    "number_of_matches": 10,
     # Board Layout -
     # Set to either 'default' or 'random'
     # 'default' will use the standard board layout
@@ -67,14 +67,14 @@ CONFIG = {
     # Set the order in which the AI will evaluate moves
     # Can influence the AI's strategy if the full move set is not explored
     "move_sort_order": [
-        "build_city",
-        "build_settlement",
-        "build_road",
-        "play_development_card",
+        "build city",
+        "build settlement",
+        "build road",
+        "play development card",
         "trade with player",
         "trade with port",
         "trade with bank",
-        "buy_development_card",
-        "end_turn",
+        "buy development card",
+        "end turn",
     ],
 }

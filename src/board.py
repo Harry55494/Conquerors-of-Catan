@@ -906,7 +906,7 @@ class board:
             LA = "LA" if player_ == self.largest_army[0] else "  "
             # Victory Points Development Cards are hidden, so we need to subtract them from the total
             VP = player_.victory_points - player_.development_cards.count(
-                "Victory Point"
+                "victory point"
             )
             Soldiers = (
                 f"{player_.played_robber_cards}" + "S"

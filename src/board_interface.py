@@ -58,6 +58,56 @@ class board_interface:
         self.logger.addHandler(fh)
         self.logger.debug("Board Interface created")
 
+    def __eq__(self, other):
+        """
+        Checks if two board_interface objects are equal
+        :param other: The other board_interface object
+        :return: True if equal, false otherwise
+        """
+        players1 = self.board.players
+        players2 = other.board.players
+        if len(players1) != len(players2):
+            print("Different number of players")
+            return False
+        players1.sort(key=lambda x: x.number)
+        players2.sort(key=lambda x: x.number)
+        for p1, p2 in zip(players1, players2):
+            if p1 != p2:
+                print("Players not equal")
+                return False
+            if p1.resources != p2.resources:
+                print("Resources not equal")
+                return False
+            if p1.development_cards != p2.development_cards:
+                print("Development cards not equal")
+                return False
+        for t1, t2 in zip(self.board.tiles, other.board.tiles):
+            if t1 != t2:
+                print("Tiles not equal")
+                return False
+        if self.board.resource_deck != other.board.resource_deck:
+            print("Resource deck not equal")
+            return False
+        if self.board.development_card_deck != other.board.development_card_deck:
+            print("Development deck not equal")
+            return False
+        for b1, b2 in zip(
+            self.board._buildings.items(), other.board._buildings.items()
+        ):
+            for s1, s2 in zip(b1[1], b2[1]):
+                if s1 != s2:
+                    print("Buildings not equal")
+                    return False
+        return True
+
+    def __deepcopy__(self, memodict={}):
+        """
+        Deep copies the board_interface object
+        :param memodict: The memo dictionary
+        :return: The deep copy
+        """
+        return pickle.loads(pickle.dumps(self, -1))
+
     def log_action(self, action: str):
         """
         Logs an action to the file
@@ -277,9 +327,9 @@ class board_interface:
                 return True
         return False
 
-    def check_num_cards(self) -> None:
+    def verify_game_integrity(self) -> None:
         """
-        Logs the number of cards in the bank
+        Check that the game is in a valid state
         :return: None
         """
         if (
@@ -295,6 +345,11 @@ class board_interface:
         ):
             raise Exception("Development card count is incorrect")
         self.log_action("Cards are correct")
+
+        if self == copy.deepcopy(self):
+            self.log_action("Deepcopy Test Passed")
+        else:
+            raise Exception("Deepcopy Test Failed")
 
     # Moving Cards ----
 
@@ -742,20 +797,25 @@ class board_interface:
             and player_.count_cards("resources")["rock"] >= 1
         ):
             # Take the resources and give the player a development card
-            self.return_player_card(player_, "wheat")
-            self.return_player_card(player_, "sheep")
-            self.return_player_card(player_, "rock")
-            card = self.give_player_card(player_, "development", "development_card")
+            if len(self.board.development_card_deck) > 0:
+                self.return_player_card(player_, "wheat")
+                self.return_player_card(player_, "sheep")
+                self.return_player_card(player_, "rock")
+                card = self.give_player_card(player_, "development", "development_card")
 
-            # Log the action if not in minimax mode
-            if not self.minimax_mode:
-                self.log_action(f"{player_.name} bought a development card")
-                self.log_action(
-                    f"{player_.name}'s development cards are now {player_.development_cards}"
-                )
-            player_.gained_dev_cards_this_turn.append(card)
+                # Log the action if not in minimax mode
+                if not self.minimax_mode:
+                    self.log_action(f"{player_.name} bought a development card")
+                    self.log_action(
+                        f"{player_.name}'s development cards are now {player_.development_cards}"
+                    )
+                player_.gained_dev_cards_this_turn.append(card)
 
-            return True
+                return True
+
+            else:
+                if not self.minimax_mode:
+                    self.log_action("There are no development cards left")
 
         else:
             return False
@@ -1020,7 +1080,7 @@ class board_interface:
                         f"{player_.name} must discard half their resources as they have more than 7"
                     )
                     player_.robber_discard(self)
-            self.check_num_cards()
+            self.verify_game_integrity()
             self.log_action("Moving the robber...")
             current_player.robber(self)
 
@@ -1208,6 +1268,9 @@ class board_interface:
 
         # Player can always end their turn
         moves.append("end turn")
+
+        sort_order = CONFIG["move_sort_order"]
+        moves.sort(key=lambda move: sort_order.index(move))
 
         return moves
 

@@ -52,3 +52,20 @@ class tile:
     def __str__(self):
         # Override the string representation of the tile, for printing to the console
         return f"{self.letter}"
+
+    def __eq__(self, other):
+        try:
+            if self.letter != other.letter:
+                return False
+            if self.dice_number != other.dice_number:
+                return False
+            if self.resource != other.resource:
+                return False
+            if self.contains_robber != other.contains_robber:
+                return False
+            return True
+        except:
+            return False
+
+    def __hash__(self):
+        return hash(self.letter + str(self.dice_number) + self.resource)

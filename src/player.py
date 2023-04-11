@@ -5,10 +5,12 @@ Implementations all require human input
 
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
+import pickle
 import sys
 
 import termcolor
 from tabulate import tabulate
+import json_fix
 from src.CONFIG import CONFIG
 
 # Exception to be raised when a player ends their turn
@@ -68,6 +70,12 @@ class player:
         if not isinstance(other, player):
             return False
         return self.number == other.number
+
+    def __json__(self):
+        return self.__dict__
+
+    def __deepcopy__(self, memodict={}):
+        return pickle.loads(pickle.dumps(self, -1))
 
     def has_access_to(self, interface) -> list:
         """

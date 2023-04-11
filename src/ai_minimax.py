@@ -272,7 +272,7 @@ class ai_minimax(ai_player):
         update_score(len(resources), "total amount of resources")
 
         update_score(
-            int(0.5 * max(len(self.resources) - 7, 0)),
+            int(1.5 * max(len(self.resources) - 12, 0)),
             "Penalise having too many resources",
         )
 
@@ -337,12 +337,29 @@ class ai_minimax(ai_player):
             if settlements_count + cities_count / len(player_roads) <= 1:
                 update_score(25, "Nicely Spaced Settlements")
 
+            num_available_settlement_positions = 0
+            road_endings = list(
+                set(
+                    [road[0] for road in player_roads]
+                    + [road[1] for road in player_roads]
+                )
+            )
+            for road in road_endings:
+                if buildings_list[
+                    road
+                ] is None and not interface.check_for_nearby_settlements(road):
+                    num_available_settlement_positions += 1
+            update_score(
+                num_available_settlement_positions * 10,
+                "Available Settlement Positions",
+            )
+
         clusters = return_clusters(player_roads)
         if clusters:
             longest_cluster = max(clusters, key=len)
             longest_route = len(find_longest_route(longest_cluster)) - 1
             update_score(
-                longest_route * (4 if not has_longest_road else 2),
+                longest_route * (7 if not has_longest_road else 2),
                 "longest continuous road",
             )
 
@@ -355,11 +372,10 @@ class ai_minimax(ai_player):
         # Number of development cards ------------------------------------------
 
         # score += len(self.development_cards) if len(self.development_cards) < 5 else 5
-        if len(self.development_cards) >= 2:
-            update_score(
-                -max(0, len(self.development_cards) - 2) * 10,
-                "amount of development cards",
-            )
+        update_score(
+            -max(0, len(self.development_cards) - 2) * 10,
+            "amount of development cards",
+        )
         update_score(self.played_robber_cards * 3, "played robber cards")
 
         # Potential to build something (only applies at max depth 0)
@@ -631,6 +647,7 @@ class ai_minimax(ai_player):
 
         # Append all combinations of moves to a list
         full_move_list = []
+        # The potential_moves list is already sorted by priority
         for move in potential_moves:
 
             # Append settlement locations
@@ -832,11 +849,6 @@ class ai_minimax(ai_player):
             if move not in return_list:
                 return_list.append(move)
 
-        # Sort the list.
-        # List is sorted so that 'build' comes before 'trade' in the list of possible moves, so that in the event of a
-        # MiniMaxTimeOutException, the player will build before trading
-        return_list.sort(key=lambda x: x[0])
-
         return return_list
 
     def minimax(self, interface, max_depth, alpha, beta, current_player) -> list:
@@ -867,7 +879,7 @@ class ai_minimax(ai_player):
             raise MiniMaxTimeoutException
 
         # Log the current depth
-        # self.log(f"Depth: {max_depth}, Maximising: {current_player.name}")
+        self.log(f"Depth: {max_depth}, Maximising: {current_player.name}")
 
         # Check if the depth is at the maximum depth, and if so set the variables
         if max_depth == self.max_depth:
@@ -940,11 +952,11 @@ class ai_minimax(ai_player):
                     # Perform alpha-beta pruning to speed up the algorithm
                     alpha = max(alpha, max_combo[1])
                     if beta <= alpha:
-                        # self.log(f"Pruning at depth {max_depth}")
+                        self.log(f"Pruning at depth {max_depth}")
                         break
 
             # If the depth is at the maximum depth, return the best move
-            # self.log(f"Max combo: {max_combo}")
+            self.log(f"Max combo: {max_combo}")
             return max_combo
 
         else:
@@ -984,7 +996,7 @@ class ai_minimax(ai_player):
                     # Perform alpha-beta pruning to speed up the algorithm
                     beta = min(beta, min_combo[1])
                     if beta <= alpha:
-                        # self.log(f"Pruning at depth {max_depth}")
+                        self.log(f"Pruning at depth {max_depth}")
                         break
 
                     # A note on imperfect information
@@ -994,7 +1006,7 @@ class ai_minimax(ai_player):
                     # believe that it is fair to allow the minimax player to 'see' the opponents hand.
 
             # If the depth is at the maximum depth, return the best move
-            # self.log("Min combo: " + str(min_combo))
+            self.log("Min combo: " + str(min_combo))
             return min_combo
 
     # noinspection DuplicatedCode
@@ -1029,6 +1041,7 @@ class ai_minimax(ai_player):
             if not self.root_score_map:
                 # Not sure whether I like this? Potentially should search for other items
                 print("No moves found, ending turn")
+                self.log("No moves found, ending turn")
                 time.sleep(5)
                 raise endOfTurnException
         self.log("Root score map: " + str(self.root_score_map))
