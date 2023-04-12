@@ -17,13 +17,13 @@ CONFIG = {
     # Minimum is 3
     "target_score": 10,
     # Number of Matches -
-    # Number of matches to play in a row before exiting
-    "number_of_matches": 5,
+    # Number of matches to play in a row before generating results and exiting
+    "number_of_matches": 10,
     # Board Layout -
     # Set to either 'default' or 'random'
     # 'default' will use the standard board layout
     # 'random' will use a random board layout
-    "board_layout": "default",
+    "board_layout": "random",
     # Table Top Mode -
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not required when playing with a human on the computer
@@ -77,4 +77,13 @@ CONFIG = {
         "buy development card",
         "end turn",
     ],
+    # MatPlotLib Colour Mappings
+    "colour_mappings": {
+        "blue": "#1f77b4",
+        "red": "#d62728",
+        "green": "#2ca02c",
+        "yellow": "#ff7f0e",
+        "cyan": "#17becf",
+        "magenta": "#9467bd",
+    },
 }

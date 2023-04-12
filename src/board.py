@@ -563,76 +563,74 @@ class board:
                 "rock",
                 "rock",
                 "rock",
-                "rock",
                 "desert",
             ]
-            number_order = [
+            number_order_circular = [
+                5,
+                2,
+                6,
+                3,
+                8,
+                10,
                 9,
                 12,
-                10,
                 11,
-                5,
+                4,
                 8,
-                6,
-                4,
-                4,
-                11,
-                3,
-                3,
+                10,
                 9,
-                7,
-                10,
-                6,
-                8,
-                2,
+                4,
                 5,
+                6,
+                3,
+                11,
             ]
-            letter_order = [
+            letter_order_circular = [
+                "s",
+                "r",
+                "p",
+                "k",
+                "f",
+                "c",
                 "a",
                 "b",
-                "c",
                 "d",
-                "e",
-                "f",
-                "g",
-                "h",
                 "i",
-                "j",
-                "k",
-                "l",
-                "m",
                 "n",
-                "o",
-                "p",
                 "q",
-                "r",
-                "s",
+                "o",
+                "m",
+                "h",
+                "e",
+                "g",
+                "l",
+                "j",
             ]
             i = 0
 
+            potential_tiles = random.sample(potential_tiles, len(potential_tiles))
+
             # Iterate through the letter order and get a random tile for each position
-            while len(self.tiles) < 19:
+            for letter in letter_order_circular:
                 # Get random tile
                 tile_type = potential_tiles.pop(
-                    random.randint(0, len(potential_tiles) - 1)
+                    random.choice(range(len(potential_tiles)))
                 )
                 if tile_type == "desert":
+                    number = 7
                     # Desert tile_ must always have the number 7
-                    self.tiles.append(tile(7, (letter_order.pop(0)), tile_type))
-                    number_order.pop(number_order.index(7))
                 else:
-                    # Add the tile to the board
-                    self.tiles.append(
-                        tile(number_order[i], (letter_order.pop(0)), tile_type)
-                    )
-                    i += 1
+                    number = number_order_circular.pop(0)
+                self.tiles.append(tile(number, letter, tile_type))
+
+            # Order tiles circularly
+            self.tiles.sort(key=lambda x: x.letter)
 
             # Shuffle the port order by reassigning the keys and items in the dictionary
             port_keys = list(self._ports.keys())
             port_values = list(self._ports.values())
             random.shuffle(port_values)
             self._ports = dict(zip(port_keys, port_values))
-            print(self._ports)
 
         # Add the required cards to their decks
 
@@ -906,7 +904,7 @@ class board:
             if not self.all_players_ai
             else sorted(
                 self.players,
-                key=lambda x: (x.victory_points, x.name),
+                key=lambda x: (x.victory_points, x.number),
                 reverse=True,
             )
         )

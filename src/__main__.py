@@ -501,8 +501,6 @@ if __name__ == "__main__":
 
         import matplotlib.pyplot as plt
 
-        time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-
         # Also add graph that shows the cumulative scores over time
         # Compare it to the average needed to win 50% of games
         # Should be a good comparison of how well the AIs are doing
@@ -530,6 +528,7 @@ if __name__ == "__main__":
                     + (player.strategy if isinstance(player, ai_player) else "")
                     + ")"
                 ),
+                color=player.matplotlib_colour,
                 marker="x",
             )
 
@@ -558,6 +557,7 @@ if __name__ == "__main__":
                     + (player.strategy if isinstance(player, ai_player) else "")
                     + ")"
                 ),
+                color=player.matplotlib_colour,
                 marker="x",
             )
 

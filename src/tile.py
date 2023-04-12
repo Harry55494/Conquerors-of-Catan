@@ -68,4 +68,8 @@ class tile:
             return False
 
     def __hash__(self):
-        return hash(self.letter + str(self.dice_number) + self.resource)
+        """
+        Override the hash function for the tile
+        :return: The hash of the tile
+        """
+        return hash(self.letter + str(self.dice_number))

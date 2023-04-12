@@ -98,7 +98,8 @@ class ai_random(ai_player):
             return False
         not_accepted = True
         # Loop until accepted
-        while not_accepted:
+        attempts = 0
+        while not_accepted and attempts < 100:
             # Choose a random road from all possible roads and make sure it is not already owned
             rand_int = random.randint(0, len(interface.get_roads_list()) - 1)
             if (
@@ -115,6 +116,10 @@ class ai_random(ai_player):
                 ):
                     # Return the chosen road
                     return list(interface.get_roads_list().keys())[rand_int]
+            attempts += 1
+        if attempts >= 100:
+            self.log("Failed to find a road to place")
+            return False
 
     def choose_placement_location(
         self, interface, building_type="settlement"

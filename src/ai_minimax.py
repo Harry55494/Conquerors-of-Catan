@@ -272,7 +272,7 @@ class ai_minimax(ai_player):
         update_score(len(resources), "total amount of resources")
 
         update_score(
-            int(1.5 * max(len(self.resources) - 12, 0)),
+            int(0.5 * max(len(self.resources) - 12, 0)),
             "Penalise having too many resources",
         )
 
@@ -322,6 +322,11 @@ class ai_minimax(ai_player):
         if interface.get_largest_army()[0] is not None:
             if interface.get_largest_army()[0].number == self.number:
                 update_score(50, "largest army")
+                next_largest_army = max(
+                    [player.played_robber_cards for player in other_players]
+                )
+                if self.played_robber_cards - 2 > next_largest_army:
+                    update_score(-25, "Too far ahead in army")
 
         # Check for how long the longest road is
 
@@ -417,6 +422,7 @@ class ai_minimax(ai_player):
 
         # Apply Heuristic Modifier
 
+        original_map = score_variation_map.copy()
         for modifier in self.heuristic_modifiers:
             score_variation_map = modifier(interface, score_variation_map)
         new_score = sum(score_variation_map.values())
@@ -425,9 +431,18 @@ class ai_minimax(ai_player):
                 isinstance(self.heuristic_modifiers[0], HMDefault)
                 and not new_score == score
             ):
-                print(score_variation_map)
+                print("Original Map:")
+                print(original_map)
+                print("Original Score:")
                 print(score)
+                print("Modified Map:")
+                print(score_variation_map)
+                print("New Score:")
                 print(new_score)
+                print(
+                    "Performing sum operation on the old score map returns:"
+                    + str(sum(original_map.values()))
+                )
                 raise Exception(
                     "Heuristic modifier is not returning the correct score variation map"
                 )

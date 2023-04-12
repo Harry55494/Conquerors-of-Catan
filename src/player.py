@@ -42,6 +42,11 @@ class player:
         # Sets all the variables
         self.number = number
         self.colour = colour
+        self.matplotlib_colour = (
+            CONFIG["colour_mappings"][self.colour]
+            if self.colour in CONFIG["colour_mappings"]
+            else "black"
+        )
         self.name = "Player " + str(number)
         self.coloured_name = termcolor.colored(self.name, self.colour)
         self.victory_points = 0
