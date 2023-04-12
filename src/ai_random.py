@@ -8,6 +8,7 @@ All methods are overwritten from the parent class
 
 import random
 import time
+from typing import Any
 
 from src.ai_player import *
 
@@ -78,7 +79,7 @@ class ai_random(ai_player):
 
         return building
 
-    def choose_road_location(self, interface) -> str:
+    def choose_road_location(self, interface) -> bool | Any:
         """
         Choose a road location
         :param interface: The interface object

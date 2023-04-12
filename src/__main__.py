@@ -50,7 +50,9 @@ if __name__ == "__main__":
 
     players = [
         ai_random(1, "red"),
-        ai_minimax(2, "yellow", wishful_thinking=True),
+        ai_minimax(
+            2, "yellow", wishful_thinking=True, heuristic_modifiers=[HMIgnorePorts()]
+        ),
         ai_minimax(3, "blue", wishful_thinking=False),
         ai_random(4, "green"),
     ]

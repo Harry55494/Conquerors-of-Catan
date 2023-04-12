@@ -660,6 +660,8 @@ class board:
             self.development_card_deck, len(self.development_card_deck)
         )
 
+        # sys.exit(0)
+
     # Helper Functions
 
     def calculate_resource_rarity(self):

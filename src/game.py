@@ -226,6 +226,9 @@ class game:
                         limit = 100
                     for i in range(limit):
                         # Get the player to perform an action
+                        self.interface.log_action(
+                            f"{player_.name} is deciding on an action"
+                        )
 
                         if (
                             isinstance(player_, ai_random)

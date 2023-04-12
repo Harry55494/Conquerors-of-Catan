@@ -4,6 +4,8 @@ Tile Class File for Board
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
 
+import unicodedata
+
 
 class tile:
     def __init__(self, dice_number, letter, resource):
@@ -20,19 +22,24 @@ class tile:
 
         # Set the symbol for the tile
         if resource == "wheat":
-            self.symbol = "🌾"
+            self.symbol = "🌾" + "" if unicodedata.east_asian_width("🌾") == "W" else " "
         elif resource == "wood":
-            self.symbol = "🌲"
+            self.symbol = "🌲" + "" if unicodedata.east_asian_width("🌲") == "W" else " "
         elif resource == "sheep":
-            self.symbol = "🐑"
+            self.symbol = "🐑" + "" if unicodedata.east_asian_width("🐑") == "W" else " "
         elif resource == "clay":
-            self.symbol = "🧱"
+            self.symbol = "🧱" + "" if unicodedata.east_asian_width("🧱") == "W" else " "
         elif resource == "rock":
-            self.symbol = "🪨"
+            self.symbol = "🪨" + "" if unicodedata.east_asian_width("🪨") == "W" else " "
         elif resource == "desert":
-            self.symbol = "🏜️"
+            self.symbol = "🏜" + (
+                "" if unicodedata.east_asian_width("🏜") == "W" else " "
+            )
             self.dice_number = 7
             self.contains_robber = True
+
+        # print(self.symbol)
+        # print(len(self.symbol.encode("utf-8")))
 
         # Set the frequency of the tile (the dots on the tile)
         self.frequency = (
