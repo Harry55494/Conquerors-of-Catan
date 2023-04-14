@@ -175,6 +175,9 @@ class HMDefault(HeuristicModifier):
                 mod_map["nicely spread out settlements"] = 25
 
             score += stats_map["available_settlement_positions"] * 10
+            mod_map["available settlement positions"] = (
+                stats_map["available_settlement_positions"] * 10
+            )
             if stats_map["opponents_on_roads"]:
                 score -= stats_map["opponents_on_roads"] * 5
                 mod_map["opponents on roads"] = -stats_map["opponents_on_roads"] * 5
@@ -189,11 +192,11 @@ class HMIgnorePorts(HeuristicModifier):
     def __init__(self):
         super().__init__("Ignore Ports", "NP")
 
-    def __call__(self, interface, score, stats_map, mod_map):
+    def __call__(self, interface, stats_map, mod_map):
         for key in list(mod_map.keys()):
             if "port" in key:
                 mod_map[key] = -50
-        return score, mod_map
+        return mod_map
 
 
 class HMEarlyLateGamePriorities(HeuristicModifier):
@@ -201,10 +204,12 @@ class HMEarlyLateGamePriorities(HeuristicModifier):
         super().__init__("Early/Late Game Priorities", "ELP")
 
     def __call__(self, interface, stats_map, mod_map):
-        if interface.turn < 15 or len(stats_map["roads"]) < 8:
+        if interface.turn_number < 15 or len(stats_map["roads"]) < 8:
             mod_map["roads"] = 7 * len(stats_map["roads"])
-            mod_map["available_settlement_positions"] = (
-                2 * mod_map["available_settlement_positions"]
-            )
+            if "available_settlement_positions" in mod_map:
+                mod_map["available_settlement_positions"] = (
+                    2 * mod_map["available_settlement_positions"]
+                )
 
         # TODO Own Mod Map Class?
+        return mod_map

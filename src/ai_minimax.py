@@ -32,7 +32,7 @@ class ai_minimax(ai_player):
         max_depth=CONFIG["minimax_max_depth"],
         epsilon_pruning_level=CONFIG["epsilon_pruning_level"],
         wishful_thinking=False,
-        heuristic_modifiers=[],
+        heuristic_modifiers=None,
     ) -> None:
         """
         Constructor for the minimax AI player
@@ -42,7 +42,9 @@ class ai_minimax(ai_player):
         :param max_depth: The maximum depth for the minimax algorithm to search to, defaults to CONFIG["minimax_max_depth"]\
         :param epsilon_pruning_level: Whether to use epsilon pruning, defaults to CONFIG["epsilon_pruning"]
         """
-        hm_abbreviations = str([hm.abbreviation for hm in heuristic_modifiers])
+        if heuristic_modifiers is None:
+            heuristic_modifiers = []
+        hm_abbreviations = str([hm.abbreviation for hm in heuristic_modifiers]).upper()
         hm_abbreviations = hm_abbreviations.replace("'", "")
         if wishful_thinking:
             hm_abbreviations = hm_abbreviations[:-1] + " + WT]"
@@ -283,7 +285,8 @@ class ai_minimax(ai_player):
         default = HMDefault()
         score, mod_map = default(interface, stats_map, {})
         for modifier in self.heuristic_modifiers:
-            score, mod_map = modifier(interface, stats_map, mod_map)
+            mod_map = modifier(interface, stats_map, mod_map)
+            score = sum(mod_map.values())
         # Overwrite score with temp score if it is better, as this is the score that will be used for the minimax algorithm
         if score > self.temp_score_variation_map[0]:
             self.temp_score_variation_map = [score, mod_map]
