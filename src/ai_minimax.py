@@ -4,8 +4,10 @@ Contains the logic for the minimax AI player to play the game
 
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
-
+import concurrent
+from concurrent.futures import ProcessPoolExecutor
 import math
+import multiprocessing
 from datetime import datetime, timedelta
 from src.longest_road import *
 
@@ -772,6 +774,51 @@ class ai_minimax(ai_player):
 
             # Else, for each move, perform the move and recursively call minimax
             else:
+
+                if max_depth == self.max_depth and len(potential_moves) > 1:
+                    with concurrent.futures.ProcessPoolExecutor(
+                        max_workers=math.floor(multiprocessing.cpu_count() / 2)
+                    ) as executor:
+                        for move in potential_moves:
+                            interface_clone = copy.deepcopy(interface)
+                            interface_clone.set_minimax(True)
+                            player_clone = copy.deepcopy(self)
+
+                            if self.wishful_thinking:
+                                for card in self.has_access_to(interface_clone):
+                                    for _ in range(
+                                        math.floor(
+                                            len(interface_clone.get_players_list()) / 2
+                                        )
+                                    ):
+                                        player_clone.resources.append(card)
+
+                            # Perform the move
+                            interface_clone = self.perform_minimax_move(
+                                player_clone, interface_clone, move
+                            )
+
+                            self.log(f"Submitting move {move} to executor")
+                            eval_combo = executor.submit(
+                                self.minimax,
+                                interface_clone,
+                                max_depth - 1,
+                                alpha,
+                                beta,
+                                current_player,
+                            )
+                            eval_combo = eval_combo.result()
+
+                            if max_depth == self.max_depth:
+                                self.root_score_map.append([move, eval_combo[1]])
+                            max_combo = max(max_combo, eval_combo, key=lambda x: x[1])
+
+                            # Perform alpha-beta pruning to speed up the algorithm
+                            alpha = max(alpha, max_combo[1])
+                            if beta <= alpha:
+                                self.log(f"Pruning at depth {max_depth}")
+                                break
+
                 for move in potential_moves:
                     # Create a clone of the interface and player so that the original is not modified
                     interface_clone = copy.deepcopy(interface)

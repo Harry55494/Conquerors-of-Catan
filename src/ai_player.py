@@ -5,6 +5,7 @@ AI Player Interface Class
 """
 
 import os
+import random
 import sys
 
 import logging
@@ -68,7 +69,9 @@ class ai_player(player):
             pass
 
         # Setup the logger, setting the minimum level to debug, and specifying the format of the log
-        self.logger = logging.getLogger(f"{self.file_path}")
+        self.logger = logging.getLogger(
+            f"{self.file_path} - {random.randint(0, 1000000)}"
+        )
         self.logger.setLevel(logging.DEBUG)
         file_format = logging.Formatter("[%(asctime)s] %(message)s")
         fh = logging.FileHandler(f"logs/players/{self.file_path}")

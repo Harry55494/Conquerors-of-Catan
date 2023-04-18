@@ -174,9 +174,9 @@ class HMDefault(HeuristicModifier):
                 score += 25
                 mod_map["nicely spread out settlements"] = 25
 
-            score += stats_map["available_settlement_positions"] * 10
+            score += stats_map["available_settlement_positions"] * 5
             mod_map["available settlement positions"] = (
-                stats_map["available_settlement_positions"] * 10
+                stats_map["available_settlement_positions"] * 5
             )
             if stats_map["opponents_on_roads"]:
                 score -= stats_map["opponents_on_roads"] * 5

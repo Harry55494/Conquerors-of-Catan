@@ -17,12 +17,6 @@ players = [
 inter = board_interface(players)
 inter.board.players[0].victory_points = 10
 
-class_checker = lambda obj: isinstance(obj, logging.Logger)
-# then assign it to a function that does the converting
-json.override_table[class_checker] = lambda obj_of_that_class: json.loads(
-    obj_of_that_class.to_json()
-)
-
 
 methods = {
     "copy.deepcopy(inter)": 0,
