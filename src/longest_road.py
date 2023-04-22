@@ -45,28 +45,28 @@ def find_route_from_node(
     if len(current_path) > len(longest_route):
         longest_route[:] = current_path
 
-    # recursively explore all unexplored neighbors of the node
-    unexplored_neighbors = [
-        neighbor for neighbor in adj_list[node] if neighbor not in visited
+    # recursively explore all unexplored neighbours of the node
+    unexplored_neighbours = [
+        neighbour for neighbour in adj_list[node] if neighbour not in visited
     ]
-    if len(unexplored_neighbors) == 1:
-        # if there is only one unexplored neighbor, continue exploring that path
+    if len(unexplored_neighbours) == 1:
+        # if there is only one unexplored neighbour, continue exploring that path
         find_route_from_node(
-            unexplored_neighbors[0],
+            unexplored_neighbours[0],
             adj_list,
             visited,
             used_paths,
             longest_route,
             current_path,
         )
-    elif len(unexplored_neighbors) > 1:
-        # if there are multiple unexplored neighbors, mark this as a fork in the road
-        for neighbor in unexplored_neighbors:
-            path = frozenset([node, neighbor])
+    elif len(unexplored_neighbours) > 1:
+        # if there are multiple unexplored neighbours, mark this as a fork in the road
+        for neighbour in unexplored_neighbours:
+            path = frozenset([node, neighbour])
             if path not in used_paths:
                 used_paths.add(path)
                 find_route_from_node(
-                    neighbor,
+                    neighbour,
                     adj_list,
                     visited.copy(),
                     used_paths.copy(),

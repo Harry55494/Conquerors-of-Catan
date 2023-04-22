@@ -332,6 +332,44 @@ class board_interface:
                 return True
         return False
 
+    def get_distance_between_nodes(self, node1, node2) -> int:
+        """
+        Returns the distance between two nodes using Dijkstra's algorithm
+        :param node1: The first node
+        :param node2: The second node
+        :return: The distance between the two nodes
+        """
+        # https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+
+        # Initialize the distances to be infinite
+        nodes = self.board._buildings.keys()
+        edges = self.board._roads.keys()
+        distances = {}
+        previous = {}
+        for node in nodes:
+            distances[node] = 1000000
+            previous[node] = None
+        distances[node1] = 0
+        unvisited = list(nodes)
+
+        # Iterate through the nodes
+        while unvisited:
+            current = min(unvisited, key=lambda node: distances[node])
+            unvisited.remove(current)
+            # If we've reached the second node, stop
+            if current == node2:
+                break
+            # Otherwise, iterate through the edges
+            for edge in edges:
+                if current in edge:
+                    neighbour = edge[0] if edge[1] == current else edge[1]
+                    if neighbour in unvisited:
+                        alt = distances[current] + 1
+                        if alt < distances[neighbour]:
+                            distances[neighbour] = alt
+                            previous[neighbour] = current
+        return distances[node2]
+
     def verify_game_integrity(self) -> None:
         """
         Check that the game is in a valid state

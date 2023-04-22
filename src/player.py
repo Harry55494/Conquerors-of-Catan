@@ -295,7 +295,7 @@ class player:
             # Keep asking for a location until two valid locations are in the list
             while len(coordinates) < 2:
                 print(
-                    f"{self} , where would you like to place the "
+                    f"{self.coloured_name}, where would you like to place the "
                     + ("start" if len(coordinates) == 0 else "end")
                     + " of your road?"
                     f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"

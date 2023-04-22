@@ -100,8 +100,8 @@ class HMDefault(HeuristicModifier):
 
         for port in stats_map["ports"]:
             if stats_map["ports"][port]["type"] == "3:1":
-                score += 3 * max(stats_map["roll map"].values())
-                mod_map["3:1 port@{}".format(port)] = 3 * max(
+                score += 2 * max(stats_map["roll map"].values())
+                mod_map["3:1 port@{}".format(port)] = 2 * max(
                     stats_map["roll map"].values()
                 )
             elif stats_map["ports"][port]["type"] == "2:1":
@@ -112,6 +112,14 @@ class HMDefault(HeuristicModifier):
                     score += (
                         2 * stats_map["roll map"][stats_map["ports"][port]["resource"]]
                     )
+
+        if "average_distance_between_settlements" in stats_map:
+            if stats_map["average_distance_between_settlements"] < 6:
+                score += 10
+                mod_map["settlements close together"] = 10
+            if stats_map["average_distance_between_settlements"] > 8:
+                score -= 10
+                mod_map["settlements far apart"] = -10
 
         # Resources ----------------------------
 

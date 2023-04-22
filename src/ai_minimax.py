@@ -47,12 +47,17 @@ class ai_minimax(ai_player):
         if heuristic_modifiers is None:
             heuristic_modifiers = []
         hm_abbreviations = str([hm.abbreviation for hm in heuristic_modifiers]).upper()
-        hm_abbreviations = hm_abbreviations.replace("'", "")
+        hm_abbreviations = " " + hm_abbreviations.replace("'", "")
+        if hm_abbreviations == " []":
+            hm_abbreviations = ""
         if wishful_thinking:
-            hm_abbreviations = hm_abbreviations[:-1] + " + WT]"
+            if not hm_abbreviations:
+                hm_abbreviations = " [WT]"
+            else:
+                hm_abbreviations = hm_abbreviations[:-1] + " + WT]"
         # Call the parent constructor
         super().__init__(
-            number=number, colour=colour, strategy=f"minimax {hm_abbreviations}"
+            number=number, colour=colour, strategy=f"minimax{hm_abbreviations}"
         )
         # Log the creation of the player
         self.log(
@@ -164,6 +169,14 @@ class ai_minimax(ai_player):
             ),
             reverse=True,
         )
+
+        if (
+            other_players[0].calculateVictoryPoints(
+                interface, buildings_list=buildings_list
+            )
+            >= CONFIG["target_score"]
+        ):
+            return -1000000
 
         stats_map["other players"] = other_players
         stats_map["victory points"] = current_vp
@@ -283,6 +296,23 @@ class ai_minimax(ai_player):
             stats_map["longest_continuous_road"] = longest_route
 
         stats_map["development_cards"] = self.development_cards
+
+        # Distance Between Settlements
+        settlements = stats_map["settlements"]
+        settlements.update(stats_map["cities"])
+        distances = []
+        for settlement in settlements:
+            for other_settlement in settlements:
+                if other_settlement != settlement:
+                    distances.append(
+                        interface.get_distance_between_nodes(
+                            settlement, other_settlement
+                        )
+                    )
+        if distances:
+            stats_map["average_distance_between_settlements"] = sum(distances) / len(
+                distances
+            )
 
         default = HMDefault()
         score, mod_map = default(interface, stats_map, {})

@@ -478,7 +478,7 @@ class ai_random(ai_player):
                         if player != self
                     ]
                 )
-                # Choose a random resource that the player has at least 4 of
+                # Submit the move to the interface
                 interface.trade_with_player(
                     self,
                     player,
@@ -527,5 +527,12 @@ class ai_random(ai_player):
                     "end turn",
                 ]:
                     raise unknownMoveException(f"Unknown move: {chosen_move}")
+
+            if random.randint(0, 2) == 0:
+                self.log("Ended turn")
+                self.entire_game_moves.append(
+                    f"Turn {interface.turn_number}, VP {self.calculateVictoryPoints(interface)} - Ended turn"
+                )
+                raise endOfTurnException
 
             break

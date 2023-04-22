@@ -18,7 +18,7 @@ CONFIG = {
     "target_score": 10,
     # Number of Matches -
     # Number of matches to play in a row before generating results and exiting
-    "number_of_matches": 1,
+    "number_of_matches": 10,
     # Board Layout -
     # Set to either 'default' or 'random'
     # 'default' will use the standard board layout

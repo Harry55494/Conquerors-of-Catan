@@ -883,7 +883,14 @@ class board:
         # This prints the deck, players and their stats
         print("\n")
         print(
-            f"{game}Turn: {str(self.turn).ljust(3)}  🌾 🌲 🐑 🧱 🪨  ❔    Roll: {str(self.current_roll[0]) + ' ' +  str(self.current_roll[1]) }      ".center(
+            f"{game}Turn: {str(self.turn).ljust(3)}  "
+            f"{'🌾' if self.resource_deck.count('wheat') > 0 else '  '} "
+            f"{'🌲' if self.resource_deck.count('wood') > 0 else '  '} "
+            f"{'🐑' if self.resource_deck.count('sheep') > 0 else '  '} "
+            f"{'🧱' if self.resource_deck.count('clay') > 0 else '  '} "
+            f"{'🪨' if self.resource_deck.count('rock') > 0 else '  '}   "
+            f"{'❔' if len(self.development_card_deck) > 0 else '  '} "
+            f"    Roll: {str(self.current_roll[0]) + ' ' +  str(self.current_roll[1]) }      ".center(
                 terminal_width
             ),
             end="",
