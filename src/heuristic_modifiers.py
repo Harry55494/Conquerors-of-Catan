@@ -134,6 +134,19 @@ class HMDefault(HeuristicModifier):
         score += 3 * len(stats_map["has_access_to"])
         mod_map["has access to"] = 3 * len(stats_map["has_access_to"])
 
+        resources = stats_map["resources"]
+        if resources.count("rock") >= 3 and resources.count("grain") >= 2:
+            score += 50
+            mod_map["can build city"] = 50
+        if (
+            resources.count("wood") >= 1
+            and resources.count("grain") >= 1
+            and resources.count("sheep") >= 1
+            and resources.count("clay") >= 0
+        ):
+            score += 25
+            mod_map["can build settlement"] = 25
+
         # Special Cards ----------------------------
         if stats_map["longest_road"]:
             mod_map["longest road"] = 50

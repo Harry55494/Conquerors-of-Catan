@@ -780,6 +780,10 @@ class board_interface:
                     print("You cannot build any more roads")
             return False
 
+        if not location:
+            self.log_action(f"{player_.name} tried to place a road at {location}")
+            return False
+
         # Check if the road is already owned by someone
         if self.get_roads_list()[location]["player"] is not None:
             raise self.moveNotValid("Road already placed at location")

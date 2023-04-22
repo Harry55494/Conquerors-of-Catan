@@ -49,15 +49,16 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        player(1, "red"),
-        ai_minimax(
-            2,
-            "yellow",
-            wishful_thinking=True,
-            heuristic_modifiers=[HMEarlyLateGamePriorities()],
-        ),
-        ai_minimax(3, "blue", wishful_thinking=False),
-        ai_random(4, "green"),
+        ai_random(1, "red"),
+        # ai_minimax(
+        #    2,
+        #    "yellow",
+        #    wishful_thinking=True,
+        #    heuristic_modifiers=[HMEarlyLateGamePriorities()],
+        # ),
+        ai_minimax(2, "yellow", wishful_thinking=False),
+        ai_random(3, "green"),
+        ai_random(4, "blue"),
     ]
 
     # If the user has specified the "--no-menu" argument, skip the menu
@@ -467,7 +468,13 @@ if __name__ == "__main__":
         player_data.append(data)
 
     # Sort the data based on player number
-    player_data.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
+    player_data.sort(key=lambda x: (x[1]), reverse=True)
+
+    for person in player_data:
+        person[1] = f"{person[1]}%"
+        person[2] = f"{person[2]:.2f}"
+        person[3] = f"{person[3]:.3f}"
+        person[4] = f"{person[4]:.2f}s"
 
     time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
