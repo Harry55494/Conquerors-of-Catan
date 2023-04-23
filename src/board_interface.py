@@ -260,10 +260,15 @@ class board_interface:
         :param location: The location to move the robber to
         :return: None
         """
+        if not self.minimax_mode:
+            self.log_action(f"Moving robber to '{location}'")
         for tile_ in self.board.tiles:
             if tile_.contains_robber:
                 tile_.contains_robber = False
+        for tile_ in self.board.tiles:
             if tile_.letter == location:
+                if not self.minimax_mode:
+                    self.log_action(f"Moved robber to {location}")
                 tile_.contains_robber = True
 
     def steal_from_player(
@@ -285,6 +290,10 @@ class board_interface:
             self.log_action(
                 f"{player_to_give_to.name} stole a {card} from {player_to_steal_from.name}"
             )
+            if CONFIG["table_top_mode"]:
+                print(
+                    f"{player_to_give_to.coloured_name} has stolen a {card} from {player_to_steal_from.coloured_name}"
+                )
         else:
             # If the player has no cards, print a message
             # Shouldn't technically happen, but just in case
@@ -858,6 +867,12 @@ class board_interface:
                     )
                 player_.gained_dev_cards_this_turn.append(card)
 
+                if CONFIG["table_top_mode"]:
+                    if not self.minimax_mode:
+                        print(
+                            f"{player_.coloured_name} has received a development card of type {card}"
+                        )
+
                 return True
 
             else:
@@ -957,7 +972,7 @@ class board_interface:
 
     def trade_with_player(
         self, original_player, player_to_trade_with, resource_to_give, resource_to_get
-    ) -> None:
+    ) -> bool | None:
         """
         Allows a player to trade with another player
         Trades are always 1:1
@@ -1003,23 +1018,27 @@ class board_interface:
                     self.log_action(
                         f"{original_player.name} traded {resource_to_give} for {resource_to_get} with {player_to_trade_with.name}"
                     )
+                    return True
                 if not self.all_players_ai:
                     print(
                         f"{original_player.name} traded {resource_to_give} for {resource_to_get} with {player_to_trade_with.name}"
                     )
                     await_user_input()
+                    return True
             # If they don't, log the action if not in minimax mode
             else:
                 if not self.minimax_mode:
                     self.log_action(
                         f"{player_to_trade_with.name} refused to trade with {original_player.name}"
                     )
+                    return False
                 if not self.all_players_ai:
                     print(
                         f"{player_to_trade_with.name} refused to trade with {original_player.name}"
                     )
                     if not self.all_players_ai:
                         await_user_input()
+                    return False
 
         # If the players don't have enough resources to trade, log the action if not in minimax mode
         else:
@@ -1027,6 +1046,7 @@ class board_interface:
                 print("One or both players do not have enough resources to trade!")
                 if not self.all_players_ai:
                     await_user_input()
+                return False
 
     def play_development_card(self, player_, card_to_play, *args) -> None:
         """
@@ -1065,6 +1085,8 @@ class board_interface:
                 # Increment the number of soldier cards the player has played
                 player_.played_robber_cards += 1
                 self.update_special_cards()
+            else:
+                print("You have already played all of your soldier cards!")
 
         # Play the monopoly card
         elif card == "monopoly":
@@ -1130,6 +1152,9 @@ class board_interface:
             self.verify_game_integrity()
             self.log_action("Moving the robber...")
             current_player.robber(self)
+            new_robber_tile = self.get_robber_location()
+            if CONFIG["table_top_mode"]:
+                print(f"The robber has moved to {new_robber_tile}")
 
             # If the player is an ai player, wait 3 seconds before continuing to allow the player to see the robber move
             if not isinstance(current_player, ai_player):
@@ -1153,6 +1178,9 @@ class board_interface:
                                 building_tile.dice_number == roll
                                 and not building_tile.contains_robber
                             ):
+                                self.log_action(
+                                    f"Tile {building_tile} with number {building_tile.dice_number} and resource {building_tile.resource} has been rolled!"
+                                )
                                 # If the building is a settlement, give the player one of the resource
                                 if (
                                     self.get_buildings_list()[building].get("building")
@@ -1261,7 +1289,11 @@ class board_interface:
                     for other_player in self.get_players_list()
                     if other_player != player_
                 ):
-                    moves.append("trade with player")
+                    if isinstance(player_, ai_minimax):
+                        if not player_.refused_trades >= 3:
+                            moves.append("trade with player")
+                    else:
+                        moves.append("trade with player")
 
         # BUILDING MOVES
 

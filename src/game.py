@@ -74,7 +74,7 @@ class game:
 
         # Shuffle the players so that the player order is random
         # Then sort the players by their number, so that the player order is correct
-        players = random.sample(players, len(players))
+        # players = random.sample(players, len(players))
 
         # Set up the game variables
         self.players = players
@@ -88,6 +88,7 @@ class game:
         self.player_num_turns = {player.name: 0 for player in self.players}
         self.turn_time_total = {player.name: 0 for player in self.players}
         self.results = {player.name: 0 for player in self.players}
+        self.player_victory_points = {player.name: [] for player in self.players}
 
     def initial_placement(self):
         """
@@ -100,16 +101,62 @@ class game:
         # Perform the setup checking
         self.setup_checking()
 
+        while True:
+            usernames = input("Would you like to give the players nicknames? y/n\n")
+            if usernames == "y":
+
+                for player in self.players:
+                    if not isinstance(player, ai_player):
+                        while True:
+                            option = input(
+                                f"Would you like to give {player.name} a starting nickname? y/n\n"
+                            )
+                            if option == "y":
+                                unhappy = True
+                                while unhappy:
+                                    name = input("What would you like to call them?\n")
+                                    option = input(
+                                        f"Are you sure you want to call them {name}? y/n\n"
+                                    )
+                                    if option == "y":
+                                        player.coloured_name = termcolor.colored(
+                                            name, player.colour
+                                        )
+                                        unhappy = False
+                                break
+                            elif option == "n":
+                                break
+                            else:
+                                print("Please enter y or n")
+
+                break
+
+            if usernames == "n":
+                break
+            else:
+                print("Please enter y or n")
+
+        if CONFIG["table_top_mode"]:
+            self.interface.print_board()
+            print("\n")
+            print("Please copy the board above and place it in front of the players")
+            print(
+                "The turn order will be "
+                + ", ".join(player.coloured_name for player in self.players)
+            )
+            await_user_input()
+            time.sleep(1)
+            await_user_input("Are you ready to start the game?")
+
         # Set up the initial placement of the players
         self.interface.initial_placement()
 
         # Clone the player so that the objects from outside this match are not affected
         # Python passes objects by reference, so if the player objects are changed, the objects outside for all matches will be changed
-        current_player = self.interface.get_players_list()[0]
-        for i in range(10):
-            current_player = copy.deepcopy(
-                self.interface.get_next_player(current_player)
-            )
+        # for i in range(10):
+        #    current_player = copy.deepcopy(
+        #        self.interface.get_next_player(current_player)
+        #    )
 
         # Calculate the victory points for the players
         for player in self.players:
@@ -128,6 +175,8 @@ class game:
 
             # Announce the start of the turn
             self.interface.log_action(f"\n\nTurn {self.turn} started")
+            self.interface.turn_number = self.turn
+            self.interface.board.turn = self.turn
 
             # Game Loop for each player
             # Each iteration here is one round of turns
@@ -144,6 +193,9 @@ class game:
                 for player__ in self.players:
                     player__.gained_dev_cards_this_turn = []
 
+                if isinstance(player_, ai_minimax):
+                    player_.refused_trades = 0
+
                 # Set the turn number and print the board
                 self.interface.print_board()
                 print("\n")
@@ -157,10 +209,14 @@ class game:
                 # If the game is in table-top mode, the dice roll is input by the user
                 if CONFIG["table_top_mode"]:
                     while True:
-                        dice_roll = input("Enter dice roll: ")
+                        dice_roll = input("Enter dice roll in the form 6,6: ")
                         try:
-                            dice_roll = int(dice_roll)
-                            if dice_roll < 2 or dice_roll > 12:
+                            dice_total = sum([int(i) for i in dice_roll.split(",")])
+                            dice_roll = dice_roll.split(",")
+                            two_dice = [int(i) for i in dice_roll]
+                            if dice_total < 2 or dice_total > 12:
+                                raise ValueError
+                            if any(i < 1 or i > 6 for i in two_dice):
                                 raise ValueError
                             break
                         except ValueError:
@@ -240,6 +296,8 @@ class game:
                         player_.turn_actions(self.interface)
                         self.interface.update_special_cards()
                         num_moves_made += 1
+                        if CONFIG["table_top_mode"]:
+                            await_user_input()
                         if (
                             player_.calculateVictoryPoints(self.interface)
                             >= CONFIG["target_score"]
@@ -276,6 +334,10 @@ class game:
                     # If tabletop mode, wait for the user to acknowledge the end of the turn so that the physical board can be updated
                     if isinstance(player_, ai_player):
                         await_user_input()
+
+                self.player_victory_points[player_.name].append(
+                    player_.calculateVictoryPoints(self.interface)
+                )
 
                 # Check if the player has won
                 if (

@@ -6,7 +6,10 @@ Implementations all require human input
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
 import pickle
+import random
 import sys
+import time
+from typing import Tuple, Any
 
 import termcolor
 from tabulate import tabulate
@@ -153,6 +156,8 @@ class player:
             print("")
         else:
             print("")
+        if self.development_cards.count("soldier") > 0 and self.played_robber_cards > 0:
+            print(f"You have played {self.played_robber_cards} of your soldier cards")
         self.resources.sort()
         self.development_cards.sort()
 
@@ -234,10 +239,12 @@ class player:
         while not accepted:
             location = input(
                 f"{self.coloured_name}, where would you like to place your {type_}? "
-                f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"
+                f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners, or type 'cancel' to cancel: "
                 f"\n(Single corner numbers increase as you move clockwise around a tile)\n"
             )
             # Make the location lowercase and split it into a list, then sort it to make it easier to check
+            if location.lower() == "cancel":
+                return "cancelled"
             letters = location.lower()
             if "," in location:
                 letters = location.split(",")
@@ -252,7 +259,7 @@ class player:
                 if (
                     interface.get_buildings_list()[location]["player"] is None
                     or interface.get_buildings_list()[location]["player"] == self
-                    and type_ == "settlement"
+                    and type_ == "city"
                 ) and not interface.check_for_nearby_settlements(location):
                     # If the location is valid and not already occupied, accept it
                     accepted = True
@@ -266,7 +273,7 @@ class player:
 
     def choose_road_location(
         self, interface, requirement=None, ignore_current_endings=True
-    ) -> tuple:
+    ) -> str | tuple[str | Any, ...]:
         """
         Places a road on the board for a player
         :param interface: The interface, so that the board can be printed
@@ -298,7 +305,7 @@ class player:
                     f"{self.coloured_name}, where would you like to place the "
                     + ("start" if len(coordinates) == 0 else "end")
                     + " of your road?"
-                    f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners"
+                    f"\nPlease enter in the form of a reference such as 'a,b,e', or of 'a1', 'a2' for single corners, or type 'cancel' to cancel: "
                 )
                 # If a requirement is given, print it out
                 if requirement is not None:
@@ -307,6 +314,9 @@ class player:
                 location = input(
                     f"Please enter the {len(coordinates) + 1}{'st' if len(coordinates) + 1 == 1 else 'nd'} location\n"
                 )
+
+                if location.lower() == "cancel":
+                    return "cancelled"
 
                 # Make the location lowercase and split it into a list, then sort it to make it easier to check
                 letters = location.lower()
@@ -397,7 +407,8 @@ class player:
         # If there are multiple players to steal from, ask which one to steal from
         if len(players_to_steal_from) > 1:
             print("Please select a player to steal from")
-            print(player_item for player_item in players_to_steal_from)
+            for player_item in players_to_steal_from:
+                print(f"{player_item.number}: {player_item.coloured_name}")
             player_nums = [
                 int(player_item.number) for player_item in players_to_steal_from
             ]
@@ -602,7 +613,7 @@ class player:
         """
         # Simply ask the player if they want to accept the trade
         print(
-            f"{original_player} would like to trade you {receiving} for {giving}. Would you like to accept this trade? (y/n)"
+            f"{self.coloured_name}, {original_player} would like to trade you {receiving} for {giving}. Would you like to accept this trade? (y/n)"
         )
         accepted = input().lower()
         while accepted not in ["y", "n"]:
@@ -658,6 +669,9 @@ class player:
         :return: None
         """
         # Print the board and the player's hand
+
+        start_time = time.time()
+
         interface.print_board()
         self.printHand("resources")
         self.printHand("development")
@@ -675,6 +689,18 @@ class player:
             action = int(input("Please enter a valid action\n"))
         action = number_move_pairings[str(action)].lower()
 
+        # if they took longer than 60 seconds, print hello
+        if time.time() - start_time > 60:
+            print(
+                random.choice(
+                    [
+                        "Wow! You sure took a while to make that decision!",
+                        "I'm not sure what you're doing, but it took a while",
+                        "Erm... are you okay? You took a while to make that decision",
+                    ]
+                )
+            )
+
         # Switch on the action
         if action == "view building cost list":
             buildings = []
@@ -690,20 +716,25 @@ class player:
                     tablefmt="grid",
                 )
             )
-            await_user_input()
-        elif action == "place settlement":
-            interface.place_settlement(
-                self, self.choose_placement_location(interface, "settlement")
-            )
-        elif action == "place city":
-            interface.place_city(
-                self, self.choose_placement_location(interface, "city")
-            )
+        elif action == "build settlement":
+            location = self.choose_placement_location(interface, "settlement")
+            if location == "cancel":
+                return
+            else:
+                interface.place_settlement(self, location)
+        elif action == "build city":
+            location = self.choose_placement_location(interface, "city")
+            if location == "cancel":
+                return
+            else:
+                interface.place_city(self, location)
         # If the player built a road, place it
         elif action == "build road":
-            interface.place_road(
-                self, self.choose_road_location(interface, None, False)
-            )
+            location = self.choose_road_location(interface, None, False)
+            if location == "cancel":
+                return
+            else:
+                interface.place_road(self, location)
         # If the player bought a development card, buy it
         elif action == "buy development card":
             interface.buy_development_card(self)
@@ -723,5 +754,4 @@ class player:
             raise endOfTurnException
         else:
             # If the player enters an invalid action, print an error message and loop
-            print("Invalid action")
-            sys.exit(1)
+            print(f"{action} is not a valid action")

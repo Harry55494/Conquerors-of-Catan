@@ -80,8 +80,237 @@ class board:
             "development card": {"rock": 1, "wheat": 1, "sheep": 1},
         }
 
+        # Roads map contains the start and end reference, which player owns the road and
+        # the symbol that needs to be printed to form the hexagons correctly
+        self._roads = {
+            # Hex a
+            tuple(["a1", "a2"]): {"player": None, "symbol": r"-"},
+            tuple(["a2", "a,c"]): {"player": None, "symbol": r"\ "},
+            tuple(["a,c", "a,c,e"]): {"player": None, "symbol": r"/ "},
+            tuple(["a,c,e", "a,b,e"]): {"player": None, "symbol": r"-"},
+            tuple(["a,b,e", "a,b"]): {"player": None, "symbol": r"\ "},
+            tuple(["a,b", "a1"]): {"player": None, "symbol": r"/ "},
+            # Hex b
+            tuple(["a,b", "b1"]): {"player": None, "symbol": r"-"},
+            tuple(["b1", "b,d"]): {"player": None, "symbol": r"/"},
+            tuple(["b,d", "b,d,g"]): {"player": None, "symbol": r"\ "},
+            tuple(["b,d,g", "b,e,g"]): {"player": None, "symbol": r"-"},
+            tuple(["b,e,g", "a,b,e"]): {"player": None, "symbol": r"/"},
+            # Hex c
+            tuple(["a,c", "c1"]): {"player": None, "symbol": r"-"},
+            tuple(["c1", "c,f"]): {"player": None, "symbol": r"\ "},
+            tuple(["c,f", "c,f,h"]): {"player": None, "symbol": r"/"},
+            tuple(["c,f,h", "c,e,h"]): {"player": None, "symbol": r"-"},
+            tuple(["c,e,h", "a,c,e"]): {"player": None, "symbol": r"\ "},
+            # Hex d
+            tuple(["b,d,g", "d,g,i"]): {"player": None, "symbol": r"/"},
+            tuple(["d,g,i", "d,i"]): {"player": None, "symbol": r"-"},
+            tuple(["d,i", "d1"]): {"player": None, "symbol": r"\ "},
+            tuple(["d1", "d2"]): {"player": None, "symbol": r"/"},
+            tuple(["d2", "b,d"]): {"player": None, "symbol": r"-"},
+            # Hex e
+            tuple(["c,e,h", "e,h,j"]): {"player": None, "symbol": r"/"},
+            tuple(["e,h,j", "e,g,j"]): {"player": None, "symbol": r"-"},
+            tuple(["e,g,j", "b,e,g"]): {"player": None, "symbol": r"\ "},
+            # Hex f
+            tuple(["c,f", "f1"]): {"player": None, "symbol": r"-"},
+            tuple(["f1", "f2"]): {"player": None, "symbol": r"\ "},
+            tuple(["f2", "f,k"]): {"player": None, "symbol": r"/"},
+            tuple(["f,k", "f,h,k"]): {"player": None, "symbol": r"-"},
+            tuple(["f,h,k", "c,f,h"]): {"player": None, "symbol": r"\ "},
+            # Hex g
+            tuple(["e,g,j", "g,j,l"]): {"player": None, "symbol": r"/"},
+            tuple(["g,j,l", "g,i,l"]): {"player": None, "symbol": r"-"},
+            tuple(["g,i,l", "d,g,i"]): {"player": None, "symbol": r"\ "},
+            # Hex h
+            tuple(["f,h,k", "h,k,m"]): {"player": None, "symbol": r"/"},
+            tuple(["h,k,m", "h,j,m"]): {"player": None, "symbol": r"-"},
+            tuple(["h,j,m", "e,h,j"]): {"player": None, "symbol": r"\ "},
+            # Hex i
+            tuple(["g,i,l", "i,l,n"]): {"player": None, "symbol": r"/"},
+            tuple(["i,l,n", "i,n"]): {"player": None, "symbol": r"-"},
+            tuple(["i,n", "i1"]): {"player": None, "symbol": r"\ "},
+            tuple(["i1", "d,i"]): {"player": None, "symbol": r"/"},
+            # Hex j
+            tuple(["h,j,m", "j,m,o"]): {"player": None, "symbol": r"/"},
+            tuple(["j,m,o", "j,l,o"]): {"player": None, "symbol": r"-"},
+            tuple(["j,l,o", "g,j,l"]): {"player": None, "symbol": r"\ "},
+            # Hex k
+            tuple(["f,k", "k1"]): {"player": None, "symbol": r"\ "},
+            tuple(["k1", "k,p"]): {"player": None, "symbol": r"/"},
+            tuple(["k,p", "k,m,p"]): {"player": None, "symbol": r"-"},
+            tuple(["k,m,p", "h,k,m"]): {"player": None, "symbol": r"\ "},
+            # Hex l
+            tuple(["j,l,o", "l,o,q"]): {"player": None, "symbol": r"/"},
+            tuple(["l,o,q", "l,n,q"]): {"player": None, "symbol": r"-"},
+            tuple(["l,n,q", "i,l,n"]): {"player": None, "symbol": r"\ "},
+            # Hex m
+            tuple(["k,m,p", "m,p,r"]): {"player": None, "symbol": r"/"},
+            tuple(["m,p,r", "m,o,r"]): {"player": None, "symbol": r"-"},
+            tuple(["m,o,r", "j,m,o"]): {"player": None, "symbol": r"\ "},
+            # Hex n
+            tuple(["l,n,q", "n,q"]): {"player": None, "symbol": r"/"},
+            tuple(["n,q", "n1"]): {"player": None, "symbol": r"-"},
+            tuple(["n1", "n2"]): {"player": None, "symbol": r"\ "},
+            tuple(["n2", "i,n"]): {"player": None, "symbol": r"/"},
+            # Hex o
+            tuple(["m,o,r", "o,r,s"]): {"player": None, "symbol": r"/"},
+            tuple(["o,r,s", "o,q,s"]): {"player": None, "symbol": r"-"},
+            tuple(["o,q,s", "l,o,q"]): {"player": None, "symbol": r"\ "},
+            # Hex p
+            tuple(["k,p", "p1"]): {"player": None, "symbol": r"\ "},
+            tuple(["p1", "p2"]): {"player": None, "symbol": r"/"},
+            tuple(["p2", "p,r"]): {"player": None, "symbol": r"-"},
+            tuple(["p,r", "m,p,r"]): {"player": None, "symbol": r"\ "},
+            # Hex q
+            tuple(["o,q,s", "q,s"]): {"player": None, "symbol": r"/"},
+            tuple(["q,s", "q1"]): {"player": None, "symbol": r"-"},
+            tuple(["q1", "n,q"]): {"player": None, "symbol": r"\ "},
+            # Hex r
+            tuple(["p,r", "r1"]): {"player": None, "symbol": r"/"},
+            tuple(["r1", "r,s"]): {"player": None, "symbol": r"-"},
+            tuple(["r,s", "o,r,s"]): {"player": None, "symbol": r"\ "},
+            # Hex s
+            tuple(["r,s", "s1"]): {"player": None, "symbol": r"/"},
+            tuple(["s1", "s2"]): {"player": None, "symbol": r"-"},
+            tuple(["s2", "q,s"]): {"player": None, "symbol": r"\ "},
+        }
+
+        # Ports, with the key being the two nodes that the port is between
+        # Ports are only ever at the locations listed below
+        self._ports = {
+            tuple(["a,c", "c1"]): {"player": None, "symbol": r"3:1", "resource": "any"},
+            tuple(["f1", "f2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
+            tuple(["k1", "k,p"]): {
+                "player": None,
+                "symbol": r"2:1",
+                "resource": "clay",
+                "emoji": " 🧱",
+            },
+            tuple(["p,r", "r1"]): {
+                "player": None,
+                "symbol": r"2:1",
+                "resource": "wood",
+                "emoji": " 🌲",
+            },
+            tuple(["s1", "s2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
+            tuple(["q1", "n,q"]): {
+                "player": None,
+                "symbol": r"2:1",
+                "resource": "wheat",
+                "emoji": " 🌾",
+            },
+            tuple(["i,n", "i1"]): {
+                "player": None,
+                "symbol": r"2:1",
+                "resource": "rock",
+                "emoji": " 🪨",
+            },
+            tuple(["d1", "d2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
+            tuple(["b1", "a,b"]): {
+                "player": None,
+                "symbol": r"2:1",
+                "resource": "sheep",
+                "emoji": " 🐑",
+            },
+        }
+
+        # Create the tiles and board
+        # The default layout has already been created, but if the layout is random it is now modified here
+        if board_type != "default":
+
+            # If the layout is random, form the tiles from the possible options in the correct order
+            self.tiles = []
+            potential_tiles = [
+                "wood",
+                "wood",
+                "wood",
+                "wood",
+                "sheep",
+                "sheep",
+                "sheep",
+                "sheep",
+                "wheat",
+                "wheat",
+                "wheat",
+                "wheat",
+                "clay",
+                "clay",
+                "clay",
+                "rock",
+                "rock",
+                "rock",
+                "desert",
+            ]
+            number_order_circular = [
+                5,
+                2,
+                6,
+                3,
+                8,
+                10,
+                9,
+                12,
+                11,
+                4,
+                8,
+                10,
+                9,
+                4,
+                5,
+                6,
+                3,
+                11,
+            ]
+            letter_order_circular = [
+                "s",
+                "r",
+                "p",
+                "k",
+                "f",
+                "c",
+                "a",
+                "b",
+                "d",
+                "i",
+                "n",
+                "q",
+                "o",
+                "m",
+                "h",
+                "e",
+                "g",
+                "l",
+                "j",
+            ]
+            i = 0
+
+            potential_tiles = random.sample(potential_tiles, len(potential_tiles))
+
+            # Iterate through the letter order and get a random tile for each position
+            for letter in letter_order_circular:
+                # Get random tile
+                tile_type = potential_tiles.pop(
+                    random.choice(range(len(potential_tiles)))
+                )
+                if tile_type == "desert":
+                    number = 7
+                    # Desert tile_ must always have the number 7
+                else:
+                    number = number_order_circular.pop(0)
+                self.tiles.append(tile(number, letter, tile_type))
+
+            self.tiles.sort(key=lambda x: x.letter)
+
+            # Shuffle the port order by reassigning the keys and items in the dictionary
+            port_keys = list(self._ports.keys())
+            port_values = list(self._ports.values())
+            random.shuffle(port_values)
+            self._ports = dict(zip(port_keys, port_values))
+
         # Buildings map contains a grid reference, the building type, and the player who owns it.
         # Also contains the tile type, so that the resources to give can be calculated easily
+        # Needs to be created after the tiles have been created
         self._buildings = {
             "a1": {
                 "player": None,
@@ -402,235 +631,6 @@ class board:
                 "tiles": [tile_ for tile_ in self.tiles if tile_.letter in ["s"]],
             },
         }
-
-        # Roads map contains the start and end reference, which player owns the road and
-        # the symbol that needs to be printed to form the hexagons correctly
-        self._roads = {
-            # Hex a
-            tuple(["a1", "a2"]): {"player": None, "symbol": r"-"},
-            tuple(["a2", "a,c"]): {"player": None, "symbol": r"\ "},
-            tuple(["a,c", "a,c,e"]): {"player": None, "symbol": r"/ "},
-            tuple(["a,c,e", "a,b,e"]): {"player": None, "symbol": r"-"},
-            tuple(["a,b,e", "a,b"]): {"player": None, "symbol": r"\ "},
-            tuple(["a,b", "a1"]): {"player": None, "symbol": r"/ "},
-            # Hex b
-            tuple(["a,b", "b1"]): {"player": None, "symbol": r"-"},
-            tuple(["b1", "b,d"]): {"player": None, "symbol": r"/"},
-            tuple(["b,d", "b,d,g"]): {"player": None, "symbol": r"\ "},
-            tuple(["b,d,g", "b,e,g"]): {"player": None, "symbol": r"-"},
-            tuple(["b,e,g", "a,b,e"]): {"player": None, "symbol": r"/"},
-            # Hex c
-            tuple(["a,c", "c1"]): {"player": None, "symbol": r"-"},
-            tuple(["c1", "c,f"]): {"player": None, "symbol": r"\ "},
-            tuple(["c,f", "c,f,h"]): {"player": None, "symbol": r"/"},
-            tuple(["c,f,h", "c,e,h"]): {"player": None, "symbol": r"-"},
-            tuple(["c,e,h", "a,c,e"]): {"player": None, "symbol": r"\ "},
-            # Hex d
-            tuple(["b,d,g", "d,g,i"]): {"player": None, "symbol": r"/"},
-            tuple(["d,g,i", "d,i"]): {"player": None, "symbol": r"-"},
-            tuple(["d,i", "d1"]): {"player": None, "symbol": r"\ "},
-            tuple(["d1", "d2"]): {"player": None, "symbol": r"/"},
-            tuple(["d2", "b,d"]): {"player": None, "symbol": r"-"},
-            # Hex e
-            tuple(["c,e,h", "e,h,j"]): {"player": None, "symbol": r"/"},
-            tuple(["e,h,j", "e,g,j"]): {"player": None, "symbol": r"-"},
-            tuple(["e,g,j", "b,e,g"]): {"player": None, "symbol": r"\ "},
-            # Hex f
-            tuple(["c,f", "f1"]): {"player": None, "symbol": r"-"},
-            tuple(["f1", "f2"]): {"player": None, "symbol": r"\ "},
-            tuple(["f2", "f,k"]): {"player": None, "symbol": r"/"},
-            tuple(["f,k", "f,h,k"]): {"player": None, "symbol": r"-"},
-            tuple(["f,h,k", "c,f,h"]): {"player": None, "symbol": r"\ "},
-            # Hex g
-            tuple(["e,g,j", "g,j,l"]): {"player": None, "symbol": r"/"},
-            tuple(["g,j,l", "g,i,l"]): {"player": None, "symbol": r"-"},
-            tuple(["g,i,l", "d,g,i"]): {"player": None, "symbol": r"\ "},
-            # Hex h
-            tuple(["f,h,k", "h,k,m"]): {"player": None, "symbol": r"/"},
-            tuple(["h,k,m", "h,j,m"]): {"player": None, "symbol": r"-"},
-            tuple(["h,j,m", "e,h,j"]): {"player": None, "symbol": r"\ "},
-            # Hex i
-            tuple(["g,i,l", "i,l,n"]): {"player": None, "symbol": r"/"},
-            tuple(["i,l,n", "i,n"]): {"player": None, "symbol": r"-"},
-            tuple(["i,n", "i1"]): {"player": None, "symbol": r"\ "},
-            tuple(["i1", "d,i"]): {"player": None, "symbol": r"/"},
-            # Hex j
-            tuple(["h,j,m", "j,m,o"]): {"player": None, "symbol": r"/"},
-            tuple(["j,m,o", "j,l,o"]): {"player": None, "symbol": r"-"},
-            tuple(["j,l,o", "g,j,l"]): {"player": None, "symbol": r"\ "},
-            # Hex k
-            tuple(["f,k", "k1"]): {"player": None, "symbol": r"\ "},
-            tuple(["k1", "k,p"]): {"player": None, "symbol": r"/"},
-            tuple(["k,p", "k,m,p"]): {"player": None, "symbol": r"-"},
-            tuple(["k,m,p", "h,k,m"]): {"player": None, "symbol": r"\ "},
-            # Hex l
-            tuple(["j,l,o", "l,o,q"]): {"player": None, "symbol": r"/"},
-            tuple(["l,o,q", "l,n,q"]): {"player": None, "symbol": r"-"},
-            tuple(["l,n,q", "i,l,n"]): {"player": None, "symbol": r"\ "},
-            # Hex m
-            tuple(["k,m,p", "m,p,r"]): {"player": None, "symbol": r"/"},
-            tuple(["m,p,r", "m,o,r"]): {"player": None, "symbol": r"-"},
-            tuple(["m,o,r", "j,m,o"]): {"player": None, "symbol": r"\ "},
-            # Hex n
-            tuple(["l,n,q", "n,q"]): {"player": None, "symbol": r"/"},
-            tuple(["n,q", "n1"]): {"player": None, "symbol": r"-"},
-            tuple(["n1", "n2"]): {"player": None, "symbol": r"\ "},
-            tuple(["n2", "i,n"]): {"player": None, "symbol": r"/"},
-            # Hex o
-            tuple(["m,o,r", "o,r,s"]): {"player": None, "symbol": r"/"},
-            tuple(["o,r,s", "o,q,s"]): {"player": None, "symbol": r"-"},
-            tuple(["o,q,s", "l,o,q"]): {"player": None, "symbol": r"\ "},
-            # Hex p
-            tuple(["k,p", "p1"]): {"player": None, "symbol": r"\ "},
-            tuple(["p1", "p2"]): {"player": None, "symbol": r"/"},
-            tuple(["p2", "p,r"]): {"player": None, "symbol": r"-"},
-            tuple(["p,r", "m,p,r"]): {"player": None, "symbol": r"\ "},
-            # Hex q
-            tuple(["o,q,s", "q,s"]): {"player": None, "symbol": r"/"},
-            tuple(["q,s", "q1"]): {"player": None, "symbol": r"-"},
-            tuple(["q1", "n,q"]): {"player": None, "symbol": r"\ "},
-            # Hex r
-            tuple(["p,r", "r1"]): {"player": None, "symbol": r"/"},
-            tuple(["r1", "r,s"]): {"player": None, "symbol": r"-"},
-            tuple(["r,s", "o,r,s"]): {"player": None, "symbol": r"\ "},
-            # Hex s
-            tuple(["r,s", "s1"]): {"player": None, "symbol": r"/"},
-            tuple(["s1", "s2"]): {"player": None, "symbol": r"-"},
-            tuple(["s2", "q,s"]): {"player": None, "symbol": r"\ "},
-        }
-
-        # Ports, with the key being the two nodes that the port is between
-        # Ports are only ever at the locations listed below
-        self._ports = {
-            tuple(["a,c", "c1"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["f1", "f2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["k1", "k,p"]): {
-                "player": None,
-                "symbol": r"2:1",
-                "resource": "clay",
-                "emoji": " 🧱",
-            },
-            tuple(["p,r", "r1"]): {
-                "player": None,
-                "symbol": r"2:1",
-                "resource": "wood",
-                "emoji": " 🌲",
-            },
-            tuple(["s1", "s2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["q1", "n,q"]): {
-                "player": None,
-                "symbol": r"2:1",
-                "resource": "wheat",
-                "emoji": " 🌾",
-            },
-            tuple(["i,n", "i1"]): {
-                "player": None,
-                "symbol": r"2:1",
-                "resource": "rock",
-                "emoji": " 🪨",
-            },
-            tuple(["d1", "d2"]): {"player": None, "symbol": r"3:1", "resource": "any"},
-            tuple(["b1", "a,b"]): {
-                "player": None,
-                "symbol": r"2:1",
-                "resource": "sheep",
-                "emoji": " 🐑",
-            },
-        }
-
-        # Create the tiles and board
-        # The default layout has already been created, but if the layout is random it is now modified here
-        if board_type != "default":
-
-            # If the layout is random, form the tiles from the possible options in the correct order
-            self.tiles = []
-            potential_tiles = [
-                "wood",
-                "wood",
-                "wood",
-                "wood",
-                "sheep",
-                "sheep",
-                "sheep",
-                "sheep",
-                "wheat",
-                "wheat",
-                "wheat",
-                "wheat",
-                "clay",
-                "clay",
-                "clay",
-                "rock",
-                "rock",
-                "rock",
-                "desert",
-            ]
-            number_order_circular = [
-                5,
-                2,
-                6,
-                3,
-                8,
-                10,
-                9,
-                12,
-                11,
-                4,
-                8,
-                10,
-                9,
-                4,
-                5,
-                6,
-                3,
-                11,
-            ]
-            letter_order_circular = [
-                "s",
-                "r",
-                "p",
-                "k",
-                "f",
-                "c",
-                "a",
-                "b",
-                "d",
-                "i",
-                "n",
-                "q",
-                "o",
-                "m",
-                "h",
-                "e",
-                "g",
-                "l",
-                "j",
-            ]
-            i = 0
-
-            potential_tiles = random.sample(potential_tiles, len(potential_tiles))
-
-            # Iterate through the letter order and get a random tile for each position
-            for letter in letter_order_circular:
-                # Get random tile
-                tile_type = potential_tiles.pop(
-                    random.choice(range(len(potential_tiles)))
-                )
-                if tile_type == "desert":
-                    number = 7
-                    # Desert tile_ must always have the number 7
-                else:
-                    number = number_order_circular.pop(0)
-                self.tiles.append(tile(number, letter, tile_type))
-
-            # Order tiles circularly
-            self.tiles.sort(key=lambda x: x.letter)
-
-            # Shuffle the port order by reassigning the keys and items in the dictionary
-            port_keys = list(self._ports.keys())
-            port_values = list(self._ports.values())
-            random.shuffle(port_values)
-            self._ports = dict(zip(port_keys, port_values))
 
         # Add the required cards to their decks
 

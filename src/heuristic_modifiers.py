@@ -146,6 +146,21 @@ class HMDefault(HeuristicModifier):
         ):
             score += 25
             mod_map["can build settlement"] = 25
+        if resources.count("wood") >= 1 and resources.count("clay") >= 1:
+            score += 5
+            mod_map["can build road"] = 5
+        if (
+            resources.count("rock") >= 1
+            and resources.count("sheep") >= 1
+            and resources.count("grain") >= 1
+        ):
+            score += 10
+            mod_map["can buy development card"] = 10
+
+        score += resources.count("clay")
+        mod_map["clay"] = resources.count("clay")
+        score += resources.count("rock")
+        mod_map["rock"] = resources.count("rock")
 
         # Special Cards ----------------------------
         if stats_map["longest_road"]:
@@ -220,12 +235,12 @@ class HMIgnorePorts(HeuristicModifier):
         return mod_map
 
 
-class HMEarlyLateGamePriorities(HeuristicModifier):
+class HMEarlyExpansion(HeuristicModifier):
     def __init__(self):
-        super().__init__("Early/Late Game Priorities", "ELP")
+        super().__init__("Early Expansion", "EE")
 
     def __call__(self, interface, stats_map, mod_map):
-        if interface.turn_number < 15 or len(stats_map["roads"]) < 8:
+        if interface.turn_number < 15 or len(stats_map["roads"]) < 7:
             mod_map["roads"] = 7 * len(stats_map["roads"])
             if "available_settlement_positions" in mod_map:
                 mod_map["available_settlement_positions"] = (

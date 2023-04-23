@@ -81,6 +81,7 @@ class ai_minimax(ai_player):
         self.epsilon_pruning = epsilon_pruning_level
         self.wishful_thinking = wishful_thinking
         self.heuristic_modifiers = heuristic_modifiers
+        self.refused_trades = 0
 
     def perform_minimax_move(self, player_clone, interface_clone, move):
         """
@@ -416,7 +417,8 @@ class ai_minimax(ai_player):
 
         # Move the robber to the location with the highest score
         location = max(location_score_map, key=location_score_map.get)
-        interface.move_robber(location)
+        self.log("Moving robber to " + str(location))
+        interface.move_robber(location.letter)
 
         # Get all players that have resources
         potential_players = []
@@ -986,13 +988,21 @@ class ai_minimax(ai_player):
                 raise endOfTurnException
         self.log("Root score map: " + str(self.root_score_map))
         # Find the best move from the moves that have been evaluated
-        best_move_from_minimax = max(self.root_score_map, key=lambda x: x[1])
+
+        highest_score = max(self.root_score_map, key=lambda x: x[1])[1]
+        best_moves = []
+        for move in self.root_score_map:
+            if move[1] == highest_score:
+                best_moves.append(move[0])
+        print("Best moves: ", best_moves)
+
+        best_move_from_minimax = [random.choice(best_moves), highest_score]
         best_move_from_minimax = {
             "move": best_move_from_minimax[0],
             "score": best_move_from_minimax[1],
         }
         # Print and log the best move
-        print("Best move: ", best_move_from_minimax)
+        print("Selected move: ", best_move_from_minimax)
         self.log(
             "Best move: "
             + str(best_move_from_minimax["move"])
@@ -1033,6 +1043,15 @@ class ai_minimax(ai_player):
                 interface.play_development_card(self, best_move[1], best_move[2])
             else:
                 interface.play_development_card(self, best_move[1])
+        elif best_move[0] == "trade with player":
+            if self.refused_trades >= 3:
+                print("Too many refused trades, ending turn")
+                raise endOfTurnException
+            response = interface.trade_with_player(
+                self, best_move[2], best_move[3], best_move[4]
+            )
+            if not response:
+                self.refused_trades += 1
 
         # Raise an exception to end the turn
         elif best_move[0] == "end turn":

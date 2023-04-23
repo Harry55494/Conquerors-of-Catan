@@ -14,8 +14,12 @@ Options:
 import shutil
 import signal
 
+from matplotlib.ticker import MaxNLocator
+
 from src.game import *
 from datetime import datetime
+
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
@@ -49,16 +53,18 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        ai_random(1, "red"),
+        player(1, "red"),
+        player(2, "blue"),
         # ai_minimax(
         #    2,
         #    "yellow",
         #    wishful_thinking=True,
-        #    heuristic_modifiers=[HMEarlyLateGamePriorities()],
+        #    heuristic_modifiers=[HMEarlyExpansion()],
         # ),
-        ai_minimax(2, "yellow", wishful_thinking=False),
-        ai_random(3, "green"),
-        ai_random(4, "blue"),
+        player(3, "green"),
+        ai_minimax(
+            4, "yellow", wishful_thinking=True, heuristic_modifiers=[HMEarlyExpansion()]
+        ),
     ]
 
     # If the user has specified the "--no-menu" argument, skip the menu
@@ -413,6 +419,29 @@ if __name__ == "__main__":
 
         shutil.copytree("logs", f"temp/match_{match_number}")
 
+        figure = plt.figure()
+        for player in match.players:
+            plt.plot(
+                range(len(match.player_victory_points[player.name])),
+                match.player_victory_points[player.name],
+                label=player.name,
+                color=player.matplotlib_colour,
+                marker="o",
+            )
+        plt.xlabel("Turn")
+        plt.ylabel("Victory Points")
+        plt.title(f"Match {match_number} - Victory Points")
+
+        ax = plt.gca()
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+
+        plt.savefig(f"temp/match_{match_number}/victory_points.png")
+
         time.sleep(3)
 
     player_data = []
@@ -458,11 +487,11 @@ if __name__ == "__main__":
                 progress = (num_turns / result) * (CONFIG["target_score"])
                 rounds_to_win.append(progress)
             total_player_turns += num_turns
-        total_time = round(total_time / total_player_turns, 2)
+        average_time = round(total_time / total_player_turns, 2)
 
         data.append(round(sum(rounds_to_win) / len(rounds_to_win), 3))
 
-        data.append(str(total_time) + "s")
+        data.append(str(average_time) + "s")
 
         # Append that player's data for that match into the overall list
         player_data.append(data)
@@ -474,7 +503,7 @@ if __name__ == "__main__":
         person[1] = f"{person[1]}%"
         person[2] = f"{person[2]:.2f}"
         person[3] = f"{person[3]:.3f}"
-        person[4] = f"{person[4]:.2f}s"
+        person[4] = f"{person[4]}"
 
     time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
@@ -508,10 +537,6 @@ if __name__ == "__main__":
 
     # No point showing graphs for less than one match
     if CONFIG["number_of_matches"] > 1:
-
-        # Plot Results
-
-        import matplotlib.pyplot as plt
 
         # Also add graph that shows the cumulative scores over time
         # Compare it to the average needed to win 50% of games
