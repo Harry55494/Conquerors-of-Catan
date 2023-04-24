@@ -18,7 +18,7 @@ CONFIG = {
     "target_score": 10,
     # Number of Matches -
     # Number of matches to play in a row before generating results and exiting
-    "number_of_matches": 1,
+    "number_of_matches": 50,
     # Board Layout -
     # Set to either 'default' or 'random'
     # 'default' will use the standard board layout
@@ -27,7 +27,7 @@ CONFIG = {
     # Table Top Mode -
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not required when playing with a human on the computer
-    "table_top_mode": True,
+    "table_top_mode": False,
     # Randomise Starting Locations -
     # If enabled, the starting locations of all players will be randomised
     "randomise_starting_locations": False,
@@ -62,7 +62,7 @@ CONFIG = {
     # AI Doesn't Initiate Trades -
     # If enabled, the AI will not initiate trades
     # This can save a lot of time in the MiniMax algorithm
-    "ai_doesnt_initiate_trades": False,
+    "ai_doesnt_initiate_trades": True,
     # Sort Order for Moves -
     # Set the order in which the AI will evaluate moves
     # Can influence the AI's strategy if the full move set is not explored

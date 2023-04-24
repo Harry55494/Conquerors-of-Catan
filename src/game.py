@@ -101,40 +101,43 @@ class game:
         # Perform the setup checking
         self.setup_checking()
 
-        while True:
-            usernames = input("Would you like to give the players nicknames? y/n\n")
-            if usernames == "y":
+        if not self.all_players_ai:
+            while True:
+                usernames = input("Would you like to give the players nicknames? y/n\n")
+                if usernames == "y":
 
-                for player in self.players:
-                    if not isinstance(player, ai_player):
-                        while True:
-                            option = input(
-                                f"Would you like to give {player.name} a starting nickname? y/n\n"
-                            )
-                            if option == "y":
-                                unhappy = True
-                                while unhappy:
-                                    name = input("What would you like to call them?\n")
-                                    option = input(
-                                        f"Are you sure you want to call them {name}? y/n\n"
-                                    )
-                                    if option == "y":
-                                        player.coloured_name = termcolor.colored(
-                                            name, player.colour
+                    for player in self.players:
+                        if not isinstance(player, ai_player):
+                            while True:
+                                option = input(
+                                    f"Would you like to give {player.name} a starting nickname? y/n\n"
+                                )
+                                if option == "y":
+                                    unhappy = True
+                                    while unhappy:
+                                        name = input(
+                                            "What would you like to call them?\n"
                                         )
-                                        unhappy = False
-                                break
-                            elif option == "n":
-                                break
-                            else:
-                                print("Please enter y or n")
+                                        option = input(
+                                            f"Are you sure you want to call them {name}? y/n\n"
+                                        )
+                                        if option == "y":
+                                            player.coloured_name = termcolor.colored(
+                                                name, player.colour
+                                            )
+                                            unhappy = False
+                                    break
+                                elif option == "n":
+                                    break
+                                else:
+                                    print("Please enter y or n")
 
-                break
+                    break
 
-            if usernames == "n":
-                break
-            else:
-                print("Please enter y or n")
+                if usernames == "n":
+                    break
+                else:
+                    print("Please enter y or n")
 
         if CONFIG["table_top_mode"]:
             self.interface.print_board()

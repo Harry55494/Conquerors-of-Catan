@@ -53,17 +53,17 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        player(1, "red"),
-        player(2, "blue"),
+        ai_random(1, "red"),
+        ai_random(3, "blue"),
         # ai_minimax(
         #    2,
         #    "yellow",
         #    wishful_thinking=True,
         #    heuristic_modifiers=[HMEarlyExpansion()],
         # ),
-        player(3, "green"),
+        ai_random(4, "green"),
         ai_minimax(
-            4, "yellow", wishful_thinking=True, heuristic_modifiers=[HMEarlyExpansion()]
+            2, "yellow", wishful_thinking=True, heuristic_modifiers=[HMEarlyExpansion()]
         ),
     ]
 
