@@ -1031,14 +1031,13 @@ class board_interface:
                     self.log_action(
                         f"{player_to_trade_with.name} refused to trade with {original_player.name}"
                     )
-                    return False
                 if not self.all_players_ai:
                     print(
                         f"{player_to_trade_with.name} refused to trade with {original_player.name}"
                     )
                     if not self.all_players_ai:
                         await_user_input()
-                    return False
+                return False
 
         # If the players don't have enough resources to trade, log the action if not in minimax mode
         else:
