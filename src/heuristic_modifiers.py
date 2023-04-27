@@ -118,21 +118,21 @@ class HMDefault(HeuristicModifier):
         mod_map["has access to"] = 3 * len(stats_map["has_access_to"])
 
         resources = stats_map["resources"]
-        if resources.count("rock") >= 3 and resources.count("grain") >= 2:
+        if resources.count("rock") >= 3 and resources.count("wheat") >= 2:
             mod_map["can build city"] = 50
         if (
             resources.count("wood") >= 1
-            and resources.count("grain") >= 1
+            and resources.count("wheat") >= 1
             and resources.count("sheep") >= 1
             and resources.count("clay") >= 0
         ):
             mod_map["can build settlement"] = 25
         if resources.count("wood") >= 1 and resources.count("clay") >= 1:
-            mod_map["can build road"] = 5
+            mod_map["can build road"] = 10
         if (
             resources.count("rock") >= 1
             and resources.count("sheep") >= 1
-            and resources.count("grain") >= 1
+            and resources.count("wheat") >= 1
         ):
             mod_map["can buy development card"] = 10
 
@@ -172,9 +172,11 @@ class HMDefault(HeuristicModifier):
         # Nicely spread out settlements
         if len(stats_map["roads"]) > 0:
             if (
-                (len(stats_map["settlements"]) + len(stats_map["cities"]))
-                / len(stats_map["roads"])
-            ) < 2:
+                (
+                    len(stats_map["roads"]) / len(stats_map["settlements"])
+                    + len(stats_map["cities"])
+                )
+            ) <= 2:
                 mod_map["nicely spread out settlements"] = 25
 
             mod_map["available settlement positions"] = (
@@ -182,6 +184,9 @@ class HMDefault(HeuristicModifier):
             )
             if stats_map["opponents_on_roads"]:
                 mod_map["opponents on roads"] = -stats_map["opponents_on_roads"] * 5
+            mod_map["connected_settlements"] = (
+                stats_map["number_of_connected_settlements"] * 3
+            )
 
         return mod_map
 
@@ -209,5 +214,47 @@ class HMEarlyExpansion(HeuristicModifier):
                     2 * mod_map["available_settlement_positions"]
                 )
 
-        # TODO Own Mod Map Class?
+        return mod_map
+
+
+# Adaptive Strategy
+
+
+class HMFavourResources(HeuristicModifier):
+    def __init__(self, resources=[]):
+        if any(
+            [
+                resource not in ["wood", "clay", "rock", "sheep", "wheat"]
+                for resource in resources
+            ]
+        ):
+            raise ValueError("Invalid resource type")
+        initials = "".join([resource[0] for resource in resources])
+        self.resources = resources
+        super().__init__("Favour Resources", f"FR[{initials}]")
+
+    def __call__(self, interface, stats_map, mod_map):
+        for resource in self.resources:
+            mod_map[resource] = stats_map["resources"].count(resource) * 2
+        added = 0
+        for resource in self.resources:
+            if resource in stats_map["roll map"]:
+                added += stats_map["roll map"].get(resource)
+        mod_map["favoured_resources"] = added * 3
+        return mod_map
+
+
+class HMDevelopmentCardSpam(HeuristicModifier):
+    def __init__(self):
+        super().__init__("Development Card Spam", "DC")
+
+    def __call__(self, interface, stats_map, mod_map):
+        added = 0
+        for resource in ["sheep", "rock", "wheat"]:
+            if resource in stats_map["roll map"]:
+                added += stats_map["roll map"].get(resource)
+        mod_map["sheep_rock_wheat_rollmap"] = added * 3
+        mod_map["total_played_development_cards"] = (
+            stats_map["total_dev_cards_played"] * 3
+        )
         return mod_map

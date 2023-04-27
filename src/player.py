@@ -61,6 +61,7 @@ class player:
         self.has_played_dev_card_this_turn = False
         self.dev_cards_at_start_of_turn = []
         self.gained_dev_cards_this_turn = []
+        self.total_dev_cards_played = 0
         print(self.coloured_name, "has joined the game")
 
     def __str__(self) -> str:

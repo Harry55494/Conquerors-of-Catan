@@ -38,7 +38,6 @@ class ai_player(player):
         number,
         colour,
         strategy: str = "random",
-        no_initiate_trades: bool = CONFIG["ai_doesnt_initiate_trades"],
     ):
         """
         Initialises an ai_player object.
@@ -58,6 +57,14 @@ class ai_player(player):
 
         self.strategy = strategy
 
+        self.make_log_file()
+        # Log the initialisation of the player
+        self.logger.debug(f"{self.strategy} Initialised - Player " + str(number))
+
+        # List of all moves made by the player
+        self.entire_game_moves = []
+
+    def make_log_file(self):
         # Setup logging
 
         self.file_path = f"player_{self.number}-{self.strategy}.log"
@@ -65,8 +72,6 @@ class ai_player(player):
         # Delete the file if it already exists
         if os.path.exists(f"logs/players/{self.file_path}"):
             os.remove(f"logs/players/{self.file_path}")
-        with open(f"logs/players/{self.file_path}", "w"):
-            pass
 
         # Setup the logger, setting the minimum level to debug, and specifying the format of the log
         self.logger = logging.getLogger(
@@ -77,12 +82,6 @@ class ai_player(player):
         fh = logging.FileHandler(f"logs/players/{self.file_path}")
         fh.setFormatter(file_format)
         self.logger.addHandler(fh)
-
-        # Log the initialisation of the player
-        self.logger.debug(f"{self.strategy} Initialised - Player " + str(number))
-
-        # List of all moves made by the player
-        self.entire_game_moves = []
 
     def log(self, action):
         """

@@ -25,6 +25,8 @@ time = timeit.timeit(
 print(f"Average time: {time / 10000} seconds")
 
 
+# Data was re-printed here as it was wrongly sorted the first time
+
 print("\nFinal Results:\n")
 
 data = [

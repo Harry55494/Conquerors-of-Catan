@@ -55,16 +55,8 @@ if __name__ == "__main__":
     players = [
         ai_random(1, "red"),
         ai_random(3, "blue"),
-        # ai_minimax(
-        #    2,
-        #    "yellow",
-        #    wishful_thinking=True,
-        #    heuristic_modifiers=[HMEarlyExpansion()],
-        # ),
         ai_random(4, "green"),
-        ai_minimax(
-            2, "yellow", wishful_thinking=True, heuristic_modifiers=[HMEarlyExpansion()]
-        ),
+        ai_minimax(2, "yellow", wishful_thinking=True, heuristic_modifiers=[]),
     ]
 
     # If the user has specified the "--no-menu" argument, skip the menu
@@ -376,262 +368,285 @@ if __name__ == "__main__":
                 time.sleep(1)
                 continue
 
-    # Setup Logging
+    # Create additional sets of players to test
+    players_list = [players]
 
-    if not os.path.exists("temp"):
-        os.makedirs("temp")
-    for file in os.listdir("temp"):
-        if file.startswith("match_"):
-            shutil.rmtree(f"temp/{file}")
+    for players_set in players_list:
 
-    # Setup Game
+        # Setup Logging
 
-    match_queue = []
-    results_list = {}
-    match_turns = {}
-    times = []
-    player_turn_times = {}
+        if not os.path.exists("temp"):
+            os.makedirs("temp")
+        for file in os.listdir("temp"):
+            if file.startswith("match_"):
+                shutil.rmtree(f"temp/{file}")
 
-    # Create Match
-    for i in range(CONFIG["number_of_matches"]):
-        players = copy.deepcopy(players)
-        match = game(players, [i + 1, CONFIG["number_of_matches"]])
-        match_queue.append(match)
-        print("Match " + str(i + 1) + " created")
+        print("Clearing logs...")
+        for file in os.listdir("logs/players"):
+            os.remove(os.path.join("logs/players", file))
 
-    # Run Matches
-    for match in match_queue:
-        match_number = str(match_queue.index(match) + 1)
-        print(
-            "Starting Match " + match_number + " of " + str(CONFIG["number_of_matches"])
-        )
-        # Player placement and playing
-        match.initial_placement()
-        match.play()
-        # Get Match results
-        results = match.results
-        results_list[match_number] = results
-        match_turns[match_number] = match.player_num_turns
-        times.append(match.duration)
-        player_turn_times[match_number] = match.turn_time_total
-        print("\nMatch " + match_number + " Results: " + str(results))
-        print("\nTotal Results: " + str(results_list))
+        for player in players_set:
+            if isinstance(player, ai_player):
+                player.make_log_file()
 
-        shutil.copytree("logs", f"temp/match_{match_number}")
+        # Setup Game
 
-        figure = plt.figure()
-        for player in match.players:
-            plt.plot(
-                range(len(match.player_victory_points[player.name])),
-                match.player_victory_points[player.name],
-                label=player.name,
-                color=player.matplotlib_colour,
-                marker="o",
+        match_queue = []
+        results_list = {}
+        match_turns = {}
+        times = []
+        player_turn_times = {}
+
+        players = players_set
+
+        # Create Match
+        for i in range(CONFIG["number_of_matches"]):
+            players = copy.deepcopy(players)
+            match = game(players, [i + 1, CONFIG["number_of_matches"]])
+            match_queue.append(match)
+            print("Match " + str(i + 1) + " created")
+
+        # Run Matches
+        for match in match_queue:
+            match_number = str(match_queue.index(match) + 1)
+            print(
+                "Starting Match "
+                + match_number
+                + " of "
+                + str(CONFIG["number_of_matches"])
             )
-        plt.xlabel("Turn")
-        plt.ylabel("Victory Points")
-        plt.title(f"Match {match_number} - Victory Points")
+            # Player placement and playing
+            match.initial_placement()
+            match.play()
+            # Get Match results
+            results = match.results
+            results_list[match_number] = results
+            match_turns[match_number] = match.player_num_turns
+            times.append(match.duration)
+            player_turn_times[match_number] = match.turn_time_total
+            print("\nMatch " + match_number + " Results: " + str(results))
+            print("\nTotal Results: " + str(results_list))
 
-        ax = plt.gca()
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+            shutil.copytree("logs", f"temp/match_{match_number}")
 
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys())
+            figure = plt.figure()
+            for player in match.players:
+                plt.plot(
+                    range(len(match.player_victory_points[player.name])),
+                    match.player_victory_points[player.name],
+                    label=player.name,
+                    color=player.matplotlib_colour,
+                    marker=" ",
+                )
+            plt.xlabel("Turn")
+            plt.ylabel("Victory Points")
+            plt.title(f"Match {match_number} - Victory Points")
 
-        plt.savefig(f"temp/match_{match_number}/victory_points.png")
+            ax = plt.gca()
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
-        time.sleep(3)
+            handles, labels = plt.gca().get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            plt.legend(by_label.values(), by_label.keys())
 
-    player_data = []
+            plt.savefig(f"temp/match_{match_number}/victory_points.png")
 
-    # Summarise all the data for each game for stats
-    # Summarises a match's results for a player, and then appends that round to the players overall scores
-    for player in players:
-        data = []
-        total_points, total_wins = 0, 0
-        # Check whether a player has the highest score, meaning they won that game
-        for results in results_list.values():
-            total_points += results[player.name]
-            highest_score = max(results.values())
-            if results[player.name] == highest_score:
-                total_wins += 1
+            time.sleep(3)
 
-        # Append each data type
-        data.append(
-            player.name
-            + " ("
-            + (player.strategy if isinstance(player, ai_player) else "")
-            + ")"
-        )
-        data.append(str(round(total_wins / CONFIG["number_of_matches"] * 100, 2)) + "%")
-        data.append(round(total_points / CONFIG["number_of_matches"], 2))
+        player_data = []
 
-        total_time = 0
-        for time in player_turn_times.values():
-            total_time += time[player.name]
-
-        # Calculate the average number of turns it takes to win
-        # If the player didn't win, calculate the average number of turns it would take to win at that pace
-        # Also Calculates the average turn time, as both require iterating over the turn maps
-        rounds_to_win = []
-
-        total_player_turns = 0
-        for mt, results in zip(match_turns.values(), results_list.values()):
-            num_turns = int(mt[player.name])
-            result = results[player.name]
-            if result >= CONFIG["target_score"]:
-                rounds_to_win.append(num_turns)
-            else:
-                progress = (num_turns / result) * (CONFIG["target_score"])
-                rounds_to_win.append(progress)
-            total_player_turns += num_turns
-        average_time = round(total_time / total_player_turns, 2)
-
-        data.append(round(sum(rounds_to_win) / len(rounds_to_win), 3))
-
-        data.append(str(average_time) + "s")
-
-        # Append that player's data for that match into the overall list
-        player_data.append(data)
-
-    # Sort the data based on player number
-    player_data.sort(key=lambda x: (x[1]), reverse=True)
-
-    for person in player_data:
-        person[1] = f"{person[1]}%"
-        person[2] = f"{person[2]:.2f}"
-        person[3] = f"{person[3]:.3f}"
-        person[4] = f"{person[4]}"
-
-    time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-
-    # Print data using tabulate to format it nicely
-    print("\nFinal Results: \n")
-    tabbed_data = tabulate(
-        player_data,
-        headers=[
-            "Player",
-            "Win Rate",
-            "Avg Victory Points",
-            "Avg Turns to Win",
-            "Avg Turn Time",
-        ],
-        tablefmt="simple_grid",
-    )
-    print(tabbed_data)
-
-    average_time = sum(times) / len(times)
-    average_time = round(average_time / 60, 2)
-    print("\nAverage Time per Match: " + str(average_time) + " minutes\n")
-
-    # Save the data to a file
-    if not os.path.exists("games"):
-        os.mkdir("games")
-
-    shutil.copytree("temp", "games/" + time)
-
-    with open("games/" + time + "/results.txt", "w+") as file:
-        file.write(tabbed_data)
-
-    # No point showing graphs for less than one match
-    if CONFIG["number_of_matches"] > 1:
-
-        # Also add graph that shows the cumulative scores over time
-        # Compare it to the average needed to win 50% of games
-        # Should be a good comparison of how well the AIs are doing
-
-        fig, ax = plt.subplots(1, 2, figsize=(13, 7))
-        ax1, ax2 = ax.flatten()
-
-        # Victory Points Per Match
-        ax1.plot(
-            [0, CONFIG["number_of_matches"]],
-            [CONFIG["target_score"], CONFIG["target_score"]],
-            label="Win Threshold",
-            linestyle="--",
-            color="red",
-        )
-
-        # Plot each player's scores
+        # Summarise all the data for each game for stats
+        # Summarises a match's results for a player, and then appends that round to the players overall scores
         for player in players:
-            ax1.plot(
-                list(results_list.keys()),
-                [results[player.name] for results in results_list.values()],
-                label=(
-                    player.name
-                    + " ("
-                    + (player.strategy if isinstance(player, ai_player) else "")
-                    + ")"
-                ),
-                color=player.matplotlib_colour,
-                marker="x",
-            )
-
-        # Add labels
-        ax1.set_xlabel("Match No.")
-        ax1.set_ylabel("Victory Points")
-        ax1.set_title("Victory Points Per Match")
-
-        # Plot cumulative scores over time
-
-        # Create a list of cumulative scores by adding and appending the values
-        for player in players:
-            cumulative_score = 0
-            cumulative_scores = []
+            data = []
+            total_points, total_wins = 0, 0
+            # Check whether a player has the highest score, meaning they won that game
             for results in results_list.values():
-                cumulative_score += results[player.name]
-                cumulative_scores.append(cumulative_score)
+                total_points += results[player.name]
+                highest_score = max(results.values())
+                if results[player.name] == highest_score:
+                    total_wins += 1
 
-            # Plot the players cumulative scores
-            ax2.plot(
-                list(results_list.keys()),
-                cumulative_scores,
-                label=(
-                    player.name
-                    + " ("
-                    + (player.strategy if isinstance(player, ai_player) else "")
-                    + ")"
-                ),
-                color=player.matplotlib_colour,
-                marker="x",
+            # Append each data type
+            data.append(
+                player.name
+                + " ("
+                + (player.strategy if isinstance(player, ai_player) else "")
+                + ")"
             )
-
-        # Add labels
-        ax2.set_xlabel("Match No.")
-        ax2.set_ylabel("Cumulative Victory Points")
-        ax2.set_title("Cumulative V.P. Per Match")
-
-        # Shared axis management:
-        for ax in [ax1, ax2]:
-            ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
-            ax.xaxis.set_major_locator(
-                plt.MaxNLocator(min(CONFIG["number_of_matches"], 10))
+            data.append(
+                str(round(total_wins / CONFIG["number_of_matches"] * 100, 2)) + "%"
             )
-            # order legend by player number
-            handles, labels = ax.get_legend_handles_labels()
-            handles, labels = zip(*sorted(zip(handles, labels), key=lambda t: t[1]))
-            ax.legend(handles, labels)
+            data.append(round(total_points / CONFIG["number_of_matches"], 2))
 
-        # Add title
-        fig.suptitle(
-            "Results of " + str(CONFIG["number_of_matches"]) + " Matches at " + time
+            total_time = 0
+            for time__ in player_turn_times.values():
+                total_time += time__[player.name]
+
+            # Calculate the average number of turns it takes to win
+            # If the player didn't win, calculate the average number of turns it would take to win at that pace
+            # Also Calculates the average turn time, as both require iterating over the turn maps
+            rounds_to_win = []
+
+            total_player_turns = 0
+            for mt, results in zip(match_turns.values(), results_list.values()):
+                num_turns = int(mt[player.name])
+                result = results[player.name]
+                if result >= CONFIG["target_score"]:
+                    rounds_to_win.append(num_turns)
+                else:
+                    progress = (num_turns / result) * (CONFIG["target_score"])
+                    rounds_to_win.append(progress)
+                total_player_turns += num_turns
+            average_time = round(total_time / total_player_turns, 2)
+
+            data.append(round(sum(rounds_to_win) / len(rounds_to_win), 3))
+
+            data.append(str(average_time) + "s")
+
+            # Append that player's data for that match into the overall list
+            player_data.append(data)
+
+        # Sort the data based on player number
+        player_data.sort(key=lambda x: (x[1]), reverse=True)
+
+        for person in player_data:
+            person[1] = f"{person[1]}"
+            person[2] = f"{person[2]:.2f}"
+            person[3] = f"{person[3]:.3f}"
+            person[4] = f"{person[4]}"
+
+        time_ = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+
+        # Print data using tabulate to format it nicely
+        print("\nFinal Results: \n")
+        tabbed_data = tabulate(
+            player_data,
+            headers=[
+                "Player",
+                "Win Rate",
+                "Avg Victory Points",
+                "Avg Turns to Win",
+                "Avg Turn Time",
+            ],
+            tablefmt="simple_grid",
         )
+        print(tabbed_data)
 
+        average_time = sum(times) / len(times)
+        average_time = round(average_time / 60, 2)
+        print("\nAverage Time per Match: " + str(average_time) + " minutes\n")
+
+        # Save the data to a file
         if not os.path.exists("games"):
             os.mkdir("games")
-        if not os.path.exists(f"games/{time}"):
-            os.mkdir(f"games/{time}")
 
-        # Save figure
-        plt.savefig(f"games/{time}/vp_matches.png")
+        shutil.copytree("temp", "games/" + time_)
 
-        shutil.rmtree("temp")
+        with open("games/" + time_ + "/results.txt", "w+") as file:
+            file.write(tabbed_data)
 
-        # Show it
-        plt.show()
+        # No point showing graphs for less than one match
+        if CONFIG["number_of_matches"] > 1:
 
-    else:
+            # Also add graph that shows the cumulative scores over time
+            # Compare it to the average needed to win 50% of games
+            # Should be a good comparison of how well the AIs are doing
 
-        print("\nNot enough matches to plot results")
+            fig, ax = plt.subplots(1, 2, figsize=(13, 7))
+            ax1, ax2 = ax.flatten()
+
+            # Victory Points Per Match
+            ax1.plot(
+                [0, CONFIG["number_of_matches"]],
+                [CONFIG["target_score"], CONFIG["target_score"]],
+                label="Win Threshold",
+                linestyle="--",
+                color="red",
+            )
+
+            # Plot each player's scores
+            for player in players:
+                ax1.plot(
+                    list(results_list.keys()),
+                    [results[player.name] for results in results_list.values()],
+                    label=(
+                        player.name
+                        + " ("
+                        + (player.strategy if isinstance(player, ai_player) else "")
+                        + ")"
+                    ),
+                    color=player.matplotlib_colour,
+                    marker="x",
+                )
+
+            # Add labels
+            ax1.set_xlabel("Match No.")
+            ax1.set_ylabel("Victory Points")
+            ax1.set_title("Victory Points Per Match")
+
+            # Plot cumulative scores over time
+
+            # Create a list of cumulative scores by adding and appending the values
+            for player in players:
+                cumulative_score = 0
+                cumulative_scores = []
+                for results in results_list.values():
+                    cumulative_score += results[player.name]
+                    cumulative_scores.append(cumulative_score)
+
+                # Plot the players cumulative scores
+                ax2.plot(
+                    list(results_list.keys()),
+                    cumulative_scores,
+                    label=(
+                        player.name
+                        + " ("
+                        + (player.strategy if isinstance(player, ai_player) else "")
+                        + ")"
+                    ),
+                    color=player.matplotlib_colour,
+                    marker="x",
+                )
+
+            # Add labels
+            ax2.set_xlabel("Match No.")
+            ax2.set_ylabel("Cumulative Victory Points")
+            ax2.set_title("Cumulative V.P. Per Match")
+
+            # Shared axis management:
+            for ax in [ax1, ax2]:
+                ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
+                ax.xaxis.set_major_locator(
+                    plt.MaxNLocator(min(CONFIG["number_of_matches"], 10))
+                )
+                # order legend by player number
+                handles, labels = ax.get_legend_handles_labels()
+                handles, labels = zip(*sorted(zip(handles, labels), key=lambda t: t[1]))
+                ax.legend(handles, labels)
+
+            # Add title
+            fig.suptitle(
+                "Results of "
+                + str(CONFIG["number_of_matches"])
+                + " Matches at "
+                + time_
+            )
+
+            if not os.path.exists("games"):
+                os.mkdir("games")
+            if not os.path.exists(f"games/{time_}"):
+                os.mkdir(f"games/{time_}")
+
+            # Save figure
+            plt.savefig(f"games/{time_}/vp_matches.png")
+
+            shutil.rmtree("temp")
+
+            # Show it
+            plt.show()
+
+        else:
+
+            print("\nNot enough matches to plot results")

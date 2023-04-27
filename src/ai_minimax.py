@@ -117,7 +117,6 @@ class ai_minimax(ai_player):
         elif move[0] == "trade with player":
             # Cannot suppose that the other player will trade with us, so don't trade if this is the case
             # We will assume that the opposing player always trades with us
-            # TODO Currently does this actually trade?
             if move[1] == self.number:
                 interface_clone.trade_with_player(
                     player_clone, move[2], move[3], move[4]
@@ -260,11 +259,7 @@ class ai_minimax(ai_player):
 
         # Check for how long the longest road is
 
-        player_roads = []
-        for road in interface.get_roads_list():
-            if interface.get_roads_list()[road]["player"] is not None:
-                if interface.get_roads_list()[road]["player"] == self:
-                    player_roads.append(road)
+        player_roads = interface.get_player_roads(self)
 
         if player_roads:
 
@@ -276,6 +271,7 @@ class ai_minimax(ai_player):
                     + [road[1] for road in player_roads]
                 )
             )
+
             for road in road_endings:
                 if buildings_list[
                     road
@@ -297,6 +293,7 @@ class ai_minimax(ai_player):
             stats_map["longest_continuous_road"] = longest_route
 
         stats_map["development_cards"] = self.development_cards
+        stats_map["total_dev_cards_played"] = self.total_dev_cards_played
 
         # Distance Between Settlements
         settlements = stats_map["settlements"]
@@ -315,8 +312,22 @@ class ai_minimax(ai_player):
                 distances
             )
 
+        # Number of settlements connected
+        count = 0
+        for settlement in settlements:
+            for other_settlement in settlements:
+                if other_settlement != settlement:
+                    if interface.are_nodes_connected(
+                        settlement, other_settlement, self
+                    ):
+                        count += 1
+        stats_map["number_of_connected_settlements"] = count
+
+        stats_map["robber_location"] = interface.get_robber_location()
+
         default = HMDefault()
-        score, mod_map = default(interface, stats_map, {})
+        mod_map = default(interface, stats_map, {})
+        score = sum(mod_map.values())
         for modifier in self.heuristic_modifiers:
             mod_map = modifier(interface, stats_map, mod_map)
             score = sum(mod_map.values())
@@ -817,13 +828,15 @@ class ai_minimax(ai_player):
                             player_clone = copy.deepcopy(self)
 
                             if self.wishful_thinking:
-                                for card in self.has_access_to(interface_clone):
-                                    for _ in range(
-                                        math.floor(
-                                            len(interface_clone.get_players_list()) / 2
-                                        )
-                                    ):
-                                        player_clone.resources.append(card)
+                                if player_clone.number == self.number:
+                                    for card in self.has_access_to(interface_clone):
+                                        for _ in range(
+                                            math.floor(
+                                                len(interface_clone.get_players_list())
+                                                / 2
+                                            )
+                                        ):
+                                            player_clone.resources.append(card)
 
                             # Perform the move
                             interface_clone = self.perform_minimax_move(
@@ -862,11 +875,14 @@ class ai_minimax(ai_player):
                     # and therefore the ability to perform a move
 
                     if self.wishful_thinking:
-                        for card in self.has_access_to(interface_clone):
-                            for _ in range(
-                                math.floor(len(interface_clone.get_players_list()) / 2)
-                            ):
-                                player_clone.resources.append(card)
+                        if player_clone.number == self.number:
+                            for card in self.has_access_to(interface_clone):
+                                for _ in range(
+                                    math.floor(
+                                        len(interface_clone.get_players_list()) / 2
+                                    )
+                                ):
+                                    player_clone.resources.append(card)
 
                     # Perform the move
                     interface_clone = self.perform_minimax_move(
@@ -996,7 +1012,40 @@ class ai_minimax(ai_player):
                 best_moves.append(move[0])
         print("Best moves: ", best_moves)
 
-        best_move_from_minimax = [random.choice(best_moves), highest_score]
+        # Add slight priority to moves that build cities/settlements and then roads
+        best_move_from_minimax = None
+        for move in best_moves:
+            if move[0] == "build city":
+                best_move_from_minimax = [
+                    move for move in best_moves if move[0] == "build city"
+                ]
+                best_move_from_minimax = [
+                    random.choice(best_move_from_minimax),
+                    highest_score,
+                ]
+                break
+        for move in best_moves:
+            if move[0] == "build settlement":
+                best_move_from_minimax = [
+                    move for move in best_moves if move[0] == "build settlement"
+                ]
+                best_move_from_minimax = [
+                    random.choice(best_move_from_minimax),
+                    highest_score,
+                ]
+                break
+        for move in best_moves:
+            if move[0] == "build road":
+                best_move_from_minimax = [
+                    move for move in best_moves if move[0] == "build road"
+                ]
+                best_move_from_minimax = [
+                    random.choice(best_move_from_minimax),
+                    highest_score,
+                ]
+                break
+        if not best_move_from_minimax:
+            best_move_from_minimax = [random.choice(best_moves), highest_score]
         best_move_from_minimax = {
             "move": best_move_from_minimax[0],
             "score": best_move_from_minimax[1],

@@ -324,6 +324,19 @@ class board_interface:
                         count += 1
         return count
 
+    def get_player_roads(self, player_):
+        """
+        Gets all the roads of a player
+        :param player_: The player to check
+        :return: A list of all the roads the player has
+        """
+        roads = []
+        for road in self.get_roads_list():
+            if self.get_roads_list()[road]["player"] is not None:
+                if self.get_roads_list()[road]["player"].number == player_.number:
+                    roads.append(road)
+        return roads
+
     def check_for_nearby_settlements(self, position) -> bool:
         """
         Checks if there are any settlements or cities within 1 hex of the given coordinates.
@@ -351,8 +364,8 @@ class board_interface:
         # https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 
         # Initialize the distances to be infinite
-        nodes = self.board._buildings.keys()
-        edges = self.board._roads.keys()
+        nodes = self.get_buildings_list().keys()
+        edges = self.get_roads_list().keys()
         distances = {}
         previous = {}
         for node in nodes:
@@ -378,6 +391,25 @@ class board_interface:
                             distances[neighbour] = alt
                             previous[neighbour] = current
         return distances[node2]
+
+    def are_nodes_connected(self, node1, node2, player_):
+        """
+        Returns whether a player has a path between two nodes
+        :param node1:
+        :param node2:
+        :param player_:
+        :return: Bool
+        """
+        clusters = return_clusters(self.get_player_roads(player_))
+        found_1, found_2 = False, False
+        for cluster in clusters:
+            found_1, found_2 = False, False
+            for road in cluster:
+                if node1 == road[0] or node1 == road[1]:
+                    found_1 = True
+                if node2 == road[0] or node2 == road[1]:
+                    found_2 = True
+        return found_1 and found_2
 
     def verify_game_integrity(self) -> None:
         """
@@ -1121,6 +1153,7 @@ class board_interface:
         # Log the action if not in minimax mode, and set the player's played dev card flag to true
         if not self.minimax_mode:
             player_.has_played_dev_card_this_turn = True
+            player_.total_dev_cards_played += 1
 
     # Turn Actions and Processing a Roll ---------------------------------------------------------
 
