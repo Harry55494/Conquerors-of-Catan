@@ -15,7 +15,8 @@ import termcolor
 from tabulate import tabulate
 
 # import json_fix
-from src.CONFIG import CONFIG
+from CONFIG import CONFIG
+
 
 # Exception to be raised when a player ends their turn
 # This is a hack to break out of the loop in the game class
@@ -157,8 +158,14 @@ class player:
             print("")
         else:
             print("")
-        if self.development_cards.count("soldier") > 0 and self.played_robber_cards > 0:
-            print(f"You have played {self.played_robber_cards} of your soldier cards")
+        if type_ == "development":
+            if (
+                self.development_cards.count("soldier") > 0
+                and self.played_robber_cards > 0
+            ):
+                print(
+                    f"You have played {self.played_robber_cards} of your soldier cards"
+                )
         self.resources.sort()
         self.development_cards.sort()
 
@@ -224,7 +231,9 @@ class player:
 
     # Placing Roads and Settlements ------------------------------------------------
 
-    def choose_placement_location(self, interface, type_="settlement") -> str:
+    def choose_placement_location(
+        self, interface, type_="settlement", initial_setup=False
+    ) -> str:
         """
         Chooses a place on the board to place a settlement or city
         :param interface:
@@ -245,7 +254,7 @@ class player:
             )
             # Make the location lowercase and split it into a list, then sort it to make it easier to check
             if location.lower() == "cancel":
-                return "cancelled"
+                return "cancel"
             letters = location.lower()
             if "," in location:
                 letters = location.split(",")
@@ -255,19 +264,12 @@ class player:
                 letters.sort()
                 location = ",".join(letters)
 
-            # Check if the location is valid and not already occupied
-            if location in interface.get_buildings_list():
-                if (
-                    interface.get_buildings_list()[location]["player"] is None
-                    or interface.get_buildings_list()[location]["player"] == self
-                    and type_ == "city"
-                ) and not interface.check_for_nearby_settlements(location):
-                    # If the location is valid and not already occupied, accept it
-                    accepted = True
-                else:
-                    print("That location is already occupied!")
+            if location not in interface.get_potential_building_locations(
+                self, type_, initial_setup
+            ):
+                print(f"{location} is not a valid location!")
             else:
-                print("That is not a valid location!")
+                accepted = True
 
         # Return the location for whatever is calling this function
         return location
@@ -317,7 +319,7 @@ class player:
                 )
 
                 if location.lower() == "cancel":
-                    return "cancelled"
+                    return "cancel"
 
                 # Make the location lowercase and split it into a list, then sort it to make it easier to check
                 letters = location.lower()
@@ -356,7 +358,9 @@ class player:
         :param interface: The interface, so that the board can be printed
         :return: The location of the first settlement
         """
-        building = self.choose_placement_location(interface, "settlement")
+        building = self.choose_placement_location(
+            interface, "settlement", initial_setup=True
+        )
         interface.place_settlement(self, building, True)
         interface.place_road(self, self.choose_road_location(interface, building, True))
         return building
@@ -552,6 +556,68 @@ class player:
         else:
             print("You do not have enough of a resource to trade with the bank")
 
+    def trade_with_port(self, interface):
+        """
+        Allows the player to trade with a port
+        :param interface: The interface object
+        :return: The resource the player wants to trade
+        """
+
+        ports = []
+        for port in interface.get_ports_list():
+            if interface.get_ports_list()[port] is not None:
+                if interface.get_ports_list()[port]["player"] is not None:
+                    if interface.get_ports_list()[port]["player"].number == self.number:
+                        resource = interface.get_ports_list()[port]["resource"]
+                        if resource == "any" and "3:1 Port" not in ports:
+                            ports.append("3:1 Port")
+                        else:
+                            ports.append(f"{resource} Port")
+
+        if len(ports) > 0:
+            print("You have access to the following ports:")
+            for i, port in enumerate(ports):
+                print(f"{i + 1}: {port}")
+            while True:
+                port = input("Which number port would you like to trade with?\n")
+                try:
+                    port = int(port)
+                    if port not in range(1, len(ports) + 1):
+                        raise ValueError
+                    break
+                except ValueError:
+                    print("Please enter a valid number")
+            port = ports[port - 1]
+        else:
+            print("You do not have access to any ports")
+            return
+
+        could_trade_with = []
+        if port == "3:1 Port":
+            for resource in ["wood", "clay", "sheep", "wheat", "rock"]:
+                if self.resources.count(resource) >= 3:
+                    could_trade_with.append(resource)
+            print("You can trade 3 of any resource for 1 of any other resource")
+            print("You have enough of the following resources to trade:")
+            for i, resource in enumerate(could_trade_with):
+                print(f"{i + 1}: {resource}")
+            resource = input("Which resource would you like to trade?\n")
+            while resource not in could_trade_with:
+                resource = input("Which resource would you like to trade?\n")
+        else:
+            resource = port.split(" ")[0]
+            if self.resources.count(resource) >= 2:
+                could_trade_with.append(resource)
+            else:
+                print("You do not have enough of the required resource")
+                time.sleep(3)
+                return
+
+        trade_for = ""
+        while trade_for not in ["wood", "clay", "sheep", "wheat", "rock"]:
+            trade_for = input("What resource would you like to trade for?\n")
+        interface.trade_with_port(self, resource, trade_for)
+
     def offer_trade(self, interface):
         """
         Allows the player to offer a trade to another player
@@ -562,10 +628,19 @@ class player:
         other_players = [
             player for player in interface.get_players_list() if player != self
         ]
-        print("Which player would you like to trade with?")
-        for i, player in enumerate(other_players):
-            print(f"{i + 1}: {player}")
-        player_to_trade_with = other_players[int(input()) - 1]
+        player_nums = [int(player_item.number) for player_item in other_players]
+        accepted = False
+        for player_item in other_players:
+            print(f"{player_item.number}: {player_item.coloured_name}")
+        while not accepted:
+            choice = input("Which player would you like to offer a trade to?\n")
+            if choice.isdigit() and int(choice) in player_nums:
+                accepted = True
+                for player_ in other_players:
+                    if player_.number == int(choice):
+                        player_to_trade_with = player_
+            else:
+                print("Invalid choice")
         # Get the resource to trade for
         while True:
             print("What resource would you like to gain from the trade?")
@@ -648,6 +723,7 @@ class player:
                         "What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n"
                     )
                 args.append(res_type)
+                interface.play_development_card(self, card, args[0])
             elif card == "year of plenty":
                 for i in range(2):
                     res_type = input(
@@ -658,8 +734,7 @@ class player:
                             "What resource would you like to monopolise?\nwood, clay, sheep, wheat, ore\n"
                         )
                     args.append(res_type)
-            # Play the card
-            interface.play_development_card(self, card, args)
+                interface.play_development_card(self, card, args[0], args[1])
         else:
             print("You have no development cards")
 
@@ -690,18 +765,6 @@ class player:
             action = int(input("Please enter a valid action\n"))
         action = number_move_pairings[str(action)].lower()
 
-        # if they took longer than 60 seconds, print hello
-        if time.time() - start_time > 60:
-            print(
-                random.choice(
-                    [
-                        "Wow! You sure took a while to make that decision!",
-                        "I'm not sure what you're doing, but it took a while",
-                        "Erm... are you okay? You took a while to make that decision",
-                    ]
-                )
-            )
-
         # Switch on the action
         if action == "view building cost list":
             buildings = []
@@ -717,6 +780,7 @@ class player:
                     tablefmt="grid",
                 )
             )
+            await_user_input()
         elif action == "build settlement":
             location = self.choose_placement_location(interface, "settlement")
             if location == "cancel":
@@ -739,16 +803,13 @@ class player:
         # If the player bought a development card, buy it
         elif action == "buy development card":
             interface.buy_development_card(self)
-        elif action in ["trade with bank"]:
+        elif action == "trade with bank":
             self.trade_with_bank(interface)
+        elif action == "trade with port":
+            self.trade_with_port(interface)
         elif action == "trade with player":
             self.offer_trade(interface)
-        elif action in [
-            "play development card",
-            "development card",
-            "play dev card",
-            "dev card",
-        ]:
+        elif action == "play development card":
             self.play_development_card(interface)
         elif action == "end turn":
             # If the player ends their turn, raise an exception to end the turn
@@ -756,3 +817,4 @@ class player:
         else:
             # If the player enters an invalid action, print an error message and loop
             print(f"{action} is not a valid action")
+            time.sleep(3)

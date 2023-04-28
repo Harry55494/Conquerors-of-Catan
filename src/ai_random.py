@@ -10,7 +10,7 @@ import random
 import time
 from typing import Any
 
-from src.ai_player import *
+from ai_player import *
 
 
 class ai_random(ai_player):

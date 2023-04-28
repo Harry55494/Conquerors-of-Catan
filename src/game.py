@@ -3,9 +3,9 @@ Game class, for setting up and running a game
 
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
-
-from src.board_interface import *
-from src.player import player, endOfTurnException
+import src
+from board_interface import *
+from player import player, endOfTurnException
 
 
 class game:
@@ -39,6 +39,10 @@ class game:
 
         # Game Checking
         if CONFIG["table_top_mode"]:
+            if self.all_players_ai:
+                raise self.setupError(
+                    "Table top mode is not compatible with a game featuring only AI players"
+                )
             print("Table top mode is enabled")
             print("An acknowledgement will be required to continue each turn")
 
@@ -101,11 +105,10 @@ class game:
         # Perform the setup checking
         self.setup_checking()
 
-        if not self.all_players_ai:
+        if not self.all_players_ai and CONFIG["table_top_mode"]:
             while True:
                 usernames = input("Would you like to give the players nicknames? y/n\n")
                 if usernames == "y":
-
                     for player in self.players:
                         if not isinstance(player, ai_player):
                             while True:
@@ -229,7 +232,7 @@ class game:
 
                     # If the player is an AI, the dice roll is automatically generated
                     # If the player is a human, the dice roll is done after a keypress
-                    if player_.__class__ == src.player.player:
+                    if not isinstance(player_, ai_player):
                         input("Press enter to roll the dice")
                         print("\033[F", end="")
                         two_dice = roll_dice()
@@ -293,7 +296,7 @@ class game:
                             isinstance(player_, ai_random)
                             and not self.interface.all_players_ai
                         ):
-                            print(f"{player_.name} is thinking...")
+                            print(f"{player_} is thinking...")
                             time.sleep(random.uniform(0.5, 1.5))
 
                         player_.turn_actions(self.interface)
@@ -329,7 +332,10 @@ class game:
                 # End of turn waiting
                 if not CONFIG["table_top_mode"]:
                     if self.interface.all_players_ai:
-                        time.sleep(0.15)
+                        if CONFIG["presentation_mode"]:
+                            time.sleep(0.5)
+                        else:
+                            time.sleep(0.15)
                     else:
                         await_user_input()
 

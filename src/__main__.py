@@ -16,7 +16,7 @@ import signal
 
 from matplotlib.ticker import MaxNLocator
 
-from src.game import *
+from game import *
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -53,10 +53,15 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        ai_random(1, "red"),
-        ai_random(3, "blue"),
+        player(1, "blue"),
         ai_random(4, "green"),
-        ai_minimax(2, "yellow", wishful_thinking=True, heuristic_modifiers=[]),
+        ai_random(3, "red"),
+        ai_minimax(
+            2,
+            "yellow",
+            wishful_thinking=True,
+            heuristic_modifiers=[HMDevelopmentCardSpam()],
+        ),
     ]
 
     # If the user has specified the "--no-menu" argument, skip the menu
@@ -89,6 +94,11 @@ if __name__ == "__main__":
             print("2. Configure Players")
             print("3. Configure Game Options")
             print("4. Exit")
+            if all(isinstance(player, ai_player) for player in players):
+                print(
+                    "\n! - All players are AI players. The game will be for observation purposes only.\n"
+                    "    This can be changed in the player configuration menu.\n"
+                )
 
             # Get the user's choice
             try:
@@ -137,6 +147,9 @@ if __name__ == "__main__":
                                     time.sleep(2)
                                     continue
 
+                                modifiers_to_add = []
+                                wt = True
+
                                 # Choose the type of AI to add
                                 potential_player = ["human", "random", "minimax"]
                                 print("Please choose the number of a player to add:")
@@ -144,11 +157,60 @@ if __name__ == "__main__":
                                     print(str(i + 1) + ". " + ai)
                                 player_choice = int(input(""))
                                 if player_choice == 1:
-                                    ai = src.player.player
+                                    ai = player.player
                                 elif player_choice == 2:
                                     ai = ai_random
                                 elif player_choice == 3:
                                     ai = ai_minimax
+
+                                    modifiers = [
+                                        HMEarlyExpansion(),
+                                        HMIgnorePorts(),
+                                        HMDevelopmentCardSpam(),
+                                        HMFavourResources(),
+                                    ]
+                                    print(
+                                        "Please choose the number of a heuristic modifier to add, or type 'done' when you are happy with your selection:"
+                                    )
+                                    print(
+                                        "You can also type 'WT' to toggle wishful thinking"
+                                    )
+                                    for i, modifier in enumerate(modifiers):
+                                        print(str(i + 1) + ". " + modifier.name)
+                                    while True:
+                                        print(
+                                            "Current modifiers: ["
+                                            + ", ".join(
+                                                [
+                                                    modifier.name
+                                                    for modifier in modifiers_to_add
+                                                ]
+                                                + ["WT" if wt else ""]
+                                            )
+                                            + "]"
+                                        )
+                                        mod = input()
+                                        if mod.lower() == "done":
+                                            break
+                                        elif mod.lower() == "WT":
+                                            wt = not wt
+                                            print(
+                                                "Wishful thinking is now "
+                                                + ("on" if wt else "off")
+                                            )
+                                        else:
+                                            try:
+                                                modifier = modifiers[int(mod) - 1]
+                                                if modifier in modifiers_to_add:
+                                                    print("Removing modifier")
+                                                    modifiers_to_add.remove(modifier)
+                                                else:
+                                                    print("Adding modifier")
+                                                    modifiers_to_add.append(modifier)
+                                            except:
+                                                print("Invalid input")
+                                                continue
+
                                 else:
                                     raise ValueError
 
@@ -165,12 +227,22 @@ if __name__ == "__main__":
                                     available_colours.remove(colour)
 
                                 # Create the AI and append it to the list
-                                players.append(
-                                    ai(
-                                        len(players) + 1,
-                                        random.choice(available_colours),
+                                if player_choice != 3:
+                                    players.append(
+                                        ai(
+                                            len(players) + 1,
+                                            random.choice(available_colours),
+                                        )
                                     )
-                                )
+
+                                else:
+                                    players.append(
+                                        ai(
+                                            len(players) + 1,
+                                            random.choice(available_colours),
+                                            heuristic_modifiers=modifiers_to_add,
+                                        )
+                                    )
 
                             elif answer == str(len(players) + 2):
                                 break
@@ -368,8 +440,13 @@ if __name__ == "__main__":
                 time.sleep(1)
                 continue
 
-    # Create additional sets of players to test
     players_list = [players]
+    if "--no-menu" in sys.argv:
+        # Create additional sets of players to test
+        # players_list.extend(...)
+        pass
+    else:
+        players_list = [players]
 
     for players_set in players_list:
 
@@ -452,7 +529,13 @@ if __name__ == "__main__":
 
             plt.savefig(f"temp/match_{match_number}/victory_points.png")
 
-            time.sleep(3)
+            if CONFIG["presentation_mode"]:
+                print(f"Next match in 15 ... ", end="")
+                for i in range(14, 0, -1):
+                    time.sleep(1)
+                    print(f"{i} ... ", end="")
+            else:
+                time.sleep(3) if not CONFIG["presentation_mode"] else time.sleep(15)
 
         player_data = []
 

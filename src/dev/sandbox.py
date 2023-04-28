@@ -1,7 +1,7 @@
 import copy
 import timeit
 
-from src.game import *
+from game import *
 
 if not os.path.exists("logs"):
     print("Setting up logging...")

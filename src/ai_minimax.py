@@ -9,10 +9,12 @@ from concurrent.futures import ProcessPoolExecutor
 import math
 import multiprocessing
 from datetime import datetime, timedelta
-from src.longest_road import *
+from typing import Any
 
-from src.ai_player import *
-from src.heuristic_modifiers import *
+from longest_road import *
+
+from ai_player import *
+from heuristic_modifiers import *
 
 import time
 
@@ -33,7 +35,7 @@ class ai_minimax(ai_player):
         time_limit=CONFIG["minimax_time_limit"],
         max_depth=CONFIG["minimax_max_depth"],
         epsilon_pruning_level=CONFIG["epsilon_pruning_level"],
-        wishful_thinking=False,
+        wishful_thinking=True,
         heuristic_modifiers=None,
     ) -> None:
         """
@@ -337,7 +339,7 @@ class ai_minimax(ai_player):
 
         return score
 
-    def choose_road_location(self, interface) -> tuple[int, int]:
+    def choose_road_location(self, interface) -> Any | None:
         """
         Chooses the location of a road to be built
         :param interface:
@@ -358,6 +360,9 @@ class ai_minimax(ai_player):
             score_map[location] = self.evaluate_board(interface_copy)
 
         self.log("Potential Roads Score Map: " + str(score_map))
+
+        if not score_map:
+            return None
 
         # Return the location with the highest score
         return max(score_map, key=score_map.get)
@@ -443,11 +448,11 @@ class ai_minimax(ai_player):
             return None
         # If there is only one player with resources, steal from them
         if len(potential_players) == 1:
-            interface.steal_from_player(self, potential_players[0])
+            interface.steal_from_player(potential_players[0], self)
         # If there are multiple players with resources, steal from the player with the most resources
         else:
             interface.steal_from_player(
-                self, max(potential_players, key=lambda x: len(x.resources))
+                max(potential_players, key=lambda x: len(x.resources)), self
             )
 
     def robber_discard(self, interface) -> None:
@@ -975,7 +980,7 @@ class ai_minimax(ai_player):
         :return: The move to be made
         """
 
-        print(self.name + " is thinking...")
+        print(self, " is thinking...")
         # Log that the minimax search has begun
         self.log(
             "\n\n$!\n\nBeginning minimax search on turn " + str(interface.turn_number)
@@ -1010,39 +1015,22 @@ class ai_minimax(ai_player):
         for move in self.root_score_map:
             if move[1] == highest_score:
                 best_moves.append(move[0])
-        print("Best moves: ", best_moves)
+        # print("Best moves: ", best_moves)
 
         # Add slight priority to moves that build cities/settlements and then roads
         best_move_from_minimax = None
-        for move in best_moves:
-            if move[0] == "build city":
-                best_move_from_minimax = [
-                    move for move in best_moves if move[0] == "build city"
-                ]
-                best_move_from_minimax = [
-                    random.choice(best_move_from_minimax),
-                    highest_score,
-                ]
-                break
-        for move in best_moves:
-            if move[0] == "build settlement":
-                best_move_from_minimax = [
-                    move for move in best_moves if move[0] == "build settlement"
-                ]
-                best_move_from_minimax = [
-                    random.choice(best_move_from_minimax),
-                    highest_score,
-                ]
-                break
-        for move in best_moves:
-            if move[0] == "build road":
-                best_move_from_minimax = [
-                    move for move in best_moves if move[0] == "build road"
-                ]
-                best_move_from_minimax = [
-                    random.choice(best_move_from_minimax),
-                    highest_score,
-                ]
+        for move_type in CONFIG["move_sort_order"]:
+            for move in best_moves:
+                if move[0] == move_type:
+                    best_move_from_minimax = [
+                        move for move in best_moves if move[0] == move_type
+                    ]
+                    best_move_from_minimax = [
+                        random.choice(best_move_from_minimax),
+                        highest_score,
+                    ]
+                    break
+            if best_move_from_minimax:
                 break
         if not best_move_from_minimax:
             best_move_from_minimax = [random.choice(best_moves), highest_score]
@@ -1051,7 +1039,7 @@ class ai_minimax(ai_player):
             "score": best_move_from_minimax[1],
         }
         # Print and log the best move
-        print("Selected move: ", best_move_from_minimax)
+        print("\nSelected move: ", best_move_from_minimax, "\n")
         self.log(
             "Best move: "
             + str(best_move_from_minimax["move"])

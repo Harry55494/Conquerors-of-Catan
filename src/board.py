@@ -5,11 +5,11 @@ One of the longest files, but mostly just due to the nice spacing of the arrays 
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
 
-import src.ai_minimax
-from src.ai_minimax import *
-from src.ai_random import *
+import ai_minimax
+from ai_minimax import *
+from ai_random import *
 import random
-from src.tile import tile
+from tile import tile
 
 
 def roll_dice():

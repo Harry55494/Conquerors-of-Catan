@@ -6,7 +6,7 @@ import ujson
 import pickle
 import jsonpickle
 
-from src.game import *
+from game import *
 
 players = [
     ai_random(1, "red"),

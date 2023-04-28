@@ -10,8 +10,8 @@ import sys
 
 import logging
 
-from src.player import *
-from src.ports import *
+from player import *
+from ports import *
 
 
 class ai_player(player):

@@ -6,7 +6,7 @@ Prevents direct manipulation of the board object, and discrepancies between diff
 © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
 """
 
-from src.board import *
+from board import *
 
 import logging
 
@@ -290,15 +290,17 @@ class board_interface:
             self.log_action(
                 f"{player_to_give_to.name} stole a {card} from {player_to_steal_from.name}"
             )
-            if CONFIG["table_top_mode"]:
-                print(
-                    f"{player_to_give_to.coloured_name} has stolen a {card} from {player_to_steal_from.coloured_name}"
-                )
+            if not self.all_players_ai:
+                if not self.minimax_mode:
+                    print(
+                        f"{player_to_give_to.coloured_name} has stolen a {card} from {player_to_steal_from.coloured_name}"
+                    )
         else:
             # If the player has no cards, print a message
             # Shouldn't technically happen, but just in case
-            print(f"{player_to_steal_from.name} has no cards to steal")
-            self.log_action(f"{player_to_steal_from.name} has no cards to steal")
+            if not self.minimax_mode:
+                print(f"{player_to_steal_from.name} has no cards to steal")
+                self.log_action(f"{player_to_steal_from.name} has no cards to steal")
 
     def count_structure(self, player_, structure) -> int:
         """
@@ -649,6 +651,7 @@ class board_interface:
         # Check for longest road
 
         for player_ in self.get_players_list():
+            self.log_action(f"Checking for longest road for {player_.name}...")
 
             # Get a list of all the roads the player has
             player_roads = []
@@ -662,6 +665,10 @@ class board_interface:
 
             # If there are no clusters, continue
             if not any(len(cluster) >= 5 for cluster in clusters):
+                self.log_action(
+                    f"No clusters of length 5 or more" f" for {player_.name}"
+                )
+                self.log_action(f"Clusters: {clusters}")
                 continue
 
             # Get the current longest road
@@ -669,6 +676,8 @@ class board_interface:
 
             # Get the length of the longest cluster
             max_cluster = len(find_longest_route(max(clusters, key=len))) - 1
+
+            self.log_action(f"Longest cluster: {max_cluster}")
 
             # If the longest cluster is longer than the current longest road, set it as the new longest road
             if max_cluster > current_longest_road[1] and max_cluster >= 5:
@@ -1050,7 +1059,6 @@ class board_interface:
                     self.log_action(
                         f"{original_player.name} traded {resource_to_give} for {resource_to_get} with {player_to_trade_with.name}"
                     )
-                    return True
                 if not self.all_players_ai:
                     print(
                         f"{original_player.name} traded {resource_to_give} for {resource_to_get} with {player_to_trade_with.name}"
@@ -1067,8 +1075,7 @@ class board_interface:
                     print(
                         f"{player_to_trade_with.name} refused to trade with {original_player.name}"
                     )
-                    if not self.all_players_ai:
-                        await_user_input()
+                    await_user_input()
                 return False
 
         # If the players don't have enough resources to trade, log the action if not in minimax mode
@@ -1123,6 +1130,7 @@ class board_interface:
         elif card == "monopoly":
             res_type = args[0]
 
+            count = 0
             # Get every other player's resources of the type specified
             for other_player in self.get_players_list():
                 if other_player != player_:
@@ -1130,6 +1138,14 @@ class board_interface:
                     while res_type in other_player.resources:
                         self.return_player_card(other_player, res_type)
                         self.give_player_card(player_, "resource", res_type)
+                        count += 1
+            if not self.minimax_mode:
+                self.log_action(
+                    f"{player_.name} played a monopoly card and took {count} {res_type} cards"
+                )
+                print(
+                    f"{player_} played a monopoly card and took {count} {res_type} cards"
+                )
 
         # Play the year of plenty card
         elif card == "year of plenty":
@@ -1333,7 +1349,7 @@ class board_interface:
         if (
             hand["wheat"] >= 2
             and hand["rock"] >= 3
-            and 0 < buildings_count["settlements"] < 4
+            and 0 < buildings_count["settlements"]
         ):
             moves.append("build city")
 
@@ -1435,6 +1451,10 @@ class board_interface:
                 for tile_ in tiles_from_settlement:
                     if not tile_.contains_robber:
                         self.give_player_card(player_, "resource", tile_.resource)
+
+            if not self.all_players_ai and not CONFIG["randomise_starting_locations"]:
+                time.sleep(1)
+                self.print_board()
 
         # Set the setup mode to false and log the actions
         self.setup_mode = False

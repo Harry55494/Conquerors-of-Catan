@@ -31,6 +31,8 @@ CONFIG = {
     # Randomise Starting Locations -
     # If enabled, the starting locations of all players will be randomised
     "randomise_starting_locations": False,
+    # Presentation Mode
+    "presentation_mode": False,
     # MINIMAX CONFIGURATION ---------------------------------------------------
     # Minimax Depth -
     # Depth to which the minimax algorithm will search
