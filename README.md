@@ -4,16 +4,39 @@
 
 ## Introduction
 
-Conquerors of Catan is a final year bachelors project at the University of Essex, aimed at investigating different AI strategies for the board game Settlers of Catan. The project is being developed solely by [Harrison Phillingham](https://harrison.phillingham.com).
+The Settlers of Catan (Settlers) is a classic board game that provides a unique and interesting challenge to modern AI methods, such as those found in AlphaGo. In Settlers, players build and develop roads, settlements and cities on a board of resource tiles, scoring them Victory Points of which they need 10 to win. However, the challenge of making an AI player for this comes from multiple factors, including imperfect information, elements of chance and negotiation, and having more than 2 players. In this project, I aim to first produce a fully-playable command line version of the game, and then create a strong AI player with multiple strategies that can be investigated and compared, aiming for human-competitive level or better.
 
-Currently, these include:
-- Random AI
-- MiniMax Search AI - See [here](https://en.wikipedia.org/wiki/Minimax) for more information
-- Monte Carlo Tree Search AI - See [here](https://wikipedia.org/wiki/Monte_Carlo_tree_search) for more information
+## Getting Started
 
-The game can be played with or without a Human Player. To specify the players, edit the `players` list at the top of `__main__.py`.
+### ❗ Notes
 
-Game play happens in turns. On each turn, the player rolls the dice, and then performs one or move of the following actions:
+> This program requires Python 3.10 or later to run.
+>
+> The program is fully tested and compatible with Mac Systems. However, Windows systems may struggle as the emojis and colours of players are not displayed properly. The core game still functions, it is just the display that is affected.
+>
+> The game has been bug tested, and full games to the end are possible. However, due to the time complexity of playing a full game and finding all bugs, there may still be a few issues in there. For example, some actions cannot be cancelled while chosen. Some inputs may also crash the program, though this is quite rare.
+
+### Starting the Game
+
+In order to run the game, you first need to install the dependencies. This can be done by running the following command:
+
+```pip install -r requirements.txt```
+
+After the dependencies are installed, you can run the program by running the following command:
+
+```cd ./src && python3 __main__.py``` or ```python3 src```
+
+(You may need to change `python3` to `python` depending on your system)
+
+If the program fails to run and states missing dependencies, or performs incorrectly, please try adding the extra requirements in from `requirements.txt`. These shouldn't be necessary, but in some situations may fix some problems.
+
+## Playing the Game
+
+The game can be played with or without a Human Player. Games without human players are played at a faster speed, and are used to observe the AI player's actions.
+
+The game players and options can be configured in the menu when the game begins. The default is one human player, two random players, and one MiniMax player.
+
+Game play happens in turns. On each turn, the player rolls the dice, and then performs one or move of the following actions (in this order):
 - Trading with the bank
 - Purchasing a development card
 - Building a settlement, city or road.
@@ -27,53 +50,9 @@ The overall aim is to be the first player to reach 10 victory points. Points are
 - 2 points for having the longest road
 - 2 points for having the largest army
 
-## Getting Started
-
-In order to run the game, you first need to install the dependencies. This can be done by running the following command:
-
-```pip install -r requirements.txt```
-
-After the dependencies are installed, you can run the program by running the following command:
-
-```cd ./src && python3 __main__.py``` or ```python3 src```
-
-(You may need to change `python3` to `python` depending on your system)
-
-## Game Information and Workings
-
-### Board State Representation
+## Game Grid System
 
 The board uses letters and grid references to identify the different tiles and vertices on the board. The tiles are lettered in alphabetic order from top to bottom, left to right. The vertices are labeled with each letter that they are adjacent to, and then a number indicating their position. For example, the top most tile is 'a' and has vertices 'a1' and 'a2' for the two vertices in the ocean. Continuing clockwise, it then has 'a,c', 'a,c,e', 'a,b,e' and 'a,b'.
-
-The board data is stored as a series of lists, arrays and dictionaries. These are:
-- `tiles` - A list of class `tile` objects, representing the tiles on the board
-- `buildings` - A dictionary mapping the grid references to a tuple of the player, the building type, and the tiles that touch it
-- `roads` - A dictionary mapping tuples of the start and end of the road to the player that owns it, and the symbol to be drawn on the board
-- `ports` - A dictionary mapping the coastline grid references to either `None` if there is no port, or the type of port and who owns it if there is one
-
-The board also has a number of other variables that are used to keep track of the game state:
-- `players` - A list of the players in the game
-- `resource_deck` - A list of the resources in the bank
-- `development_card_deck` - A list of the development cards in the bank
-- `largest_army` - A list of the player with the largest army, and the number of knights they have
-- `longest_road` - A list of the player with the longest road, and the number of roads they have
-
-
-### MiniMax Search Heuristic
-
-The MiniMax Search Heuristic uses the following values and weights to evaluate the board. These are:
-
-| Metric                         | Description                                                                                        |
-|--------------------------------|----------------------------------------------------------------------------------------------------|
-| Victory Points                 | VP * 10. The number of victory points the player has                                               |
-| Current VP > Next Highest VP   | Adds 50 if the current player has more victory points than the next highest player, or 25 if equal |
-| Roads Count                    | RC * 2. The number of roads the player has                                                         |
-| Total Num. resources available | TR * 1. A sum of how many resources each city and settlement can get.                              |
-| Development Cards              | DC * 3. The number of development cards the player has                                             |
-| Robber Cards                   | Played Robber Cards * 3.                                                                           |
-If the player has won, the metric returns 1000000.
-
-The metric prioritizes getting victory points and expanding over hoarding cards. It is a fairly general heuristic, and is not specific to any particular strategy.
 
 
 ## Contact
