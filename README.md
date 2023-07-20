@@ -1,5 +1,9 @@
 # Conquerors of Catan
 
+## A Settlers of Catan AI Project
+
+© 2023 HARRISON PHILLINGHAM
+
 &nbsp; 🌾 &nbsp; 🌲&nbsp; 🐑&nbsp; 🧱 &nbsp; 🪨  &nbsp; &nbsp; &nbsp; ❔
 
 ## Introduction
@@ -55,6 +59,8 @@ The overall aim is to be the first player to reach 10 victory points. Points are
 The board uses letters and grid references to identify the different tiles and vertices on the board. The tiles are lettered in alphabetic order from top to bottom, left to right. The vertices are labeled with each letter that they are adjacent to, and then a number indicating their position. For example, the top most tile is 'a' and has vertices 'a1' and 'a2' for the two vertices in the ocean. Continuing clockwise, it then has 'a,c', 'a,c,e', 'a,b,e' and 'a,b'.
 
 
-## Contact
+## Contact and Licence
 
 If you have any questions, please feel free to contact me at [harrison@phillingham.com](mailto:harrison@phillingham.com)
+
+This code is released under the GPLv3 licence, which can be found in the LICENCE file in the root of this repository.

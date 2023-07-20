@@ -9,7 +9,7 @@ python3 -m src [--no-menu]
 Options:
 --no-menu    Skips the menu and starts the game immediately with the default settings and players
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
 """
 import shutil
 import signal
@@ -22,6 +22,19 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
+
+    os.system("clear" if os.name == "posix" else "cls")
+
+    print(
+        """
+        Conquerors of Catan - A Settlers of Catan AI Project - Copyright © 2023 HARRISON PHILLINGHAM
+        This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+        This is free software, and you are welcome to redistribute it
+        under certain conditions; type `show c' for details.
+        """
+    )
+
+    time.sleep(3)
 
     # Add a handler for the keyboard interrupt signal
 
@@ -93,7 +106,8 @@ if __name__ == "__main__":
             print("1. Play Game")
             print("2. Configure Players")
             print("3. Configure Game Options")
-            print("4. Exit")
+            print("4. Licence and Information")
+            print("5. Exit")
             if all(isinstance(player, ai_player) for player in players):
                 print(
                     "\n! - All players are AI players. The game will be for observation purposes only.\n"
@@ -424,8 +438,24 @@ if __name__ == "__main__":
                             time.sleep(1)
                             continue
 
-                # Exit the program, with a farewell message
+                # Print the licence and information
                 elif choice == 4:
+                    os.system("clear" if os.name == "posix" else "cls")
+                    print(
+                        """
+                        Conquerors of Catan - A Settlers of Catan AI Project
+                        © 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+                        This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
+                        This is free software, and you are welcome to redistribute it
+                        under certain conditions; type `show c' for details.
+
+                        For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+                        """
+                    )
+                    await_user_input("Press enter to return to the menu")
+
+                # Exit the program, with a farewell message
+                elif choice == 5:
                     for letter in "\nFarewell Settler!\n":
                         print(letter, end="", flush=True)
                         time.sleep(0.1)

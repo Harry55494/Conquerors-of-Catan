@@ -2,7 +2,7 @@
 Methods to find the longest route in a graph.
 ChatGPT wrote some code as listed below
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
 """
 
 

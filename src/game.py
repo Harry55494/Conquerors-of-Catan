@@ -1,7 +1,7 @@
 """
 Game class, for setting up and running a game
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
 """
 from board_interface import *
 from player import player, endOfTurnException
