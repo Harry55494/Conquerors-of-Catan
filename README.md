@@ -1,10 +1,23 @@
-# Conquerors of Catan
+<div align="center">
 
-## A Settlers of Catan AI Project
+# Conquerors of Catan
+### A Settlers of Catan AI Project
+
+&nbsp; 🌾 &nbsp; 🌲&nbsp; 🐑&nbsp; 🧱 &nbsp; 🪨  &nbsp; &nbsp; &nbsp; ❔
 
 © 2023 HARRISON PHILLINGHAM
 
-&nbsp; 🌾 &nbsp; 🌲&nbsp; 🐑&nbsp; 🧱 &nbsp; 🪨  &nbsp; &nbsp; &nbsp; ❔
+</div>
+
+---
+
+## Contents
+
+- [Introduction](#introduction)
+- [Getting Started](#getting-started)
+- [Playing the Game](#playing-the-game)
+- [Game Grid System](#game-grid-system)
+- [Contact and Licence](#contact-and-licence)
 
 ## Introduction
 
