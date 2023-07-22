@@ -23,6 +23,10 @@
 
 The Settlers of Catan (Settlers) is a classic board game that provides a unique and interesting challenge to modern AI methods, such as those found in AlphaGo. In Settlers, players build and develop roads, settlements and cities on a board of resource tiles, scoring them Victory Points of which they need 10 to win. However, the challenge of making an AI player for this comes from multiple factors, including imperfect information, elements of chance and negotiation, and having more than 2 players. In this project, I aim to first produce a fully-playable command line version of the game, and then create a strong AI player with multiple strategies that can be investigated and compared, aiming for human-competitive level or better.
 
+## Demo
+
+![](demo.gif)
+
 ## Getting Started
 
 ### ❗ Notes
