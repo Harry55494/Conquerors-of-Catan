@@ -735,6 +735,18 @@ class player:
                         )
                     args.append(res_type)
                 interface.play_development_card(self, card, args[0], args[1])
+            elif card == "road building":
+                interface.play_development_card(
+                    self,
+                    card,
+                    self.choose_road_location(interface, None, False),
+                    self.choose_road_location(interface, None, False),
+                )
+            elif card == "soldier":
+                interface.play_development_card(
+                    self,
+                    card,
+                )
         else:
             print("You have no development cards")
 

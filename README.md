@@ -39,17 +39,15 @@ The Settlers of Catan (Settlers) is a classic board game that provides a unique 
 
 ### Starting the Game
 
-In order to run the game, you first need to install the dependencies. This can be done by running the following command:
+In order to run the game, you first need to create a virtual environment. This can be done by running the following command when in the root directory of the project:
 
-```pip install -r requirements.txt```
+```pipenv install``` or ```pipenv install --dev``` if you want to install the development dependencies.
 
 After the dependencies are installed, you can run the program by running the following command:
 
-```cd ./src && python3 __main__.py``` or ```python3 src```
+```pipenv run python3 main.py```
 
 (You may need to change `python3` to `python` depending on your system)
-
-If the program fails to run and states missing dependencies, or performs incorrectly, please try adding the extra requirements in from `requirements.txt`. These shouldn't be necessary, but in some situations may fix some problems.
 
 ## Playing the Game
 
