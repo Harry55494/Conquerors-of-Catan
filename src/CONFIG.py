@@ -23,7 +23,7 @@ CONFIG = {
     # Set to either 'default' or 'random'
     # 'default' will use the standard board layout
     # 'random' will use a random board layout
-    "board_layout": "default",
+    "board_layout": "random",
     # Table Top Mode -
     # If enabled, waits for a keypress after each AI turn, to acknowledge the move
     # Used only when playing with a physical board, not required when playing with a human on the computer
@@ -37,11 +37,11 @@ CONFIG = {
     # Minimax Depth -
     # Depth to which the minimax algorithm will search
     # 0 means it only looks at the current state
-    "minimax_max_depth": 6,
+    "minimax_max_depth": 4,
     # MiniMax Max Time -
     # Maximum time in seconds that the MiniMax algorithm will take to find the best move
     # If it takes longer than this, it will return the best move it has found so far
-    "minimax_time_limit": 30,
+    "minimax_time_limit": 60,
     # Log MiniMax Score Calculation -
     # If enabled, logs the score calculation for each move in the MiniMax algorithm
     # This is useful for debugging, but will fill up the log file very quickly
@@ -55,7 +55,7 @@ CONFIG = {
     # 2 = All Moves
     # Recommended Level is 1
     # See README.md for more information
-    "epsilon_pruning_level": 1,
+    "epsilon_pruning_level": 0,
     # AI CONFIGURATION --------------------------------------------------------
     # Maximum Moves per Turn -
     # Set the maximum number of moves that can be made in a single turn, per player type

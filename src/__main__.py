@@ -66,11 +66,11 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        # player(1, "blue"),
-        ai_random(1, "blue"),
-        ai_random(2, "red"),
+        player(1, "blue"),
+        ai_random(4, "green"),
+        ai_random(3, "red"),
         ai_minimax(
-            3,
+            2,
             "yellow",
             wishful_thinking=True,
             heuristic_modifiers=[HMDevelopmentCardSpam()],
