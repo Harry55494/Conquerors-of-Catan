@@ -2,7 +2,7 @@
 Configuration file for the games
 Is overwritten by anything set while the program is running, but then will return to this upon a restart
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com.
 """
 
 

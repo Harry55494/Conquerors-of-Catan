@@ -2,7 +2,7 @@
 AI Minimax Player
 Contains the logic for the minimax AI player to play the game
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com.
 """
 import concurrent
 from concurrent.futures import ProcessPoolExecutor

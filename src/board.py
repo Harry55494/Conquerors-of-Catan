@@ -2,7 +2,7 @@
 Board Class, containing all the information about the board, and the buildings on it
 One of the longest files, but mostly just due to the nice spacing of the arrays and dictionaries
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com.
 """
 
 import ai_minimax

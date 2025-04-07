@@ -2,7 +2,7 @@
 Heuristic Modifiers, to provide varying strategies for the AI player
 Multiple Modifiers can be chained together to create a more complex strategy
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com.
 """
 
 

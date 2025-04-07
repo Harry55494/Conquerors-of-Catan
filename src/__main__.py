@@ -9,7 +9,7 @@ python3 -m src [--no-menu]
 Options:
 --no-menu    Skips the menu and starts the game immediately with the default settings and players
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com.
 """
 import shutil
 import signal
@@ -449,7 +449,7 @@ if __name__ == "__main__":
                         This is free software, and you are welcome to redistribute it
                         under certain conditions; type `show c' for details.
 
-                        For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+
                         """
                     )
                     await_user_input("Press enter to return to the menu")

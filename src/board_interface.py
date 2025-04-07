@@ -3,7 +3,7 @@ Board Interface Class
 Used to interact with the board object in a standardised way e.g. takes cards from a player
 Prevents direct manipulation of the board object, and discrepancies between different implementations of the player actions
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com.
 """
 
 from board import *

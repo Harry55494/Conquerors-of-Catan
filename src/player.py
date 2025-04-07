@@ -3,7 +3,7 @@ Player class
 Contains the default implementations of all required methods, which are all overridden by the AI class
 Implementations all require human input
 
-© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com. For the full licence, please see LICENCE.txt (https://github.com/Harry55494/conquerors-of-catan/blob/master/LICENCE)
+© 2023 HARRISON PHILLINGHAM, mailto:harrison@phillingham.com.
 """
 import pickle
 import random
