@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="icon.png" alt="Conquerors of Catan" width="200" style="border-radius:25%"/>
+
 # Conquerors of Catan
 ### A Settlers of Catan AI Project
 
