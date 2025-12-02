@@ -25,17 +25,6 @@ if __name__ == "__main__":
 
     os.system("clear" if os.name == "posix" else "cls")
 
-    print(
-        """
-        Conquerors of Catan - A Settlers of Catan AI Project - Copyright © 2023 HARRISON PHILLINGHAM
-        This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
-        This is free software, and you are welcome to redistribute it
-        under certain conditions; type `show c' for details.
-        """
-    )
-
-    time.sleep(3)
-
     # Add a handler for the keyboard interrupt signal
 
     def keyboard_interrupt_handler(signal, frame):
@@ -66,8 +55,7 @@ if __name__ == "__main__":
     # Create the default players
 
     players = [
-        player(1, "blue"),
-        ai_random(4, "green"),
+        ai_random(1, "green"),
         ai_random(3, "red"),
         ai_minimax(
             2,

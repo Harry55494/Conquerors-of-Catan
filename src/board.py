@@ -242,6 +242,7 @@ class board:
                 "rock",
                 "desert",
             ]
+            # Lacks the desert tile, which is added later
             number_order_circular = [
                 5,
                 2,
@@ -283,7 +284,6 @@ class board:
                 "l",
                 "j",
             ]
-            i = 0
 
             potential_tiles = random.sample(potential_tiles, len(potential_tiles))
 
@@ -295,7 +295,7 @@ class board:
                 )
                 if tile_type == "desert":
                     number = 7
-                    # Desert tile_ must always have the number 7
+                    # Desert tile must always have the number 7
                 else:
                     number = number_order_circular.pop(0)
                 self.tiles.append(tile(number, letter, tile_type))
